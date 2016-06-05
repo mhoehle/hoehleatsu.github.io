@@ -27,7 +27,7 @@ via [twitter](https://twitter.com/m_hoehle/status/729107184789954561).
 # Introduction
 
 Imagine that a team of developers of a new R package needs to structure a test
-plan before the release of the package to CRAN. Let \\(N$ be the (unknown) number
+plan before the release of the package to CRAN. Let \\(N\\) be the (unknown) number
 of bugs in the package. The team starts their testing at time zero and subsequently
 find an increasing number of bugs as the test period passes by. The figure below
 shows such a testing process mimicking the example

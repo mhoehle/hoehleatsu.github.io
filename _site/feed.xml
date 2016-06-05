@@ -6,9 +6,323 @@
 </description>
     <link>http://hoehleatsu.github.io/</link>
     <atom:link href="http://hoehleatsu.github.io/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sun, 05 Jun 2016 23:13:21 +0200</pubDate>
-    <lastBuildDate>Sun, 05 Jun 2016 23:13:21 +0200</lastBuildDate>
+    <pubDate>Mon, 06 Jun 2016 00:12:53 +0200</pubDate>
+    <lastBuildDate>Mon, 06 Jun 2016 00:12:53 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
+    
+      <item>
+        <title>Right or Wrong? - Validate Numbers Like a Boss</title>
+        <description>&lt;p&gt;&lt;br /&gt;
+&lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot; /&gt;&lt;/a&gt;&lt;br /&gt;
+This work is licensed under a &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
+
+&lt;p&gt;How does a statistician ensure that an analysis that comprises of outputting \(M\) results is
+correct? Can this be done without manually checking each of the results? Some statistical
+approaches for this task of &lt;strong&gt;proof-calculation&lt;/strong&gt; are described – e.g. capture-recapture
+estimation and sequential decision making.&lt;/p&gt;
+
+&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
+
+&lt;p&gt;One activity the public associates with &lt;strong&gt;statistics&lt;/strong&gt; is the generation of large tables
+containing a multitude of numbers on a phenomena of interest. Below an example containing the summary of &lt;a href=&quot;https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/bulletins/uklabourmarket/april2016&quot;&gt;UK labour market statistics&lt;/a&gt; for the 3 months to February 2016 from the
+Office for National Statistics:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;unemployment-apr2016.png&quot; alt=&quot;&quot; title=&quot;Source: https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/bulletins/uklabourmarket/april2016&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Another example is The German Federal Government’s &lt;a href=&quot;http://www.bmas.de/DE/Service/Medien/Publikationen/a334-4-armuts-reichtumsbericht-2013.html&quot;&gt;4th Report on Poverty and Wealth&lt;/a&gt;. The report consists of a total of 549 pages with the pure table appendix fun starting on p. 518 including, e.g., age-adjusted ORs obtained from logistic regression modelling (p.523).&lt;/p&gt;
+
+&lt;p&gt;Even though dynamic report generation, graphical &amp;amp; interactive
+visualizations have developed to a point making such tables
+obsolete, this does not change the fact that the results still need to
+be &lt;strong&gt;correct&lt;/strong&gt;.  As a consequence, the results need to be validated to ensure
+their correctness, sometimes even beyond any doubt! In what follow we
+will use the term &lt;strong&gt;result&lt;/strong&gt; to describe an output element of the
+statistical analysis. In most cases results are numbers, but we shall
+use the term number and result interchangeably. However, results
+could also denote higher level output elements (e.g. tables, a
+specific line in a graph).&lt;/p&gt;
+
+&lt;p&gt;Surprisingly, statistics students are taught very little on how to address such a problem
+using what we do best: statistics. We teach about the median,
+censoring &amp;amp; truncation, complex modelling and computer intensive inference methods. Maybe we even tell them about &lt;code class=&quot;highlighter-rouge&quot;&gt;knitr&lt;/code&gt; as way to get the same results twice (a minimum requirement
+to ensure correctness). However, spraying out numbers (even from the most beautiful model) is &lt;strong&gt;not cool&lt;/strong&gt; if the initial data-munging went wrong or if your quotient is obtained by dividing with the wrong denominator .&lt;/p&gt;
+
+&lt;p&gt;The on-going discussion of &lt;strong&gt;reproducible research&lt;/strong&gt; aims at the core of this problem: How to
+ensure that your analysis re-producible and correct?
+As modern statistics becomes more and more programming oriented it appears natural to seek inspiration from the discipline of &lt;strong&gt;software testing&lt;/strong&gt;. Another entertaining branch is the concept of optimal &lt;strong&gt;proofreading&lt;/strong&gt;. This dates back to the 1970-1980s,  where the problem is formulated as the search for an optimal stopping rules for the process of checking a text consisting of \(M\) words – see for example Yang et al. (1982).
+Periodically, the software development community re-visits these works – for example by making it more accessible for computer scientists (Hayes, 2010).
+Singpurwalla and Wilson (1999) give a thorough exposition of
+treating uncertainty in the context of software engineering by 
+interfacing between statistics and software engineering.&lt;/p&gt;
+
+&lt;h1 id=&quot;proofcalculation&quot;&gt;Proofcalculation&lt;/h1&gt;
+
+&lt;p&gt;The scientific method of choice to address validity is &lt;strong&gt;peer
+review&lt;/strong&gt;. This can go as far as having the reviewer implement the
+analysis as a completely separate and independent process in order to
+ensure that results agree. Reporting the results of clinical trials
+have such independent implementations has part of the protocol. Such a
+co-pilot approach fits nicely to the fact that real-life statistical
+analysis rarely is a one-person activity anymore, but team work. There
+might neither be a need nor resources to rebuild entire analyses, but
+critical parts are nice to &lt;strong&gt;double-check&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Formalizing the task into mathematical notation let’s assume the
+report of interest consists of a total of \(M\) numbers. These numbers
+would typically have a hierarchical structure, e.g., they relate to
+various parts of the analysis or are part of individual tables.  Error
+search is usually performed along the hierarchical structure.  Good
+validation/proofcalculation strategies follow the principles of
+software testing – for example it may be worthwhile to remember
+&lt;strong&gt;Pareto’s law&lt;/strong&gt;: 80 percent of the error are found in 20 percent of
+the modules to test. Further hints on a well structured debugging
+process can be found in Zeller (2009) where the quote on Pareto’s law
+is also from.&lt;/p&gt;
+
+&lt;p&gt;One crucial question is what exactly we mean by an &lt;strong&gt;error&lt;/strong&gt;? A result
+can be wrong, because of a bug in the code line computing it. Strictly
+speaking &lt;strong&gt;wrong&lt;/strong&gt; is just the (mathematical) black-and-white version
+of the complex phenomena describing a misalignment between what is
+perceived and what is desired by somebody. A more in-depth debate of
+what’s wrong is beyond the scope of this note, but there are
+situations when a result is agreeably wrong. In the simplest case this
+could be due to erroneous counting of the number of elements forming
+the denominator of a ratio \(x/y\). More complicated cases could be the
+use of a wrong regression model compared to what was described in the
+methodology section (e.g. use of an extra unintended covariate). Even
+worse are problems in the data-prepossessing step resulting in a wrong
+data foundation and, hence, invalidating a large part of the
+results. Altogether, a result be wrong in more than at the same time
+and one error can invalidate several results. The \(M\) results are just
+the final output – what matters is what happens along your &lt;strong&gt;analysis
+pipeline&lt;/strong&gt;. Detecting a wrong result is thus merely a symptom of a
+flawed pipeline. Isolating and fixing the bug causing the
+error does not necessarily ensure that the number is correct then.&lt;/p&gt;
+
+&lt;p&gt;We summarise the above discussion by making the following 
+simplifying abstractions:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;The number of results which is wrong is a function of the number of errors \(M\). One error invalidates at least one result, but it can invalidate several jointly and errors can overlap thus invalidating the same number.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;We deliberately keep the definition of an error vague, but mean a mechanism which causes a result to be wrong. The simplest form of a result is a number. The simplest error is a number which is wrong.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;The hierarchical structure of the numbers and the intertwined code generating them is ignored. Instead, we simply assume there are \(M\) errors and assume that these errors are independent of each other.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;We shall now describe an estimation approach a decision theoretic approach for the problem.&lt;/p&gt;
+
+&lt;h1 id=&quot;team-based-validation&quot;&gt;Team Based Validation&lt;/h1&gt;
+
+&lt;p&gt;Consider the situation where a team of two statisticians together validate the same report consisting of \(M\) numbers. Say the team use a fixed amount of time (e.g. one day)
+trying to find as many errors in the numbers as possible. During the test period no errors are fixed – this happens only after the end of the period. Let’s assume that
+ during the test period the two statistician found \(n_1\) and \(n_2\) wrong numbers,
+respectively. Let \(n_{11}\) be the number of wrong numbers which were found by both statisticians.&lt;/p&gt;
+
+&lt;p&gt;We  summarise the findings in the following alternative representation: Let \(f_i, i=1,2\) be the number of wrong numbers found by \(i\) of the testers, i.e.&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{aligned}
+f_1 &amp;=(n_1-n_{11})+(n_2-n_{11})\\
+f_2 &amp;= n_{11}.
+\end{aligned} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;These are the wrong numbers found by only one of the testers and by both testers, respectively.
+Let \(S=f_1+f_2\) be the total number of erroneous numbers found in the test phase. Assuming that we in the subsequent debugging phase
+are able to remove all these \(S\) errors, we are interested in estimating the number of remaining errors, i.e. \(f_0\) or, alternatively, the total number of errors \(M=S+f_0\).&lt;/p&gt;
+
+&lt;p&gt;Assume that during the 1 day of testing the result is as follows:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;data.frame&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;9&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;12&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;colnames&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;01&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;10&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;11&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;##   01 10 11
+## 1  9 12  6&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;i.e. \(n_1=9\), \(n_2=12\) and \(n_{11}=6\). 
+Hence, the total number of errors found so far is \(S=27\).&lt;/p&gt;
+
+&lt;h2 id=&quot;estimating-the-total-number-of-wrong-numbers&quot;&gt;Estimating the total number of wrong numbers&lt;/h2&gt;
+
+&lt;p&gt;Estimating the total number of errors from the above data is a capture-recapture problem
+with two time points (=sampling occasions).&lt;/p&gt;
+
+&lt;h3 id=&quot;lincoln-petersen-estimator&quot;&gt;Lincoln-Petersen estimator&lt;/h3&gt;
+&lt;p&gt;Under the simple assumption that the two statisticians are equally good at finding errors
+and that the possible errors  have the same probability to be found (unrealistic?) a simple
+capture-recapture estimate for the total number of errors is the so called &lt;a href=&quot;https://en.wikipedia.org/wiki/Mark_and_recapture#Lincoln.E2.80.93Petersen_estimator&quot;&gt;Lincoln-Petersen estimator&lt;/a&gt;):&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{M} = \frac{n_1 \cdot n_2}{n_{11}}.&lt;/script&gt;
+
+&lt;p&gt;Note that this estimator puts no upper-bound on \(N\). The estimator can be computed using, e.g., the &lt;a href=&quot;https://cran.r-project.org/web/packages/CARE1/index.html&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;CARE1&lt;/code&gt;&lt;/a&gt; package:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;CARE1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;estN.pair&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;##  Petersen   Chapman        se       cil       ciu 
+## 45.000000 42.428571  9.151781 32.259669 72.257758&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This also provides a 95% confidence interval for \(N\) – see the package documentation for details. To verify the computations one could alternatively compute the Lincoln-Petersen estimator manually:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Nhat&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;01&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;11&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;10&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;11&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;11&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;##   01
+## 1 45&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Finally, an estimate on the number of errors left to find is \(\hat{M}-S=18.0\).&lt;/p&gt;
+
+&lt;h2 id=&quot;heterogeneous-sampling-probabilities&quot;&gt;Heterogeneous Sampling Probabilities&lt;/h2&gt;
+
+&lt;p&gt;If one does not want to assume the equal catch-probabilities of the errors, a range of alternatives exists. One of them is the procedure by Chao (1984, 1987). Here, a non-parametric estimate of the total number of errors is given as:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{M} = S + \frac{f_1^2}{2 f_2}.&lt;/script&gt;
+
+&lt;p&gt;An R implementation of the estimator is readily available as part of the &lt;a href=&quot;https://cran.r-project.org/web/packages/SPECIES/index.html&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;SPECIES&lt;/code&gt;&lt;/a&gt; package.
+For this, data first need to be stored as a table containing \(f_1, f_2\):&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;testPaggr&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;data.frame&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;j&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n_j&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;as.numeric&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sum&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]),&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])))&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;testPaggr&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;##   j n_j
+## 1 1  21
+## 2 2   6&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;N_est&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SPECIES&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;chao1984&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testPaggr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.95&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;## $Nhat
+## [1] 64
+## 
+## $SE
+## [1] 22.78363
+## 
+## $CI
+##      lb  ub
+## [1,] 39 139&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Again, estimator as well as a 95% confidence interval (based on a log-transform) are computed  – see the package documentation for details.&lt;/p&gt;
+
+&lt;!-- ### Manual computation --&gt;
+
+&lt;!-- Again, if the computation can of course also be done manually: --&gt;
+&lt;!-- ```{r} --&gt;
+&lt;!-- f &lt;- testPaggr$n_j --&gt;
+&lt;!-- S &lt;- sum(f) --&gt;
+&lt;!-- ceiling(S + f[1]^2/(2*f[2])) --&gt;
+&lt;!-- ``` --&gt;
+
+&lt;h1 id=&quot;knowing-when-to-stop&quot;&gt;Knowing when to Stop&lt;/h1&gt;
+
+&lt;p&gt;Whereas the above estimates are nice to know they give little guidance on how to decide between the two alternatives: continue validating numbers on day 2 or stop
+the testing process and publish the report. We follow the work of Ferguson and Hardwick (1989) by solving the described sequential decision making problem within a decision theoretic framework: Let’s assume that the cost of each round of proofcalculation costs an amount of \(C_p&amp;gt;0\) units and that each error undetected after \(n\) rounds of proofcalculation costs \(c_n&amp;gt;0\) units. Treating the total number of wrong results  \(N\) as a random variable and letting \(X_1,\ldots,X_n\), be the number of wrong results found in each of the proofcalculation rounds \(1,\ldots,n\), we know that \(X_i\in N_0\) and \(\sum_{j=1}^n X_j \leq N\). One then formulates the conditional expected loss after \(n, n=0, 1, 2, \ldots,\) rounds of proofcalculation as:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;Y_n = n C_p + c_n E(M_n|X_1,\ldots,X_n),&lt;/script&gt;
+
+&lt;p&gt;where \(M_n = M -(\sum_{j=1}^n X_j)\).  If we further assume that in the \((n+1)\)’th proofcalculation round errors are detected independently of each other with probability \(p_n, 0 \leq p_n \leq 1\) and \(p_n\) being a known number we obtain that&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;X_{n+1} \&gt;|\&gt; M, X_1,\ldots,X_n \sim \text{Bin}(M_n, p_n), \quad n=0,1,2,\ldots.&lt;/script&gt;
+
+&lt;p&gt;Under the further assumption that \(N\sim \text{Po}(\lambda)\) with \(\lambda&amp;gt;0\) being known,  one can show that the loss function is independent of the observations (Ferguson and Hardwick, 1989), i.e.&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;Y_n = n C_p + c_n \lambda \prod_{j=0}^{n-1} (1-p_j), \quad n=0,1,2,\ldots.&lt;/script&gt;
+
+&lt;p&gt;The above Poisson assumption seems to be an acceptable approximation if the total number of results \(M\) is large and the probability of a result being wrong is low. In this case the optimal stopping rule is given as follows:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;n_{\text{stop}} = \min_{n\geq 0} Y_n.&lt;/script&gt;
+
+&lt;h3 id=&quot;numerical-example&quot;&gt;Numerical example&lt;/h3&gt;
+
+&lt;p&gt;We consider a setup where the costly errors have substantial ramifications and thus
+are easy to detect early on. As time passes on the errors become
+more difficult to detect. This is reflected by the subsequent choices of \(p_n\) and \(c_n\) – see below. Furthermore, the expected number of bugs is taken to be the non-homogeneous capture-recapture estimate of the remaining errors. This coupling of the two procedures is somewhat pragmatic and ignores any uncertainty from the estimation stage.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;c1&quot;&gt;#Cost of one round of proofcalculation (say in number of working days)
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Cp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;#Cost of finding errors after n round of proofcalculation
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cn&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.9&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;^&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;+1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;#Expected number of errors
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lambda&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;N_est&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Nhat&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sum&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;## [1] 37&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;c1&quot;&gt;#Probabilty of detecting an error in round j+1
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pj&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;j&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;m&quot;&gt;0.8&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;^&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;j&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;+1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;#Expected conditional loss as defined above
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Yn&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Vectorize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Cp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;lambda&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;prod&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pj&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;-1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;})&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;#Make a data.frame with the results.
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;df&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;data.frame&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;20&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;mutate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Yn&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Yn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cn&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pn&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pj&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;-1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The above choice of parameters leads to the following functional forms:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://hoehleatsu.github.io/figure/source/2016-05-21-proofCalculation/unnamed-chunk-7-1.png&quot; alt=&quot;plot of chunk unnamed-chunk-7&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;The optimal strategy is thus found as:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;df&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;filter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rank&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Yn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;select&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Yn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;##   n       Yn
+## 1 5 6.457426&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;In other words, one should test for \(n_{\text{stop}}=5\) rounds.&lt;/p&gt;
+
+&lt;h1 id=&quot;discussion&quot;&gt;Discussion&lt;/h1&gt;
+
+&lt;p&gt;Is any of the above useful? 
+Well, I have not heard about such approaches being used seriously in software engineering. The presented methods are more in the direction of  narrowing a complex problem down by assumptions in order to make the problem mathematically tractable. You may not agree with the assumptions as, e.g., Bolton (2010), yet, assumptions are a good way to get started. As long as they are made transparent.&lt;/p&gt;
+
+&lt;p&gt;The point is that statisticians appear to be very good at enlightening others about the virtues of statistics (repeat your measurements, have a sample plan, pantomimic act visualizing the horror of p-values, etc.). However, when it comes to our own analyses, we are surprisingly statistics-illiterate at times.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;look_for_the_pattern-300px.png&quot; alt=&quot;&quot; title=&quot;Source: https://openclipart.org/detail/248382/dropping-numbers&quot; /&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;literature&quot;&gt;Literature&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;Bolton, M (2010). &lt;a href=&quot;http://www.developsense.com/blog/2010/07/another-silly-quantitative-model/&quot;&gt;Another Silly Quantitative Model&lt;/a&gt;, Blog post, July 2010.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Cook, JD (2010). &lt;a href=&quot;http://www.johndcook.com/blog/2010/07/13/lincoln-index/&quot;&gt;How many errors are left to find?&lt;/a&gt;, Blog post, July 2010.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Ferguson, TS and Hardwick JP (1989). &lt;a href=&quot;http://www.jstor.org/stable/3214037&quot;&gt;Stopping Rules For Proofreading&lt;/a&gt;, J. Appl. Prob. 26:304-313.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Hayes, B (2010). &lt;a href=&quot;http://bit-player.org/2010/the-thrill-of-the-chase&quot;&gt;The thrill of the chase&lt;/a&gt;, Blog post, July 2010.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Singpurwalla ND, Wilson SP (1999). &lt;a href=&quot;http://www.springer.com/us/book/9780387988238&quot;&gt;Statistical Methods in Software Engineering&lt;/a&gt;, Springer.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Yang MCK, Wackerly DD, Rosalsky A (1982). &lt;a href=&quot;http://www.jstor.org/stable/3213535&quot;&gt;Optimal Stopping Rules in Proofreading&lt;/a&gt;,  Journal of Applied Probability
+19(3), pp. 723-729&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Zeller, A (2009). &lt;a href=&quot;http://www.whyprogramsfail.com/&quot;&gt;Why programs fail&lt;/a&gt;, Elsevier, 2009, 423 pages.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Sat, 21 May 2016 00:00:00 +0200</pubDate>
+        <link>http://hoehleatsu.github.io/2016/05/21/proofCalculation.html</link>
+        <guid isPermaLink="true">http://hoehleatsu.github.io/2016/05/21/proofCalculation.html</guid>
+        
+        <category>datascience</category>
+        
+        <category>rstats</category>
+        
+        <category>debugging</category>
+        
+        
+      </item>
     
       <item>
         <title>When Should One Stop Testing Software?</title>
@@ -27,7 +341,7 @@ via &lt;a href=&quot;https://twitter.com/m_hoehle/status/729107184789954561&quot
 &lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
 
 &lt;p&gt;Imagine that a team of developers of a new R package needs to structure a test
-plan before the release of the package to CRAN. Let \(N$ be the (unknown) number
+plan before the release of the package to CRAN. Let \(N\) be the (unknown) number
 of bugs in the package. The team starts their testing at time zero and subsequently
 find an increasing number of bugs as the test period passes by. The figure below
 shows such a testing process mimicking the example
