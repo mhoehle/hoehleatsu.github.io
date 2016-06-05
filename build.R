@@ -23,7 +23,7 @@ local({
     # you may want to adapt them to your own website
 
     knitr::opts_knit$set(
-      base.dir = '~/Sandbox/Blog/',
+      base.dir = '/Users/hoehle/Sandbox/Blog/',
       base.url = 'http://hoehleatsu.github.io/'
     )
   }

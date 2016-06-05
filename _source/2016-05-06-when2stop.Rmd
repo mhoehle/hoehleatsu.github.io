@@ -1,0 +1,280 @@
+---
+layout: post
+title:  "When Should One Stop Testing Software?"
+tags: [datascience, rstats, debugging]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,fig.width=6,fig.height=4)
+library("ggplot2")
+library("dplyr")
+library("animation")
+```
+
+
+# Abstract
+
+This is a small note rediscovering a gem published by S. R. Dalal and C. L. Mallows on
+treating the test of software in a statistical context (Dalal and Mallows, 1988).
+In their paper they answer the question on how long to continue testing your software before
+shipping. The problem is translated into a sequential decision problem, where an optimal stopping rule has to be found minimizing expected loss.
+We sketch the main result of their paper and apply their stopping rule to an example
+using R code.
+
+This text & source code is available under the MIT license from [Github](https://github.com/hoehleatsu/When2Stop). Furthermore, it is also available as a [RPubs](http://rpubs.com/hoehle/179204). This publication was announced 
+via [twitter](https://twitter.com/m_hoehle/status/729107184789954561).
+
+# Introduction
+
+Imagine that a team of developers of a new R package needs to structure a test
+plan before the release of the package to CRAN. Let $N$ be the (unknown) number
+of bugs in the package. The team starts their testing at time zero and subsequently
+find an increasing number of bugs as the test period passes by. The figure below
+shows such a testing process mimicking the example
+of Dalal and Mallows (1988) from the testing of a large
+software system at a telecommunications research company.
+
+```{r,echo=FALSE,fig.align='center',results='hide',fig.keep='last'}
+#Simulate some data, which look like Fig. 1 of the paper. 
+set.seed(123)
+t <- 0:175
+mu <- 0.02
+N <- 1250
+#Simulate K based on the inter arrival times of the exponential distribution.
+#See
+#http://www.math.kth.se/matstat/gru/sf2955/exponorderstats.pdf
+p <- cumsum(rexp(N,rate=(N+1-1:N)*mu))
+#Alternative: Simulate from Hawkes process
+#p <- unlist(hawkes::simulateHawkes(lambda0=mu*5,alpha=10,beta=10,horizon=max(t)))
+
+#Discretize the event times into daily data, but show only data available before time max(t)
+K_days <- head(cumsum(table(cut(p, breaks=c(0:(max(t)),Inf)))),n=-1)
+K_days
+#Show result. Each time point t actually means the interval (t-1,t]
+testProcess <- data_frame(t=t,K=c(0,K_days))
+p <- ggplot(testProcess, aes(x=t,y=K)) + geom_line() + xlab("Time (testing days)") + ylab("Cumulative Number of Bugs found")
+print(p)
+
+```
+
+We see that the number of bugs appears to level off. The question is now *how long should we continue testing before releasing*? Dalal and Mallows
+(1988) give an intriguing statistical answer to this problem.
+
+# Methodology
+
+In order to answer the above question the following notation and assumptions are introduced:
+
+* The total number of bugs is assumed to be Poisson distributed $$N \sim \text{Po}(\lambda).$$ However, practice shows that the number of bugs in different modules has more variation that given by the Poisson distribution. Hence, let $\lambda \sim \text{Ga}(\alpha,\beta)$ and thus the marginal distribution of $N$ is negative binomial. 
+
+* The amount of time until discovery of each bug during the testing period is distributed according to the known distribution $G$ with density $g$. Furthermore, it can be assumed that the discoveries times are independent of each other. 
+Example : The simplest example is to assume that the discovery distribution is exponential, i.e. $g(t)=\mu\exp(-\mu t)$, 
+where we measure time in number of person-days spent on the testing. 
+Thus, $1/\mu$ is the expected time until discovery of a bug.
+
+* Let $K(t)$ be the total number of bugs found up to time $t$. In other words, if $t_1,\ldots,t_N$ denote the discovery times of the $N$ bugs then 
+    $$K(t)=\sum_{i=1}^N I(t_i \leq t),$$
+where $I(\cdot)$ is the indicator function. However, note that at time point $t$, only bugs with a discovery time smaller or equal to $t$ would already have been observed and, hence, would be known to exist (right-truncation). Thus, even though $K(t)$ is proportional to the empirical cumulative distribution function of the discovery distribution $\hat{G}(t)$, the factor of proportionality is $N$, which is unknown at the time $t$.
+
+Note: The paper actually showns that the Poisson-Gamma distribution assumption for $N$ is not crucial. An asymptotic argument is given that as long as the process does not terminate quickly (i.e. the number of bugs is relatively large) the results hold for more general distributions of $N$. Hence, in the analysis that follows, the parameter $\lambda$ is not needed as we only proceed with the asymptotic approach of the paper. 
+
+### Loss function
+In order to make a decision about when to stop testing based on expected loss/gain we need two further assumptions:
+
+* Let $c$ be the net cost of fixing a bug *after* release of the software instead of *before* the release. Hence, $c$ is the price of fixing a bug after release minus the price of fixing a bug before release. The practice of software development tells us that $c>0$.
+
+* Let $f(t)$ be a known non-negative and monotone increasing function reflecting the cost of testing plus the opportunity cost of not releasing the software up to time $t$. Note that the cost of testing does not contain the costs of fixing bugs, once they are found. A simple example for $f$ is the linear loss function, i.e. $f(t) = f \cdot t$, where $f>0$ is a known constant.
+
+The above assumptions in summary imply the analysis of the following loss function:
+
+$$L(t,K(t),N) = f(t) - c K(t) + b\cdot N.$$
+
+As time passes, one obtains information about the number of bugs found through $K(t)$. At each time point the following decision has to be made: stop testing & ship the package or continue to test. Seen in a statistical context this can
+be rephrased into formulating a stopping rule such that the above loss function is minimized.
+
+### Optimal Stopping Time
+
+In the simple model with exponential discovery times having rate $\mu$, the stopping rule  stated as equation (4.6) of Dalal and Mallows (1988) is to stop as soon as the number, $k$, of bugs found at time $t$, i.e. $K(t)=k$, is such that:
+$$
+\frac{f}{c}\cdot \frac{\exp(\mu t) -1}{\mu} \geq k.
+$$
+At this time point, the estimated number of bugs left is Poisson with mean $f/(c\mu)$.
+
+```{r}
+##########################################################################
+# Function describing the LHS of (4.6) in the Delal and Mallows article
+#
+# Parameters:
+#  fdivc - the quotient f/c
+#  mu    - the value of mu, this typically needs to be estimated from data
+#  testProcess - a data_frame containing the decision time points and the
+#               observed number of events
+##########################################################################
+lhs <- function(fdivc,mu,testProcess) {
+  fdivc*(exp(mu*testProcess$t)-1)/mu
+}
+```
+
+In the above, the quantity $c/f$ measures the amount saved by finding a bug (and hence fixing it before release) measured in units of testing days. As an example: if $c/f=0.2 \Leftrightarrow f/c=5$ then the gain in detecting a bug before release corresponds to 0.2
+testing days. Throughout the subsequent example we shall work with both $c/f=0.2$
+(ship early and fix later is acceptable) and $c/f=1$ (high costs of fixing bugs afte
+r the release).
+
+
+# Example
+
+Taking the testing data from the above figure, the first step consists of estimating $\mu$ from the available data. It is important to realize that the available data are a right-truncated sample, because only errors with a 
+discovery time smaller than the current observation time are observed.
+Furthermore, if only data on the daily number of bug discoveries are available, then
+the data are also interval censored. We set up the loglikelihood function accordingly.
+
+```{r}
+#######################################################
+#Log-likelihood function to maximize, which handles the
+#right truncation and interval censoring.
+# Paramers:
+#  theta - \log(\mu).
+#  testProcess - data_frame containing the observed data
+#  tC - the right-censoring time.
+########################################################
+ll <- function(theta, testProcess, tC=max(testProcess$t)) {
+  mu <- exp(theta)
+  #Daily number of *new* bug discoveries. .
+  DeltaK <- c(0,diff(testProcess$K))
+  #CDF function taking the right-truncation into account
+  CDF <- function(x) pexp(x,rate=mu)/pexp(tC,rate=mu)
+  #Log-likelihood is equivalent to multinomial sampling with p being a func of mu.
+  p <- CDF(1:(max(testProcess$t)+1)) - CDF(testProcess$t)
+  return(sum(DeltaK * log(p)))
+}
+#Find MLE
+mle <- optim(log(0.01),ll, testProcess=testProcess, control=list(fnscale=-1),method="BFGS")
+mu.hat <- exp(mle$par)
+c(mu=mu, mu.hat=mu.hat)
+```
+
+Note that we in the above used all data obtained over the entire testing
+period. In practice, one would instead sequentially update the $\mu$ estimate each day as the information arrives -- see the animated sequential procedure in the next section.
+
+
+```{r,fig.align='center',warning=FALSE,echo=FALSE}
+####################################################################################
+# Show situation at time 'time'. 
+#
+# Paramaters:
+#  time   - timepoint of the testing period. If NULL then the situation at the end
+#           of testProcess is shown.
+#  mu.hat - estimated value of mu.hat, if NULL a new estimation based on the available
+#           information at time 'time'
+#  testProcess - data_frame containing the data to illustrate/estimate from
+#  plot   - (boolean, default TRUE) If TRUE a plot of the situation is made
+####################################################################################
+
+stoptime_at_time <- function(time=NULL,mu.hat=NULL,testProcess, plot=TRUE,no_Khat=FALSE) {
+  if (!is.null(time)) {
+    tP_at_time <- testProcess %>% filter(t <= time) %>% select(t,K)
+  } else {
+    tP_at_time <- testProcess 
+    time <- max(testProcess$t) 
+  }
+  
+  #Estimate mu.hat
+  if (is.null(mu.hat)) {
+    mle <- optim(log(0.01),ll, testProcess=tP_at_time,control=list(fnscale=-1),method="BFGS")
+    mu.hat <- exp(mle$par)
+  } 
+  
+  #Add model based estimate for K(t)
+  lastRow <- tP_at_time %>% filter(row_number()==n())
+  N_estimate <- with(lastRow, K/pexp(t,rate=mu.hat))
+  testProcess <- testProcess %>% mutate(K_estimate=N_estimate*pexp(t,rate=mu.hat))
+  
+  #Add curves to intersect with to the dataset
+  testProcess <- testProcess %>% mutate(sol5=lhs(5,mu=mu.hat,testProcess),
+                                      sol1=lhs(1,mu=mu.hat,testProcess)) %>% select(-K)
+  
+  tP_at_time <- inner_join(tP_at_time,testProcess,by="t")
+  #Do we have some intersections?
+  theSol5 <- tP_at_time %>% filter(sol5>K) %>% filter(row_number()==1)
+  theSol1 <- tP_at_time %>% filter(sol1>K) %>% filter(row_number()==1) 
+  
+  #Plot it - first extract the y's of the labels
+  y5 <- testProcess %>% filter(t==50) %>% .[["sol5"]]
+  y1 <- testProcess %>% filter(t==100) %>% .[["sol1"]]
+  
+  #Now make the plot
+  p_sol <- ggplot(tP_at_time, aes(x=t,y=K)) + geom_line() +
+    annotate("text",x=20,y=1.05*filter(tP_at_time,t==25)$K, label="K(t)",hjust=0.5,vjust=0) +
+    geom_line(data=testProcess, aes(x=t,y=sol5),lty=2) +
+    annotate("text",x=65,y=y5, label="f/c=5") +
+    geom_point(data=theSol5,aes(x=t,y=K),size=4,col="red")  +
+    geom_line(data=testProcess, aes(x=t,y=sol1),lty=3) +
+    annotate("text",x=115,y=y1, label="f/c=1") +
+    geom_point(data=theSol1,aes(x=t,y=K),size=4,col="red")  +
+   
+    xlab("Time (testing days)") + ylab("Cumulative Number of Bugs found") +
+    ylim(c(0,1600)) + xlim(0,max(t)+1) + ggtitle(paste0("With mu.hat at time t=",time))
+  
+  if (nrow(theSol5)>0) {
+    p_sol <- p_sol + geom_linerange(data=theSol5,aes(ymin = 0, ymax = K),col="red",lty=2) +
+      annotate("text",x=theSol5$t,y=0,vjust=1,label=theSol5$t,col="red")
+  }
+   if (nrow(theSol1)>0) {
+    p_sol <- p_sol + geom_linerange(data=theSol1,aes(ymin = 0, ymax = K),col="red",lty=3) +
+      annotate("text",x=theSol1$t,y=0,vjust=1,label=theSol1$t,col="red")
+  }
+  if (!no_Khat) {
+    p_sol <- p_sol + geom_line(data=testProcess, aes(x=t,y=K_estimate),lty=4,col="steelblue",alpha=0.25) +
+    annotate("text",x=175,y=0.95*filter(testProcess,t==175)$K_estimate, label="K.hat(t)") 
+  }   
+  if (plot) { print(p_sol) }
+  #Done
+  invisible(list(stopTimefc5=theSol5,stopTimefc1=theSol1))
+}
+
+#Determine the stopping time for a f/c ratio of 5 and 1.
+stopTime <- stoptime_at_time(time=max(t),mu.hat=mu.hat,testProcess=testProcess,plot=TRUE,no_Khat=TRUE)
+stopTime$stopTimefc5
+
+```
+
+The optimal stopping time in the example, in the case of $f/c=5$, is to stop the testing after `r stopTime$stopTimefc5$t` testing days. An estimate of the expected number of remaining bugs at this stopping time would be `r sprintf("%.1f",5/mu.hat)`, which appears to agree quite well with the empirical data -- actually, they were simulated with $N=`r N`$.
+
+# Animation
+
+The animation belows shows the above computations in sequential fashion:
+
+* At a given time $t$ of the testing process, $\hat{\mu}$ is
+determined from the curve of cumulative bugs found up to time
+$t$. 
+* This  $\hat{\mu}$ estimate is then use to determine the intersecting curves as described above. 
+* Once the $K(t)$ curve and the curve for a given $f/c$ ratio intersect, we would stop the testing.
+
+
+```{r,warning=FALSE,echo=FALSE,results='hide',message=FALSE,fig.width=6,fig.height=4}
+#plot_at_time(169)
+t_grid <- seq(25,max(t),by=5)
+ani.options(interval=0.25) #5 for faster processing
+# Use same directory as images of the post.
+#saveGIF(sapply(t_grid,stoptime_at_time,testProcess=testProcess),
+#        movie.name=paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"),"animation.gif"))
+# Adapt paths s.t. it works for jekyll posting of the blog (use downloads directory)
+saveGIF(sapply(t_grid,stoptime_at_time,testProcess=testProcess),
+        movie.name=file.path(knitr::opts_knit$get("base.dir"),"downloads","animation.gif"))
+```
+
+![]({{ site.url }}/downloads/animation.gif)
+
+
+# Discussion
+
+* Assuming that the time periods until discovery of the bugs are independently distributed appears convenient, butnot so realistic. The paper has a section about analysing the situation in case of different classes of bugs. However, fixing a bug often spawns new bugs. Hence, the bug-process could instead be more realistically  modelled by a self-exiciting process such as the Hawkes' process (Hawkes, 1971). 
+
+* For Open Source Software and in particular R packages, which nobody might ever use, is $c$ really bigger than zero? Ship and fix might be a good way to test, if a package actually addresses any kind of need?
+
+* How to extract the daily number of bugs found from your bug tracking ticket system? 
+
+# Literature
+
+* Dalal, S. R. and C. L. Mallows. “[When Should One Stop Testing Software?](http://www.jstor.org/stable/2289319)”. Journal of the American Statistical Association (1988), 83(403):872–879. 
+
+* Hawkes, A. G. "[Spectra of some self-exciting and mutually exciting point processes](http://biomet.oxfordjournals.org/content/58/1/83.abstract)". Biometrika (1971), 58(1):83-90.
