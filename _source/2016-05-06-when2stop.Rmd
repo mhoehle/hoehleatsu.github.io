@@ -2,6 +2,7 @@
 layout: post
 title:  "When Should One Stop Testing Software?"
 tags: [datascience, rstats, debugging]
+comments: true
 ---
 
 ```{r setup, include=FALSE}

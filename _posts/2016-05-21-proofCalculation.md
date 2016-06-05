@@ -2,6 +2,7 @@
 layout: post
 title: "Right or Wrong? - Validate Numbers Like a Boss"
 tags: [datascience, rstats, debugging]
+comments: true
 ---
 
 
