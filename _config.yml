@@ -17,3 +17,7 @@ github_username:  hoehleatsu
 
 # Build settings
 markdown: kramdown
+
+author:
+  name:           'Michael Höhle'
+  url:            http://www.math.su.se/~hoehle
