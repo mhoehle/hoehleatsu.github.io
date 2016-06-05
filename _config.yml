@@ -7,7 +7,7 @@
 
 # Site settings
 title: Theory meets practice...
-email: hoehle@su <figure out the rest>
+email: hoehle@math <figure out the rest>
 description: > # this means to ignore newlines until "baseurl:"
   A blog about statistics in theory and practice. Not always serious, not always flawless, but definitely a statistically flavoured bean.
 baseurl: "" # the subpath of your site, e.g. /blog

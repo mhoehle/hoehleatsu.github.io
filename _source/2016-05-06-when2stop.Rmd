@@ -255,7 +255,7 @@ determined from the curve of cumulative bugs found up to time
 * Once the \\(K(t)\\) curve and the curve for a given \\(f/c\\) ratio intersect, we would stop the testing.
 
 
-```{r,warning=FALSE,echo=FALSE,results='hide',message=FALSE,fig.width=6,fig.height=4}
+```{r,eval=FALSE,warning=FALSE,echo=FALSE,results='hide',message=FALSE,fig.width=6,fig.height=4}
 #plot_at_time(169)
 t_grid <- seq(25,max(t),by=5)
 ani.options(interval=0.25) #5 for faster processing
