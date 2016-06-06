@@ -278,7 +278,9 @@ n_{\text{stop}} = \min_{n\geq 0} Y_n.
 $$
 
 One limitation of the above approach is that we have used a **guesstimate** on how  the detection probability \\(p_n\\) evolves over time. An extension would be to sequentially estimate this parameter from the obtained results.
-This goes along the lines of Dalal and Mallows (1988) which discuss when to stop testing your software -- see the following [note](https://htmlpreview.github.io/?https://github.com/hoehleatsu/When2Stop/blob/master/when2stop.html) for a short statistical treatment of their approach.
+This goes along the lines of Dalal and Mallows (1988) which discuss
+when to stop testing your software -- see the following
+[blog entry]({{ site.url }}/2016/05/06/when2stop.html) for a short statistical treatment of their approach.
 
 ### Numerical example
 
