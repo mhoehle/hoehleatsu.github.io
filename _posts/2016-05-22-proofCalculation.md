@@ -29,7 +29,7 @@ One activity the public associates with **statistics** is the generation of larg
 containing a multitude of numbers on a phenomena of interest. Below an example containing the summary of [UK labour market statistics](https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/bulletins/uklabourmarket/april2016) for the 3 months to February 2016 from the
 Office for National Statistics:
 
-![]({{ site.url }}/figure/source/2016-05-21-proofCalculation/unemployment-apr2016.png "Source: https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/bulletins/uklabourmarket/april2016")
+![]({{ site.url }}/figure/source/2016-05-22-proofCalculation/unemployment-apr2016.png "Source: https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/bulletins/uklabourmarket/april2016")
 
 Another example is The German Federal Government’s [4th Report on Poverty and Wealth](http://www.bmas.de/DE/Service/Medien/Publikationen/a334-4-armuts-reichtumsbericht-2013.html). The report consists of a total of 549 pages with the pure table appendix fun starting on p. 518 including, e.g., age-adjusted ORs obtained from logistic regression modelling (p.523).
 
@@ -347,7 +347,7 @@ Is any of the above **useful**?
 Well, I have not heard about such approaches being used seriously in software engineering. The presented methods narrow down a complex problem down using assumptions in order to make the problem mathematically tractable. You may not agree with the assumptions as, e.g., Bolton (2010) -- yet, such assumptions are a good way to get started. The point is that statisticians appear to be very good at enlightening others about the **virtues of statistics** (repeat your measurements, have a sampling plan, pantomimic acts visualizing the horror of p-values). However, when it comes to our own analyses, we are surprisingly statistics-illiterate at times.
 
 
-![]({{ site.url }}/figure/source/2016-05-21-proofCalculation/look_for_the_pattern-300px.png "Source: https://openclipart.org/detail/248382/dropping-numbers")
+![]({{ site.url }}/figure/source/2016-05-22-proofCalculation/look_for_the_pattern-300px.png "Source: https://openclipart.org/detail/248382/dropping-numbers")
 
 # Literature
 
