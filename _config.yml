@@ -16,7 +16,7 @@ twitter_username: m_hoehle
 github_username:  hoehleatsu
 
 gems:
-  - jekyll-pandoc
+   - jekyll-pandoc
 
 # Build settings
 # markdown: kramdown
