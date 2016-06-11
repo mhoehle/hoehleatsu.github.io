@@ -15,8 +15,17 @@ url: "http://hoehleatsu.github.io" # the base hostname & protocol for your site
 twitter_username: m_hoehle
 github_username:  hoehleatsu
 
+gems:
+  - jekyll-pandoc
+
 # Build settings
-markdown: kramdown
+# markdown: kramdown
+markdown: Pandoc
+
+pandoc:
+  extensions:
+    - mathjax
+    - bibliography: ~/Literature/Bibtex/jabref.bib
 
 author:
   name:           'Michael Höhle'
