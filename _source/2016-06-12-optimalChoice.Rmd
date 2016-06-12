@@ -2,7 +2,6 @@
 layout: post
 title: "Optimal Choice - Mathematical Advice for Real Life"
 tags: [datascience, rstats, debugging]
-disqus_identifier: "8C3FF64F-EE03-4B67-A0E5-198A74E7E0B3"
 comments: true
 ---
 
