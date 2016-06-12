@@ -10,8 +10,8 @@ title: Theory meets practice...
 email: hoehle@math <figure out the rest>
 description: > # this means to ignore newlines until "baseurl:"
   A blog about statistics in theory and practice. Not always serious, not always flawless, but definitely a statistically flavoured bean.
-baseurl: "" # the subpath of your site, e.g. /blog
-url: "http://hoehleatsu.github.io" # the base hostname & protocol for your site
+baseurl: "/hoehle/blog" # the subpath of your site, e.g. /blog
+url: "http://staff.math.su.se" # the base hostname & protocol for your site
 twitter_username: m_hoehle
 github_username:  hoehleatsu
 
@@ -19,7 +19,8 @@ gems:
    - jekyll-pandoc
 
 # Build settings
-#markdown: kramdown
+# markdown: kramdown
+# Changed to (in my eyes) superious pandoc renderer -- see https://github.com/mfenner/jekyll-pandoc
 markdown: Pandoc
 
 pandoc:

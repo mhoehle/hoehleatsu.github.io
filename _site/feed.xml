@@ -4,22 +4,280 @@
     <title>Theory meets practice...</title>
     <description>A blog about statistics in theory and practice. Not always serious, not always flawless, but definitely a statistically flavoured bean.
 </description>
-    <link>http://hoehleatsu.github.io/</link>
-    <atom:link href="http://hoehleatsu.github.io/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sun, 12 Jun 2016 14:37:28 +0200</pubDate>
-    <lastBuildDate>Sun, 12 Jun 2016 14:37:28 +0200</lastBuildDate>
+    <link>http://staff.math.su.se/hoehle/blog/</link>
+    <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Sun, 12 Jun 2016 17:38:57 +0200</pubDate>
+    <lastBuildDate>Sun, 12 Jun 2016 17:38:57 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
+    
+      <item>
+        <title>Optimal Choice - Mathematical Advice for Real Life</title>
+        <description>&lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
+href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
+&lt;p&gt;We discuss how to choose the optimal candidate from a rankable sequence of candidates arriving one by one. The candidates could for example be job applicants, princes, tinder profiles or flats. This &lt;strong&gt;choice problem&lt;/strong&gt; is casted into the context of sequential decision making and is solved using optimal stopping theory. Two R functions are provided to compute optimal selection strategies for in two specific instances of the problem. Altogether, the mathematical inclined decision maker is given valuable open-source tools to support prudent real life decisions.&lt;/p&gt;
+&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
+&lt;p&gt;Life is full of choices. The prudent &lt;a href=&quot;https://en.wikipedia.org/wiki/Decision-making&quot;&gt;decision maker&lt;/a&gt; likes to rationally balance alternatives, assess uncertain outcomes, gather additional information and -- when ready -- pick the best action. A mathematical approach to such decision making under uncertainty is based on maximizing an adequate utility function subject to the identified stochasticity, e.g., by maximizing expected utility. The ultimate statistical guides to such &lt;a href=&quot;https://en.wikipedia.org/wiki/Optimal_decision&quot;&gt;optimal decision making&lt;/a&gt; are the books by &lt;span class=&quot;citation&quot; data-cites=&quot;degroot1970&quot;&gt;DeGroot (1970)&lt;/span&gt; and &lt;span class=&quot;citation&quot; data-cites=&quot;berger1985&quot;&gt;Berger (1985)&lt;/span&gt;. &lt;a href=&quot;https://en.wikipedia.org/wiki/Influence_diagram&quot;&gt;Influence diagrams&lt;/a&gt; are compact representations of decision problems embedded within the graphical modelling toolset of Bayesian networks, see e.g. &lt;span class=&quot;citation&quot; data-cites=&quot;jensen_nielsen2007&quot;&gt;Jensen and Nielsen (2007)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/hoehle/blog/figure/source/2016-06-12-optimalChoice/indecisive-silhouette-300px-scaled.png&quot; title=&quot;Source: https://openclipart.org/detail/171299/indecisive-silhouettesvg&quot; /&gt; &lt;br&gt;&lt;/p&gt;
+&lt;p&gt;In this note we consider the very simple -- but entertaining -- sequential decision problem known as the optimal choice, secretary, marriage, dowry or game of googol problem &lt;span class=&quot;citation&quot; data-cites=&quot;ferguson1989&quot;&gt;(Ferguson 1989)&lt;/span&gt;. Scientific publishing about the &lt;a href=&quot;https://en.wikipedia.org/wiki/Secretary_problem&quot;&gt;&lt;em&gt;optimal choice problem&lt;/em&gt;&lt;/a&gt; dates back to the 1950&#39;s and 1960&#39;s, but accounts of variations of the problem date back as far as &lt;a href=&quot;https://en.wikipedia.org/wiki/Johannes_Kepler#Second_marriage&quot;&gt;1613&lt;/a&gt;. To illustrate the problem we use the process of finding a real estate property in an overheated housing market as example. Of course, the human resource manager, wooed princess, &lt;a href=&quot;http://www.npr.org/sections/krulwich/2014/05/15/312537965/how-to-marry-the-right-girl-a-mathematical-solution&quot;&gt;Johannes Kepler&lt;/a&gt;, tinder hustler as well as the mathematical enthusiast (subsets might overlap) should easily be able to adapt terminology to their needs.&lt;/p&gt;
+&lt;h2 id=&quot;the-optimal-choice-problem&quot;&gt;The optimal choice problem&lt;/h2&gt;
+&lt;p&gt;The rules of the game are as follows:&lt;/p&gt;
+&lt;ol type=&quot;1&quot;&gt;
+&lt;li&gt;You want to choose exactly one property (say, buy a &lt;strong&gt;flat&lt;/strong&gt;) within a given period of time&lt;/li&gt;
+&lt;li&gt;The number of candidate flats available on the market and inspectable in the given time period is assumed to be known. We shall denote this number by &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt;.&lt;/li&gt;
+&lt;li&gt;The flats are assumed to be rankable from best (rank 1) to worst (rank &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt;)) without ties.&lt;/li&gt;
+&lt;li&gt;The flats can only be inspected sequentially and in some random order.&lt;/li&gt;
+&lt;li&gt;After seeing a flat one has to decide whether to pick this flat or not.&lt;/li&gt;
+&lt;li&gt;Once a flat is rejected, this choice is permanent and cannot be re-called.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Your objective is to find the &lt;em&gt;best candidate&lt;/em&gt; among the &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; flats. Less will not work for you, i.e. you have no interest in the 2nd best candidate or any other worse candidate. Furthermore, the decision at each time is to select this flat or reject it and inspect a new flat. Which flat to pick thus at each time point is based only on the flat&#39;s relative rank within the set of flats seen up to now. Our goal is to find a strategy s.t. we end up with the best flat, i.e. rank 1, among all of the &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; flats. Note that simply looking at all candidates and then picking the best one will not work due to rules 5 and 6.&lt;/p&gt;
+&lt;h2 id=&quot;mathematical-notation&quot;&gt;Mathematical notation&lt;/h2&gt;
+&lt;p&gt;Following &lt;span class=&quot;citation&quot; data-cites=&quot;chow_etal1964&quot;&gt;Chow et al. (1964)&lt;/span&gt; we introduce the following mathematical notation: Let &lt;span class=&quot;math inline&quot;&gt;\(x_1,\ldots, x_n\)&lt;/span&gt; be a permutation of the integers between 1 and &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt;. At the time we are considering the &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt;&#39;th candidate in our ordered sequence we have seen the candidates &lt;span class=&quot;math inline&quot;&gt;\(1,\ldots,i\)&lt;/span&gt;. Let &lt;span class=&quot;math inline&quot;&gt;\(y_i\)&lt;/span&gt;, &lt;span class=&quot;math inline&quot;&gt;\(y_i \in \{1,\ldots,i\}\)&lt;/span&gt;, denote the rank of the &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt;&#39;th candidate among these &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt; candidates We call this the &lt;strong&gt;relative rank&lt;/strong&gt; at time &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt; of the &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt;&#39;th candidate. Note that the relative rank can be 1 even though a candidates&#39; &lt;strong&gt;overall rank&lt;/strong&gt; is not 1. This is a consequence of the overall rank being only partially revealed by knowing more of the candidates.&lt;/p&gt;
+&lt;p&gt;A code example illustrates the concept:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;co&quot;&gt;#Generate a sequence of ranks between 1 and n&lt;/span&gt;
+&lt;span class=&quot;kw&quot;&gt;set.seed&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;123&lt;/span&gt;)
+n &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;10L ; x &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;sample&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;:n,&lt;span class=&quot;dt&quot;&gt;replace=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;FALSE&lt;/span&gt;)
+
+&lt;span class=&quot;co&quot;&gt;#Function to compute sequential relative ranks, where smallest is best&lt;/span&gt;
+relrank &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(x) {
+  output &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rep&lt;/span&gt;(&lt;span class=&quot;ot&quot;&gt;NA&lt;/span&gt;,&lt;span class=&quot;kw&quot;&gt;length&lt;/span&gt;(x))
+  &lt;span class=&quot;co&quot;&gt;# take vector and find relative ranks, if sequentially disclosed&lt;/span&gt;
+  for (i in &lt;span class=&quot;kw&quot;&gt;seq_len&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;length&lt;/span&gt;(x))) {
+    output[i] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;sum&lt;/span&gt;(x[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;:i] &amp;lt;=&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;x[i])
+  }
+  &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(output)
+}
+
+&lt;span class=&quot;kw&quot;&gt;rbind&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;x, &lt;span class=&quot;dt&quot;&gt;y=&lt;/span&gt;y&amp;lt;-&lt;span class=&quot;kw&quot;&gt;relrank&lt;/span&gt;(x))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##   [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+## x    3    8    4    7    6    1   10    9    2     5
+## y    1    2    2    3    3    1    7    7    2     5&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&quot;finding-the-best&quot;&gt;Finding the best&lt;/h2&gt;
+&lt;p&gt;It is possible to show &lt;span class=&quot;citation&quot; data-cites=&quot;gilbert_mosteller1966&quot;&gt;(Gilbert and Mosteller 1966)&lt;/span&gt; that the optimal selection policy is to follow the rather intuitive procedure:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Consider the first &lt;span class=&quot;math inline&quot;&gt;\(r-1\)&lt;/span&gt; candidates without picking any of them (=&amp;quot;training sample&amp;quot;).&lt;/li&gt;
+&lt;li&gt;Then select the first candidate, which is better than the best among the training sample.&lt;/li&gt;
+&lt;li&gt;If no candidate has been selected by the time &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; and, hence, the last candidate is reached, one is forced to select this candidate.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Mathematically expressed the optimal stopping time is thus&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+\min_{i \in \{r,\ldots,n\}}\{y_i = 1 \text{ or } i = n\}.
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;The question is what &lt;span class=&quot;math inline&quot;&gt;\(r\)&lt;/span&gt; to choose? &lt;span class=&quot;citation&quot; data-cites=&quot;ferguson1989&quot;&gt;Ferguson (1989)&lt;/span&gt; in equation 2.1 shows that the probability &lt;span class=&quot;math inline&quot;&gt;\(\phi_n(r)\)&lt;/span&gt; of finding the overall best rank using a value of &lt;span class=&quot;math inline&quot;&gt;\(r\)&lt;/span&gt; in the above strategy is&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+\phi_n(r) = \frac{r-1}{n} \sum_{j=r}^n \frac{1}{j-1}.
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;It is obvious that &lt;span class=&quot;math inline&quot;&gt;\(\phi_n(1)=1/n\)&lt;/span&gt;. The remaining probabilities can easily be computed with R:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;co&quot;&gt;#Compute probability of finding max after screening the r-1 first out of n and then&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#picking the first, which is better than the best in the training sample.&lt;/span&gt;
+phi &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(r,n) {
+  if (r==&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;) &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;/n)
+  j &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;r:n
+  &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;((&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;/n)*(r&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)*&lt;span class=&quot;kw&quot;&gt;sum&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;/(j&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)))
+}
+
+&lt;span class=&quot;co&quot;&gt;#Compute probabilities for all i in {1,...,n}&lt;/span&gt;
+df &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;data.frame&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;i=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;:n)
+df &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;df %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rowwise&lt;/span&gt;() %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;mutate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;phi=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;phi&lt;/span&gt;(i,n)) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;ungroup&lt;/span&gt;()
+r &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;df %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;filter&lt;/span&gt;(phi==&lt;span class=&quot;kw&quot;&gt;max&lt;/span&gt;(phi))  %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;select&lt;/span&gt;(i)  %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;unlist&lt;/span&gt;() %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;as.numeric&lt;/span&gt;()&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We can illustrate &lt;span class=&quot;math inline&quot;&gt;\(\phi_n(r)\)&lt;/span&gt; as a function of &lt;span class=&quot;math inline&quot;&gt;\(r\)&lt;/span&gt;:&lt;/p&gt;
+&lt;figure&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-06-12-optimalChoice/PHIPLOT-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;We thus select the &lt;span class=&quot;math inline&quot;&gt;\(r\)&lt;/span&gt;, which gives the highest value of &lt;span class=&quot;math inline&quot;&gt;\(\phi_n(r)\)&lt;/span&gt;. In the example with &lt;span class=&quot;math inline&quot;&gt;\(n=10\)&lt;/span&gt; we therefore look at &lt;span class=&quot;math inline&quot;&gt;\(r-1=3\)&lt;/span&gt; candidates in order to get a &lt;em&gt;baseline&lt;/em&gt; and then take the first candidate, which is better than this baseline. In the example:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;(pickIdx &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;which.max&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;relrank&lt;/span&gt;(x)[r:n] ==&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt; |&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(r:n ==&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;n)))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] 3&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;x[pickIdx +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(r&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] 1&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In the example we thus actually manage to select the best candidate! However, this is not always guaranteed: for example, if the best overall candidate is among the training sample (4/10 chance for this to happen) we would end up with the last candidate flat no matter how good or bad it is. As stated above: the probability that the above decision strategy will pick the best candidate is &lt;span class=&quot;math inline&quot;&gt;\(\phi_{10}(4)=0.40\)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;In order to compare the decision strategy with later formulations we denote by &lt;span class=&quot;math inline&quot;&gt;\(\mathbf{s}=(s_1,\ldots,s_n)\)&lt;/span&gt; a strategy which at time &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt; selects candidate &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt;, if &lt;span class=&quot;math inline&quot;&gt;\(y_i \leq s_i\)&lt;/span&gt;. In other words, the above strategy for &lt;span class=&quot;math inline&quot;&gt;\(n=10\)&lt;/span&gt; is:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;s &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;rep&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;,r&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;),&lt;span class=&quot;kw&quot;&gt;rep&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,n-(r&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)))
+s&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##  [1] 0 0 0 1 1 1 1 1 1 1&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And the selected candidate can easily found as&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;which.max&lt;/span&gt;(y &amp;lt;=&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;s)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] 6&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For small &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; the optimal &lt;span class=&quot;math inline&quot;&gt;\(r\)&lt;/span&gt; and corresponding probability of success can easily be computed numerically. However, for large &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; the numerical precision as well as the computations become more tedious and hence interest is in finding a general asymptotic approximation as &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; grows large: One can show that as &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; gets large the optimal procedure is always to screen the first &lt;span class=&quot;math inline&quot;&gt;\(1/e\)&lt;/span&gt; = 37% and then select the first candidate better than the training sample &lt;span class=&quot;citation&quot; data-cites=&quot;gilbert_mosteller1966&quot;&gt;(Gilbert and Mosteller 1966)&lt;/span&gt;. The asymptotic probability of success, i.e. finding the overall best candidate, when following the such a procedure is also about &lt;span class=&quot;math inline&quot;&gt;\(1/e\)&lt;/span&gt;=37% &lt;span class=&quot;citation&quot; data-cites=&quot;gilbert_mosteller1966&quot;&gt;(Gilbert and Mosteller 1966)&lt;/span&gt;. Below we show a small table illustrating the precision of the asymptotic approximation.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr class=&quot;header&quot;&gt;
+&lt;th style=&quot;text-align: right;&quot;&gt;&lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt;&lt;/th&gt;
+&lt;th style=&quot;text-align: right;&quot;&gt;&lt;span class=&quot;math inline&quot;&gt;\(r-1\)&lt;/span&gt;&lt;/th&gt;
+&lt;th style=&quot;text-align: right;&quot;&gt;&lt;span class=&quot;math inline&quot;&gt;\((r-1)/n\)&lt;/span&gt; (%)&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&quot;odd&quot;&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;10&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;4&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;40.0&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&quot;even&quot;&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;100&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;38&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;38.0&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&quot;odd&quot;&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;1000&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;369&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;36.9&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&quot;even&quot;&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;10000&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;3680&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;36.8&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;We summarise our above findings for how to find the best candidate in the following function:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;strategy_best &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(n) {
+  r &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;find_r&lt;/span&gt;(n)
+  s &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;rep&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;,r&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;),&lt;span class=&quot;kw&quot;&gt;rep&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,n-(r&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)-&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;),n)
+  &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(s)
+}
+
+&lt;span class=&quot;kw&quot;&gt;strategy_best&lt;/span&gt;(n)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##  [1]  0  0  0  1  1  1  1  1  1 10&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;...and sometimes one animation says more than a lot of text and equations:&lt;/p&gt;
+&lt;figure&gt;
+&lt;img src=&quot;/hoehle/blog/figure/source/2016-06-12-optimalChoice/animation-select.gif&quot; /&gt;
+&lt;/figure&gt;
+&lt;h2 id=&quot;maximizing-the-expected-rank&quot;&gt;Maximizing the expected rank&lt;/h2&gt;
+&lt;p&gt;As attractive as it may sound, finding the overall best candidate appears a pedant&#39;s criterion. In reality, you would typically settle with a lesser rank, as long as you know the candidate is good and it&#39;s yours to keep. Hence, finding a &lt;a href=&quot;https://en.wikipedia.org/wiki/Satisficing&quot;&gt;satisficing&lt;/a&gt; strategy to minimize, e.g., the expected rank appears a more prudent objective for the risk adverse decision maker. This problem was addressed by &lt;span class=&quot;citation&quot; data-cites=&quot;chow_etal1964&quot;&gt;Chow et al. (1964)&lt;/span&gt; - we shall follow their treatment in what follows.&lt;/p&gt;
+&lt;p&gt;In their paper they show that the relative ranks &lt;span class=&quot;math inline&quot;&gt;\(y_1,\ldots,y_n\)&lt;/span&gt; are independent and the probability mass function of the &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt;&#39; relative rank is &lt;span class=&quot;math inline&quot;&gt;\(P(y_i=j)=1/i\)&lt;/span&gt;, &lt;span class=&quot;math inline&quot;&gt;\(j=1,\ldots,i\)&lt;/span&gt;. Furthermore, the sequence of relative ranks has the Markov property and, hence,&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+P(x_i=k|y_1=j_1,\ldots,y_{i-1}=j_{i-1},y_i=j) = P(x_i=k|y_i=j) =
+\frac{\binom{k-1}{j-1} \binom{n-k}{i-j}}{\binom{n}{i}}.
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;From this one computes&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+E(x_i|y_i=j) = \sum_{k=1}^n k\cdot P(x_i=k|y_i=j) = \frac{n+1}{i+1} j.
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;Let &lt;span class=&quot;math inline&quot;&gt;\(c_i=c_i(n)\)&lt;/span&gt; be the minimal possible expected overall rank selected if we limit us to strategies of the following type: use the first &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt; candidates to generate a baseline and then, starting from &lt;span class=&quot;math inline&quot;&gt;\(i+1\)&lt;/span&gt;, select the first candidate better than the baseline. &lt;span class=&quot;citation&quot; data-cites=&quot;chow_etal1964&quot;&gt;Chow et al. (1964)&lt;/span&gt; now shows that &lt;span class=&quot;math inline&quot;&gt;\(c_i\)&lt;/span&gt; can be computed by backwards recursion:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+c_{n-1} = E\left(\frac{n+1}{n+1}y_n\right) = \frac{1}{n} \sum_{j=1}^n
+j = \frac{n+1}{2}.
+\]&lt;/span&gt; and for &lt;span class=&quot;math inline&quot;&gt;\(i=n-1,n-2,\ldots,1\)&lt;/span&gt; let &lt;span class=&quot;math display&quot;&gt;\[
+s_i     = \left[ \frac{i+1}{n+1} c_i\right] \\
+c_{i-1} = \frac{1}{i} \left[ \frac{n+1}{i+1} \cdot \frac{s_i(s_i+1)}{2}+ (i-s_i)c_i \right],
+\]&lt;/span&gt; where &lt;span class=&quot;math inline&quot;&gt;\([x]\)&lt;/span&gt; denotes the largest integer smaller or equal to &lt;span class=&quot;math inline&quot;&gt;\(x\)&lt;/span&gt;, i.e. &lt;code&gt;floor(x)&lt;/code&gt;. Because at each decision time &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt; we select between either selecting the current candidate or proceeding with the next, we can evaluate the two options according to their expected payoff:&lt;/p&gt;
+&lt;ol type=&quot;1&quot;&gt;
+&lt;li&gt;if we decide to wait deciding for at least another round the expected payoff is &lt;span class=&quot;math inline&quot;&gt;\(c_i\)&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;If we selected the current candidate, which has relative rank &lt;span class=&quot;math inline&quot;&gt;\(y_i=j\)&lt;/span&gt; our expected payoff is &lt;span class=&quot;math inline&quot;&gt;\(E(x_i|y_i=j)\)&lt;/span&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Our optimal stopping time is thus&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+\min_{i\in \{1,\ldots,n\}} \{ E(x_i|y_i=j) \geq c_{i} \&amp;gt; \text{or} \&amp;gt; i=n \}.
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;Implicitly, the above sequence of &lt;span class=&quot;math inline&quot;&gt;\(s_i\)&lt;/span&gt;&#39;s computed actualy contains the obtained decision strategy &lt;span class=&quot;citation&quot; data-cites=&quot;chow_etal1964&quot;&gt;(Chow et al. 1964)&lt;/span&gt;. We transfer the procedure into R code as follows:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;co&quot;&gt;# Function to find a strategy minimizing expected rank as done by Chow et al. (1964).&lt;/span&gt;
+strategy_erank &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(n) {
+  c &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;s &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rep&lt;/span&gt;(&lt;span class=&quot;ot&quot;&gt;NA&lt;/span&gt;,n)
+  idx &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(i) {i&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;}
+  c[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(n&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)/&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;
+  s[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(n)] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;n
+
+  for (i in (n&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;):&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;) {
+    s[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i)]   &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;floor&lt;/span&gt;( (i&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)/(n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)*c[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i)])
+    c[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i)-&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;/i *&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;( (n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)/(i&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)*s[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i)]*(s[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i)]+&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;)/&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt; +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(i-s[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i)])*c[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i)])
+  }
+
+  &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;s=&lt;/span&gt;s,&lt;span class=&quot;dt&quot;&gt;c=&lt;/span&gt;c))
+}
+
+&lt;span class=&quot;kw&quot;&gt;print&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;strategy_erank&lt;/span&gt;(n),&lt;span class=&quot;dt&quot;&gt;digits=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;4&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## $s
+##  [1] NA  0  0  0  1  1  2  2  3  5 10
+## 
+## $c
+##  [1] 2.558 2.558 2.558 2.558 2.677 2.888 3.154 3.590 4.278 5.500&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Note that in the above, the first element of the vectors &lt;code&gt;s&lt;/code&gt; and &lt;code&gt;c&lt;/code&gt; is the element 0. Hence, &lt;span class=&quot;math inline&quot;&gt;\(s_1\)&lt;/span&gt; is located at position two of the vector. It&#39;s interesting to observe that for the example one forms a baseline for the same amount of time, but after a while becomes more &#39;desperate&#39; and accepts candidates who are not optimal.&lt;/p&gt;
+&lt;p&gt;Finally, it is interesting to compare the two strategies for any &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; we like, e.g. &lt;span class=&quot;math inline&quot;&gt;\(n=15\)&lt;/span&gt;:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;rbind&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;best=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;strategy_best&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;15&lt;/span&gt;), &lt;span class=&quot;dt&quot;&gt;erank=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;strategy_erank&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;15&lt;/span&gt;)$s[-&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;])&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10] [,11] [,12] [,13] [,14] [,15]
+## best     0    0    0    0    0    1    1    1    1     1     1     1     1     1    15
+## erank    0    0    0    0    1    1    1    1    2     2     3     4     5     7    15&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Again, with the expected minimizing rank strategy our training sample is slightly smaller. Furthermore, we again adapt our relative-rank criterion as one becomes more desperate towards the end.&lt;/p&gt;
+&lt;h1 id=&quot;monte-carlo-simulation&quot;&gt;Monte Carlo simulation&lt;/h1&gt;
+&lt;p&gt;Using classical Monte Carlo integration we can for a given &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; compute the expected rank obtained by each of the strategies.&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;simulate&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sample&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;seq_len&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;replace&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FALSE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;y&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;relrank&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;idxSelect&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;which.max&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;y&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rank&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;idxSelect&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;idx&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;idxSelect&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isBest&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;idxSelect&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;==&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;strategies&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;list&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s_best&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;strategy_best&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s_erank&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;strategy_erank&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;-1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;res&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;lapply&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;strategies&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;replicate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1e5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;simulate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;(sim &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rbind&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;best=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;apply&lt;/span&gt;(res[[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;]], &lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,mean), &lt;span class=&quot;dt&quot;&gt;erank=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;apply&lt;/span&gt;(res[[&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;]],&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,mean)))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##          rank     idx  isBest
+## best  3.02352 6.99844 0.40041
+## erank 2.56212 6.29809 0.32745&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;From the results it becomes clear that the expected rank optimizing function on average takes a little less time to decide. Furthermore, the expected rank is somewhat better than for the overall best decision strategy. We can also compare the Monte Carlo estimate &lt;code&gt;sim[&amp;quot;erank&amp;quot;,&amp;quot;rank&amp;quot;]&lt;/code&gt;=2.562 against the theoretical value of &lt;span class=&quot;math inline&quot;&gt;\(c_0\)&lt;/span&gt;=2.558.&lt;/p&gt;
+&lt;h1 id=&quot;discussion&quot;&gt;Discussion&lt;/h1&gt;
+&lt;p&gt;Is the blog title &lt;em&gt;Mathematical advice for real life&lt;/em&gt; an &lt;strong&gt;oxymoron&lt;/strong&gt;? Certainly not! Assumptions 1-6 clearly state the abstraction. You may not agree with these assumptions, but given that framework, the two functions &lt;code&gt;strategy_best&lt;/code&gt;and &lt;code&gt;strategy_erank&lt;/code&gt; give practical advice for a certain class of decisions. The methods are also clearly superior to &lt;a href=&quot;https://www.youtube.com/watch?v=BVIjqd8DBGw&quot;&gt;Sheldon Cooper&#39;s dice strategy&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Furthermore, assumptions 1-6 have been improved upon in a multitude of ways &lt;span class=&quot;citation&quot; data-cites=&quot;freeman1983&quot;&gt;(Freeman 1983)&lt;/span&gt;. For example:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;unknown &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; or random &lt;span class=&quot;math inline&quot;&gt;\(n\sim\operatorname{Po}(\lambda)\)&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;the opportunity to return to previous candidates, but with a probability &lt;span class=&quot;math inline&quot;&gt;\(p\)&lt;/span&gt; of being rejected&lt;/li&gt;
+&lt;li&gt;Candidate score originating from a known underlying distribution, e.g. the uniform or the normal&lt;/li&gt;
+&lt;li&gt;Candidate score originating from an &lt;span class=&quot;math inline&quot;&gt;\(U(a,b)\)&lt;/span&gt; uniform with unknown &lt;span class=&quot;math inline&quot;&gt;\(a&amp;lt;b\)&lt;/span&gt;, but with a conjugate and sequentially updated bivariate Pareto prior on &lt;span class=&quot;math inline&quot;&gt;\((a,b)\)&lt;/span&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Altogether, such methods provide decision support: One can evaluate a potential decision and compare results with other ways of reaching the decision. &lt;span class=&quot;citation&quot; data-cites=&quot;frey_eichenberger1996&quot;&gt;Frey and Eichenberger (1996)&lt;/span&gt; discuss that for marriage decisions empirical investigations show that individuals decide rather quickly marrying the first reasonably serious partner. Where does this misalignment between theory and practice originate from? Some of it appears to be consequences of additional effects not addressed by the theory, e.g., little marginal gain of searching longer, &lt;em&gt;lemon effects&lt;/em&gt;, satisficing, endowment effects, etc... &lt;strong&gt;Life is complicated&lt;/strong&gt;. Finding a satisficing complexity representation is non-trivial -- even for mathematicians. :-)&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-06-12-optimalChoice/unnamed-chunk-14-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
+&lt;h1 id=&quot;references&quot; class=&quot;unnumbered&quot;&gt;References&lt;/h1&gt;
+&lt;div id=&quot;refs&quot; class=&quot;references&quot;&gt;
+&lt;div id=&quot;ref-berger1985&quot;&gt;
+&lt;p&gt;Berger, J. O. 1985. &lt;em&gt;Statistical Decision Theory and Bayesian Analysis : With 23 Illustrations&lt;/em&gt;. 2nd ed. Springer Series in Statistics. New York, Berlin, Heidelberg: Springer.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-chow_etal1964&quot;&gt;
+&lt;p&gt;Chow, Y. S., S. Moriguti, H. Robbins, and S. M. Samuels. 1964. “Optimal Selection Based on Relative Rank (the ‘Secretary Problem’).” &lt;em&gt;Israel Journal of Mathematics&lt;/em&gt; 2 (2): 81–90. doi:&lt;a href=&quot;https://doi.org/10.1007/BF02759948&quot;&gt;10.1007/BF02759948&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-degroot1970&quot;&gt;
+&lt;p&gt;DeGroot, Morris. 1970. &lt;em&gt;Optimal Statistical Decisions&lt;/em&gt;. McGraw-Hill. New York.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-ferguson1989&quot;&gt;
+&lt;p&gt;Ferguson, T. S. 1989. “Who Solved the Secretary Problem?” &lt;em&gt;Statist. Sci.&lt;/em&gt; 4 (3). The Institute of Mathematical Statistics: 282–89. doi:&lt;a href=&quot;https://doi.org/10.1214/ss/1177012493&quot;&gt;10.1214/ss/1177012493&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-freeman1983&quot;&gt;
+&lt;p&gt;Freeman, P. R. 1983. “The Secretary Problem and Its Extensions: A Review.” &lt;em&gt;International Statistical Review / Revue Internationale de Statistique&lt;/em&gt; 51 (2). International Statistical Institute (ISI): 189–206. &lt;a href=&quot;http://www.jstor.org/stable/1402748&quot; class=&quot;uri&quot;&gt;http://www.jstor.org/stable/1402748&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-frey_eichenberger1996&quot;&gt;
+&lt;p&gt;Frey, B. S., and R. Eichenberger. 1996. “Marriage Paradoxes.” &lt;em&gt;Rationality and Society&lt;/em&gt; 8 (2): 187–206.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-gilbert_mosteller1966&quot;&gt;
+&lt;p&gt;Gilbert, J. P., and F. Mosteller. 1966. “Recognizing the Maximum of a Sequence.” &lt;em&gt;Journal of the American Statistical Association&lt;/em&gt; 61 (313). [American Statistical Association, Taylor &amp;amp; Francis, Ltd.]: 35–73. &lt;a href=&quot;http://www.jstor.org/stable/2283044&quot; class=&quot;uri&quot;&gt;http://www.jstor.org/stable/2283044&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-jensen_nielsen2007&quot;&gt;
+&lt;p&gt;Jensen, F. V., and T. D. Nielsen. 2007. &lt;em&gt;Bayesian Networks and Decision Graphs&lt;/em&gt;. 2nd ed. Springer Verlag.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Sun, 12 Jun 2016 00:00:00 +0200</pubDate>
+        <link>http://staff.math.su.se/hoehle/blog/2016/06/12/optimalChoice.html</link>
+        <guid isPermaLink="true">http://staff.math.su.se/hoehle/blog/2016/06/12/optimalChoice.html</guid>
+        
+        <category>datascience</category>
+        
+        <category>rstats</category>
+        
+        <category>debugging</category>
+        
+        
+      </item>
     
       <item>
         <title>Right or Wrong? - Validate Numbers Like a Boss</title>
         <description>&lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt;&lt;br/&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
-href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;http://hoehleatsu.github.io/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
+href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
 &lt;p&gt;How does a statistician ensure that an analysis that comprises of outputting \(N\) results is correct? Can this be done without manually checking each of the results? Some statistical approaches for this task of &lt;strong&gt;proof-calculation&lt;/strong&gt; are described -- e.g. capture-recapture estimation and sequential decision making.&lt;/p&gt;
 &lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
 &lt;p&gt;One activity the public associates with &lt;strong&gt;statistics&lt;/strong&gt; is the generation of large tables containing a multitude of numbers on a phenomena of interest. Below an example containing the summary of &lt;a href=&quot;https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/bulletins/uklabourmarket/april2016&quot;&gt;UK labour market statistics&lt;/a&gt; for the 3 months to February 2016 from the Office for National Statistics:&lt;/p&gt;
 &lt;figure&gt;
-&lt;img src=&quot;http://hoehleatsu.github.io/figure/source/2016-05-22-proofCalculation/unemployment-apr2016.png&quot; title=&quot;Source: https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/bulletins/uklabourmarket/april2016&quot; /&gt;
+&lt;img src=&quot;/hoehle/blog/figure/source/2016-05-22-proofCalculation/unemployment-apr2016.png&quot; title=&quot;Source: https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/bulletins/uklabourmarket/april2016&quot; /&gt;
 &lt;/figure&gt;
 &lt;p&gt;Another example is The German Federal Government’s &lt;a href=&quot;http://www.bmas.de/DE/Service/Medien/Publikationen/a334-4-armuts-reichtumsbericht-2013.html&quot;&gt;4th Report on Poverty and Wealth&lt;/a&gt;. The report consists of a total of 549 pages with the pure table appendix fun starting on p. 518 including, e.g., age-adjusted ORs obtained from logistic regression modelling (p.523).&lt;/p&gt;
 &lt;p&gt;Even though dynamic &amp;amp; web-based reporting coupled with graphical &amp;amp; interactive visualizations have developed to a point making such tables obsolete, this does not change the fact that the results still need to be &lt;strong&gt;correct&lt;/strong&gt;. As a consequence, the results need to be validated to ensure their correctness, occasionally even beyond any doubt! In what follow we will use the term &lt;strong&gt;result&lt;/strong&gt; to describe an output element of the statistical analysis. In most cases results are numbers, but we shall use the term number and result interchangeably. However, results could also denote higher level output elements, e.g., complete tables, a specific line in a graph or the complete output of a particular query.&lt;/p&gt;
@@ -47,15 +305,11 @@ f_2 &amp;amp;= n_{12}.
 \]&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;These are the wrong numbers found by only one of the testers and by both testers, respectively. Let \(S=f_1+f_2=n_1+n_2-n_{12}\) be the total number of erroneous numbers found in the test phase. Assuming that we in the subsequent debugging phase are able to remove all these \(S\) errors, we are interested in estimating the number of remaining errors, i.e. \(f_0\) or, alternatively, the total number of errors \(M=S+f_0\).&lt;/p&gt;
 &lt;p&gt;Assume that after the first day of proofcalculation the two statisticians obtain the following results:&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;data.frame&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;9&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;12&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;colnames&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;01&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;10&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;11&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;##   01 10 11
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;testP &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;data.frame&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;t&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;9&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;12&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;6&lt;/span&gt;)))
+&lt;span class=&quot;kw&quot;&gt;colnames&lt;/span&gt;(testP) &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;01&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;10&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;11&amp;quot;&lt;/span&gt;)
+testP&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##   01 10 11
 ## 1  9 12  6&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
 &lt;p&gt;i.e. \(n_1=9\), \(n_2=12\) and \(n_{12}=6\). The total number of errors found so far is \(S=27\). In the above code we use index &lt;code&gt;01&lt;/code&gt;, &lt;code&gt;10&lt;/code&gt; and &lt;code&gt;11&lt;/code&gt; specifying the results in two binary variable bit-notation -- this is necessary for the &lt;code&gt;CARE1&lt;/code&gt; package used in the next section.&lt;/p&gt;
 &lt;h2 id=&quot;estimating-the-total-number-of-wrong-numbers&quot;&gt;Estimating the total number of wrong numbers&lt;/h2&gt;
 &lt;p&gt;Estimating the total number of errors from the above data is a capture-recapture problem with two time points (=sampling occasions).&lt;/p&gt;
@@ -65,21 +319,13 @@ f_2 &amp;amp;= n_{12}.
 \hat{M} = \frac{n_1 \cdot n_2}{n_{12}}.
 \]&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;Note that this estimator puts no upper-bound on \(N\). The estimator can be computed using, e.g., the &lt;a href=&quot;https://cran.r-project.org/web/packages/CARE1/index.html&quot;&gt;&lt;code&gt;CARE1&lt;/code&gt;&lt;/a&gt; package:&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;M.hat&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CARE1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;estN.pair&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;##  Petersen   Chapman        se       cil       ciu 
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;(M.hat &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;CARE1::&lt;span class=&quot;kw&quot;&gt;estN.pair&lt;/span&gt;(testP))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##  Petersen   Chapman        se       cil       ciu 
 ## 45.000000 42.428571  9.151781 32.259669 72.257758&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
 &lt;p&gt;In other words, the estimated total number of errors is 45. A 95% confidence interval (CI) for \(M\) is 32-72 -- see the package documentation for details on the method for computing the (CI). To verify the computations one could alternatively compute the Lincoln-Petersen estimator manually:&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Nhat&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;01&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;11&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;10&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;11&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;11&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;##   01
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;(Nhat &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(testP[&lt;span class=&quot;st&quot;&gt;&amp;quot;01&amp;quot;&lt;/span&gt;]+testP[&lt;span class=&quot;st&quot;&gt;&amp;quot;11&amp;quot;&lt;/span&gt;]) *&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(testP[&lt;span class=&quot;st&quot;&gt;&amp;quot;10&amp;quot;&lt;/span&gt;]+testP[&lt;span class=&quot;st&quot;&gt;&amp;quot;11&amp;quot;&lt;/span&gt;]) /&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;testP[&lt;span class=&quot;st&quot;&gt;&amp;quot;11&amp;quot;&lt;/span&gt;])&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##   01
 ## 1 45&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
 &lt;p&gt;Finally, an estimate on the number of errors left to find is \(-S=18.0\).&lt;/p&gt;
 &lt;h2 id=&quot;heterogeneous-sampling-probabilities&quot;&gt;Heterogeneous Sampling Probabilities&lt;/h2&gt;
 &lt;p&gt;If one does not want to assume the equal catch-probabilities of the errors, a range of alternatives exists. One of them is the procedure by Chao (1984, 1987). Here, a non-parametric estimate of the total number of errors is given as:&lt;/p&gt;
@@ -87,20 +333,13 @@ f_2 &amp;amp;= n_{12}.
 \hat{M} = S + \frac{f_1^2}{2 f_2}.
 \]&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;The above estimator is based on the assumption that the two statisticians are equally good at spotting errors, but unlike for the Petersen-Lincoln estimator, errors can have heterogeneous detection probabilities. No specific parametric model for the detection is although required. An R implementation of the estimator is readily available as part of the &lt;a href=&quot;https://cran.r-project.org/web/packages/SPECIES/index.html&quot;&gt;&lt;code&gt;SPECIES&lt;/code&gt;&lt;/a&gt; package. For this, data first need to be stored as a &lt;code&gt;data.frame&lt;/code&gt; containing \(f_1, f_2\):&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;testPaggr&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;data.frame&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;j&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;f_j&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;as.numeric&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sum&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]),&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])))&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;testPaggr&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;##   j f_j
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;testPaggr &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;data.frame&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;j=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;:&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;f_j=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;as.numeric&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;sum&lt;/span&gt;(testP[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;:&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;]),testP[&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;])))
+testPaggr&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##   j f_j
 ## 1 1  21
 ## 2 2   6&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;M_est&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SPECIES&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;chao1984&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testPaggr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.95&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;## $Nhat
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;(M_est &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;SPECIES::&lt;span class=&quot;kw&quot;&gt;chao1984&lt;/span&gt;(testPaggr, &lt;span class=&quot;dt&quot;&gt;conf=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.95&lt;/span&gt;))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## $Nhat
 ## [1] 64
 ## 
 ## $SE
@@ -109,7 +348,6 @@ f_2 &amp;amp;= n_{12}.
 ## $CI
 ##      lb  ub
 ## [1,] 39 139&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
 &lt;p&gt;In this case the estimator for the total number of errors is \(=64\) (95% CI: 39-139). Again see the package documentation for methodological details.&lt;/p&gt;
 &lt;!-- ### Manual computation --&gt;
 &lt;!-- Again, if the computation can of course also be done manually: --&gt;
@@ -135,50 +373,40 @@ Y_n = n C_p + c_n \lambda \prod_{j=0}^{n-1} (1-p_j), \quad n=0,1,2,\ldots.
 &lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
 n_{\text{stop}} = \min_{n\geq 0} Y_n.
 \]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;One limitation of the above approach is that we have used a &lt;strong&gt;guesstimate&lt;/strong&gt; on how the detection probability \(p_n\) evolves over time. An extension would be to sequentially estimate this parameter from the obtained results. This goes along the lines of Dalal and Mallows (1988) which discuss when to stop testing your software -- see the following &lt;a href=&quot;http://hoehleatsu.github.io/2016/05/06/when2stop.html&quot;&gt;blog entry&lt;/a&gt; for a short statistical treatment of their approach.&lt;/p&gt;
+&lt;p&gt;One limitation of the above approach is that we have used a &lt;strong&gt;guesstimate&lt;/strong&gt; on how the detection probability \(p_n\) evolves over time. An extension would be to sequentially estimate this parameter from the obtained results. This goes along the lines of Dalal and Mallows (1988) which discuss when to stop testing your software -- see the following &lt;a href=&quot;http://staff.math.su.se/2016/05/06/when2stop.html&quot;&gt;blog entry&lt;/a&gt; for a short statistical treatment of their approach.&lt;/p&gt;
 &lt;h3 id=&quot;numerical-example&quot;&gt;Numerical example&lt;/h3&gt;
 &lt;p&gt;We consider a setup where the costly errors have substantial ramifications and thus are easy to detect early on. As time passes on the errors become more difficult to detect. This is reflected by the subsequent choices of \(p_n\) and \(c_n\) -- see below. Furthermore, the expected number of bugs is taken to be the non-homogeneous capture-recapture estimate of the remaining errors. This coupling of the two procedures is somewhat pragmatic: it does not include the first round of proofcalculation in the decision making as this is used to estimate \(\). Furthermore, no estimation uncertainty in \(\) from this stage is transferred to the subsequent stages.&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;c1&quot;&gt;#Cost of one round of proofcalculation (say in number of working days)
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Cp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;#Cost of finding errors after n round of proofcalculation
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cn&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.9&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;^&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;+1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;#Expected number of errors
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lambda&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;M_est&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Nhat&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sum&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;## [1] 37&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;c1&quot;&gt;#Probabilty of detecting an error in round j+1
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pj&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;j&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;m&quot;&gt;0.8&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;^&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;j&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;+1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;#Expected conditional loss as defined above
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Yn&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Vectorize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Cp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;lambda&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;prod&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pj&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;-1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;})&lt;/span&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;co&quot;&gt;#Cost of one round of proofcalculation (say in number of working days)&lt;/span&gt;
+Cp &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#Cost of finding errors after n round of proofcalculation&lt;/span&gt;
+cn &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(n) &lt;span class=&quot;dv&quot;&gt;10&lt;/span&gt;*&lt;span class=&quot;fl&quot;&gt;0.9&lt;/span&gt;^(&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;*(n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;))
+&lt;span class=&quot;co&quot;&gt;#Expected number of errors&lt;/span&gt;
+(lambda &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;M_est$Nhat -&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;sum&lt;/span&gt;(testP))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] 37&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;co&quot;&gt;#Probabilty of detecting an error in round j+1&lt;/span&gt;
+pj &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(j) {
+  &lt;span class=&quot;fl&quot;&gt;0.8&lt;/span&gt;^(j&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)
+}
+&lt;span class=&quot;co&quot;&gt;#Expected conditional loss as defined above&lt;/span&gt;
+Yn &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;Vectorize&lt;/span&gt;(function(n) {
+  n*Cp +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;cn&lt;/span&gt;(n) *&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;lambda *&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;prod&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;-&lt;span class=&quot;kw&quot;&gt;pj&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;:(n&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)))
+})
 
-&lt;span class=&quot;c1&quot;&gt;#Make a data.frame with the results.
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;df&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;data.frame&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;20&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;mutate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Yn&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Yn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cn&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pn&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pj&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;-1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
+&lt;span class=&quot;co&quot;&gt;#Make a data.frame with the results.&lt;/span&gt;
+df &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;data.frame&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;:&lt;span class=&quot;dv&quot;&gt;20&lt;/span&gt;) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;mutate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;Yn=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;Yn&lt;/span&gt;(n),&lt;span class=&quot;dt&quot;&gt;cn=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;cn&lt;/span&gt;(n),&lt;span class=&quot;dt&quot;&gt;pn=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;pj&lt;/span&gt;(n&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;The above choice of parameters leads to the following functional forms:&lt;/p&gt;
 &lt;figure&gt;
-&lt;img src=&quot;http://hoehleatsu.github.io/figure/source/2016-05-22-proofCalculation/unnamed-chunk-7-1.png&quot; alt=&quot;plot of chunk unnamed-chunk-7&quot; /&gt;&lt;figcaption&gt;plot of chunk unnamed-chunk-7&lt;/figcaption&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-05-22-proofCalculation/unnamed-chunk-7-1.png&quot; alt=&quot;plot of chunk unnamed-chunk-7&quot; /&gt;&lt;figcaption&gt;plot of chunk unnamed-chunk-7&lt;/figcaption&gt;
 &lt;/figure&gt;
 &lt;p&gt;The optimal strategy is thus found as:&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;df&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;filter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rank&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Yn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;select&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Yn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;##   n       Yn
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;df %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;filter&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;rank&lt;/span&gt;(Yn) ==&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;select&lt;/span&gt;(n,Yn)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##   n       Yn
 ## 1 5 6.457426&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
 &lt;p&gt;In other words, one should test after \(n_{}=5\) additional rounds.&lt;/p&gt;
 &lt;h1 id=&quot;discussion&quot;&gt;Discussion&lt;/h1&gt;
 &lt;p&gt;Is any of the above &lt;strong&gt;useful&lt;/strong&gt;? Well, I have not heard about such approaches being used seriously in software engineering. The presented methods narrow down a complex problem down using assumptions in order to make the problem mathematically tractable. You may not agree with the assumptions as, e.g., Bolton (2010) -- yet, such assumptions are a good way to get started. The point is that statisticians appear to be very good at enlightening others about the &lt;strong&gt;virtues of statistics&lt;/strong&gt; (repeat your measurements, have a sampling plan, pantomimic acts visualizing the horror of p-values). However, when it comes to our own analyses, we are surprisingly statistics-illiterate at times.&lt;/p&gt;
 &lt;figure&gt;
-&lt;img src=&quot;http://hoehleatsu.github.io/figure/source/2016-05-22-proofCalculation/look_for_the_pattern-300px.png&quot; title=&quot;Source: https://openclipart.org/detail/248382/dropping-numbers&quot; /&gt;
+&lt;img src=&quot;/hoehle/blog/figure/source/2016-05-22-proofCalculation/look_for_the_pattern-300px.png&quot; title=&quot;Source: https://openclipart.org/detail/248382/dropping-numbers&quot; /&gt;
 &lt;/figure&gt;
 &lt;h1 id=&quot;literature&quot;&gt;Literature&lt;/h1&gt;
 &lt;ul&gt;
@@ -196,8 +424,8 @@ n_{\text{stop}} = \min_{n\geq 0} Y_n.
 &lt;/div&gt;
 </description>
         <pubDate>Sun, 22 May 2016 00:00:00 +0200</pubDate>
-        <link>http://hoehleatsu.github.io/2016/05/22/proofCalculation.html</link>
-        <guid isPermaLink="true">http://hoehleatsu.github.io/2016/05/22/proofCalculation.html</guid>
+        <link>http://staff.math.su.se/hoehle/blog/2016/05/22/proofCalculation.html</link>
+        <guid isPermaLink="true">http://staff.math.su.se/hoehle/blog/2016/05/22/proofCalculation.html</guid>
         
         <category>datascience</category>
         
@@ -212,10 +440,11 @@ n_{\text{stop}} = \min_{n\geq 0} Y_n.
         <title>When Should One Stop Testing Software?</title>
         <description>&lt;h1 id=&quot;abstract&quot;&gt;Abstract&lt;/h1&gt;
 &lt;p&gt;This is a small note rediscovering a gem published by S. R. Dalal and C. L. Mallows on treating the test of software in a statistical context (Dalal and Mallows, 1988). In their paper they answer the question on how long to continue testing your software before shipping. The problem is translated into a sequential decision problem, where an optimal stopping rule has to be found minimizing expected loss. We sketch the main result of their paper and apply their stopping rule to an example using R code.&lt;/p&gt;
-&lt;p&gt;This text &amp;amp; source code is available under the MIT license from &lt;a href=&quot;https://github.com/hoehleatsu/When2Stop&quot;&gt;Github&lt;/a&gt;. Furthermore, it is also available as a &lt;a href=&quot;http://rpubs.com/hoehle/179204&quot;&gt;RPubs&lt;/a&gt;. This publication was announced via &lt;a href=&quot;https://twitter.com/m_hoehle/status/729107184789954561&quot;&gt;twitter&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt;&lt;br/&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
+href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
 &lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
 &lt;p&gt;Imagine that a team of developers of a new R package needs to structure a test plan before the release of the package to CRAN. Let \(N\) be the (unknown) number of bugs in the package. The team starts their testing at time zero and subsequently find an increasing number of bugs as the test period passes by. The figure below shows such a testing process mimicking the example of Dalal and Mallows (1988) from the testing of a large software system at a telecommunications research company.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;http://hoehleatsu.github.io/figure/source/2016-05-06-when2stop/unnamed-chunk-1-1.png&quot; title=&quot;plot of chunk unnamed-chunk-1&quot; alt=&quot;plot of chunk unnamed-chunk-1&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-05-06-when2stop/unnamed-chunk-1-1.png&quot; title=&quot;plot of chunk unnamed-chunk-1&quot; alt=&quot;plot of chunk unnamed-chunk-1&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
 &lt;p&gt;We see that the number of bugs appears to level off. The question is now &lt;em&gt;how long should we continue testing before releasing&lt;/em&gt;? Dalal and Mallows (1988) give an intriguing statistical answer to this problem.&lt;/p&gt;
 &lt;h1 id=&quot;methodology&quot;&gt;Methodology&lt;/h1&gt;
 &lt;p&gt;In order to answer the above question the following notation and assumptions are introduced:&lt;/p&gt;
@@ -242,60 +471,52 @@ n_{\text{stop}} = \min_{n\geq 0} Y_n.
 \frac{f}{c}\cdot \frac{\exp(\mu t) -1}{\mu} \geq k.
 \]&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;At this time point, the estimated number of bugs left is Poisson with mean \(f/(c)\).&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;c1&quot;&gt;##########################################################################
-# Function describing the LHS of (4.6) in the Delal and Mallows article
-#
-# Parameters:
-#  fdivc - the quotient f/c
-#  mu    - the value of mu, this typically needs to be estimated from data
-#  testProcess - a data_frame containing the decision time points and the
-#               observed number of events
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;##########################################################################
+&lt;span class=&quot;co&quot;&gt;# Function describing the LHS of (4.6) in the Delal and Mallows article&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;# Parameters:&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#  fdivc - the quotient f/c&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#  mu    - the value of mu, this typically needs to be estimated from data&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#  testProcess - a data_frame containing the decision time points and the&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#               observed number of events&lt;/span&gt;
 ##########################################################################
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lhs&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;fdivc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mu&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testProcess&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;fdivc&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;exp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mu&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testProcess&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;-1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mu&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
+lhs &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(fdivc,mu,testProcess) {
+  fdivc*(&lt;span class=&quot;kw&quot;&gt;exp&lt;/span&gt;(mu*testProcess$t)-&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;)/mu
+}&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;In the above, the quantity \(c/f\) measures the amount saved by finding a bug (and hence fixing it before release) measured in units of testing days. As an example: if \(c/f=0.2 f/c=5\) then the gain in detecting a bug before release corresponds to 0.2 testing days. Throughout the subsequent example we shall work with both \(c/f=0.2\) (ship early and fix later is acceptable) and \(c/f=1\) (high costs of fixing bugs afte r the release).&lt;/p&gt;
 &lt;h1 id=&quot;example&quot;&gt;Example&lt;/h1&gt;
 &lt;p&gt;Taking the testing data from the above figure, the first step consists of estimating \(\) from the available data. It is important to realize that the available data are a right-truncated sample, because only errors with a discovery time smaller than the current observation time are observed. Furthermore, if only data on the daily number of bug discoveries are available, then the data are also interval censored. We set up the loglikelihood function accordingly.&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;c1&quot;&gt;#######################################################
-#Log-likelihood function to maximize, which handles the
-#right truncation and interval censoring.
-# Paramers:
-#  theta - \log(\mu).
-#  testProcess - data_frame containing the observed data
-#  tC - the right-censoring time.
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;#######################################################
+&lt;span class=&quot;co&quot;&gt;#Log-likelihood function to maximize, which handles the&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#right truncation and interval censoring.&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;# Paramers:&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#  theta - \log(\mu).&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#  testProcess - data_frame containing the observed data&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#  tC - the right-censoring time.&lt;/span&gt;
 ########################################################
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ll&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;theta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;testProcess&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;max&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testProcess&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;mu&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;exp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;theta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;c1&quot;&gt;#Daily number of *new* bug discoveries. .
-&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;DeltaK&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;diff&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testProcess&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;K&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
-  &lt;span class=&quot;c1&quot;&gt;#CDF function taking the right-truncation into account
-&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;CDF&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pexp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rate&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mu&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pexp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rate&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mu&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;c1&quot;&gt;#Log-likelihood is equivalent to multinomial sampling with p being a func of mu.
-&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CDF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;max&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testProcess&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;+1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CDF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testProcess&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sum&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;DeltaK&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;log&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;#Find MLE
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mle&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;optim&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;log&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ll&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;testProcess&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;testProcess&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;control&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;list&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;fnscale&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;-1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;method&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;BFGS&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;mu.hat&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;exp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mle&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;par&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mu&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mu&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;mu.hat&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mu.hat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;##         mu     mu.hat 
+ll &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(theta, testProcess, &lt;span class=&quot;dt&quot;&gt;tC=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;max&lt;/span&gt;(testProcess$t)) {
+  mu &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;exp&lt;/span&gt;(theta)
+  &lt;span class=&quot;co&quot;&gt;#Daily number of *new* bug discoveries. .&lt;/span&gt;
+  DeltaK &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;,&lt;span class=&quot;kw&quot;&gt;diff&lt;/span&gt;(testProcess$K))
+  &lt;span class=&quot;co&quot;&gt;#CDF function taking the right-truncation into account&lt;/span&gt;
+  CDF &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(x) &lt;span class=&quot;kw&quot;&gt;pexp&lt;/span&gt;(x,&lt;span class=&quot;dt&quot;&gt;rate=&lt;/span&gt;mu)/&lt;span class=&quot;kw&quot;&gt;pexp&lt;/span&gt;(tC,&lt;span class=&quot;dt&quot;&gt;rate=&lt;/span&gt;mu)
+  &lt;span class=&quot;co&quot;&gt;#Log-likelihood is equivalent to multinomial sampling with p being a func of mu.&lt;/span&gt;
+  p &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;CDF&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;:(&lt;span class=&quot;kw&quot;&gt;max&lt;/span&gt;(testProcess$t)+&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;)) -&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;CDF&lt;/span&gt;(testProcess$t)
+  &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;sum&lt;/span&gt;(DeltaK *&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;log&lt;/span&gt;(p)))
+}
+&lt;span class=&quot;co&quot;&gt;#Find MLE&lt;/span&gt;
+mle &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;optim&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;log&lt;/span&gt;(&lt;span class=&quot;fl&quot;&gt;0.01&lt;/span&gt;),ll, &lt;span class=&quot;dt&quot;&gt;testProcess=&lt;/span&gt;testProcess, &lt;span class=&quot;dt&quot;&gt;control=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;fnscale=&lt;/span&gt;-&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;),&lt;span class=&quot;dt&quot;&gt;method=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;BFGS&amp;quot;&lt;/span&gt;)
+mu.hat &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;exp&lt;/span&gt;(mle$par)
+&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;mu=&lt;/span&gt;mu, &lt;span class=&quot;dt&quot;&gt;mu.hat=&lt;/span&gt;mu.hat)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##         mu     mu.hat 
 ## 0.02000000 0.01916257&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
 &lt;p&gt;Note that we in the above used all data obtained over the entire testing period. In practice, one would instead sequentially update the \(\) estimate each day as the information arrives -- see the animated sequential procedure in the next section.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;http://hoehleatsu.github.io/figure/source/2016-05-06-when2stop/unnamed-chunk-4-1.png&quot; title=&quot;plot of chunk unnamed-chunk-4&quot; alt=&quot;plot of chunk unnamed-chunk-4&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;## Source: local data frame [1 x 5]
+&lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-05-06-when2stop/unnamed-chunk-4-1.png&quot; title=&quot;plot of chunk unnamed-chunk-4&quot; alt=&quot;plot of chunk unnamed-chunk-4&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;## Source: local data frame [1 x 5]
 ## 
 ##       t     K K_estimate     sol5     sol1
 ##   (int) (dbl)      (dbl)    (dbl)    (dbl)
 ## 1    82   989   990.8676 994.9211 198.9842&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
 &lt;p&gt;The optimal stopping time in the example, in the case of \(f/c=5\), is to stop the testing after 82 testing days. An estimate of the expected number of remaining bugs at this stopping time would be 260.9, which appears to agree quite well with the empirical data -- actually, they were simulated with \(N=1250\).&lt;/p&gt;
 &lt;h1 id=&quot;animation&quot;&gt;Animation&lt;/h1&gt;
 &lt;p&gt;The animation belows shows the above computations in sequential fashion:&lt;/p&gt;
@@ -305,7 +526,7 @@ n_{\text{stop}} = \min_{n\geq 0} Y_n.
 &lt;li&gt;Once the \(K(t)\) curve and the curve for a given \(f/c\) ratio intersect, we would stop the testing.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;figure&gt;
-&lt;img src=&quot;http://hoehleatsu.github.io/downloads/animation.gif&quot; /&gt;
+&lt;img src=&quot;/hoehle/blog/downloads/animation.gif&quot; /&gt;
 &lt;/figure&gt;
 &lt;h1 id=&quot;discussion&quot;&gt;Discussion&lt;/h1&gt;
 &lt;ul&gt;
@@ -323,8 +544,8 @@ n_{\text{stop}} = \min_{n\geq 0} Y_n.
 &lt;/div&gt;
 </description>
         <pubDate>Fri, 06 May 2016 00:00:00 +0200</pubDate>
-        <link>http://hoehleatsu.github.io/2016/05/06/when2stop.html</link>
-        <guid isPermaLink="true">http://hoehleatsu.github.io/2016/05/06/when2stop.html</guid>
+        <link>http://staff.math.su.se/hoehle/blog/2016/05/06/when2stop.html</link>
+        <guid isPermaLink="true">http://staff.math.su.se/hoehle/blog/2016/05/06/when2stop.html</guid>
         
         <category>datascience</category>
         

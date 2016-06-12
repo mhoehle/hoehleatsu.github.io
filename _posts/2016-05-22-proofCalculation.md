@@ -12,7 +12,7 @@ comments: true
 This work is licensed under a <a rel="license"
 href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
 Attribution-ShareAlike 4.0 International License</a>.
-The markdown+Rknitr source code of this blog is available from [![github]({{ site.url }}/images/GitHub-Mark-32px.png)](https://github.com/hoehleatsu/hoehleatsu.github.io).
+The markdown+Rknitr source code of this blog is available from [![github]({{ site.baseurl }}/images/GitHub-Mark-32px.png)](https://github.com/hoehleatsu/hoehleatsu.github.io).
 
 ## Abstract
 
@@ -29,7 +29,7 @@ One activity the public associates with **statistics** is the generation of larg
 containing a multitude of numbers on a phenomena of interest. Below an example containing the summary of [UK labour market statistics](https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/bulletins/uklabourmarket/april2016) for the 3 months to February 2016 from the
 Office for National Statistics:
 
-![]({{ site.url }}/figure/source/2016-05-22-proofCalculation/unemployment-apr2016.png "Source: https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/bulletins/uklabourmarket/april2016")
+![]({{ site.baseurl }}/figure/source/2016-05-22-proofCalculation/unemployment-apr2016.png "Source: https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/bulletins/uklabourmarket/april2016")
 
 Another example is The German Federal Government’s [4th Report on Poverty and Wealth](http://www.bmas.de/DE/Service/Medien/Publikationen/a334-4-armuts-reichtumsbericht-2013.html). The report consists of a total of 549 pages with the pure table appendix fun starting on p. 518 including, e.g., age-adjusted ORs obtained from logistic regression modelling (p.523).
 
@@ -138,18 +138,16 @@ are able to remove all these \\(S\\) errors, we are interested in estimating the
 Assume that after the first day of proofcalculation the two statisticians obtain the following results:
 
 
-{% highlight r %}
+```r
 testP <- data.frame(t(c(9,12,6)))
 colnames(testP) <- c("01","10","11")
 testP
-{% endhighlight %}
+```
 
-
-
-{% highlight text %}
+```
 ##   01 10 11
 ## 1  9 12  6
-{% endhighlight %}
+```
 i.e. \\(n_1=9\\), \\(n_2=12\\)  and \\(n_{12}=6\\). The total number of errors found so far is \\(S=27\\). In the above code we use index `01`, `10` and `11` specifying the results in two binary variable bit-notation -- this is necessary for the  `CARE1` package used in the next section.
 
 
@@ -170,29 +168,25 @@ $$
 
 Note that this estimator puts no upper-bound on \\(N\\). The estimator can be computed using, e.g., the [`CARE1`](https://cran.r-project.org/web/packages/CARE1/index.html) package:
 
-{% highlight r %}
+```r
 (M.hat <- CARE1::estN.pair(testP))
-{% endhighlight %}
+```
 
-
-
-{% highlight text %}
+```
 ##  Petersen   Chapman        se       cil       ciu 
 ## 45.000000 42.428571  9.151781 32.259669 72.257758
-{% endhighlight %}
+```
 In other words, the estimated total number of errors is 45. A 95% confidence interval (CI) for \\(M\\) is 32-72 -- see the package documentation for details on the method for computing the (CI). To verify the computations one could alternatively compute the Lincoln-Petersen estimator manually:
 
 
-{% highlight r %}
+```r
 (Nhat <- (testP["01"]+testP["11"]) * (testP["10"]+testP["11"]) / testP["11"])
-{% endhighlight %}
+```
 
-
-
-{% highlight text %}
+```
 ##   01
 ## 1 45
-{% endhighlight %}
+```
 
 Finally, an estimate on the number of errors left to find is \\(\hat{M}-S=18.0\\).
 
@@ -207,28 +201,22 @@ $$
 The above estimator is based on the assumption that the two statisticians are equally good at spotting errors, but unlike for the Petersen-Lincoln estimator, errors can have heterogeneous detection probabilities. No specific parametric model for the detection is although required. An R implementation of the estimator is readily available as part of the [`SPECIES`](https://cran.r-project.org/web/packages/SPECIES/index.html) package.
 For this, data first need to be stored as a `data.frame` containing \\(f_1, f_2\\):
 
-{% highlight r %}
+```r
 testPaggr <- data.frame(j=1:2,f_j=as.numeric(c(sum(testP[1:2]),testP[3])))
 testPaggr
-{% endhighlight %}
+```
 
-
-
-{% highlight text %}
+```
 ##   j f_j
 ## 1 1  21
 ## 2 2   6
-{% endhighlight %}
+```
 
-
-
-{% highlight r %}
+```r
 (M_est <- SPECIES::chao1984(testPaggr, conf=0.95))
-{% endhighlight %}
+```
 
-
-
-{% highlight text %}
+```
 ## $Nhat
 ## [1] 64
 ## 
@@ -238,7 +226,7 @@ testPaggr
 ## $CI
 ##      lb  ub
 ## [1,] 39 139
-{% endhighlight %}
+```
 In this case the estimator for the total number of errors is \\(\hat{M}=64\\) (95% CI: 39-139). Again see the package documentation for methodological details.
 
 <!-- ### Manual computation -->
@@ -289,24 +277,20 @@ are easy to detect early on. As time passes on the errors become
 more difficult to detect. This is reflected by the subsequent choices of \\(p_n\\) and \\(c_n\\) -- see below. Furthermore, the expected number of bugs is taken to be the non-homogeneous capture-recapture estimate of the remaining errors. This coupling of the two procedures is somewhat pragmatic: it does not include the first round of proofcalculation in the decision making as this is used to estimate \\(\lambda\\). Furthermore, no estimation uncertainty in \\(\lambda\\) from this stage is transferred to the subsequent stages.
 
 
-{% highlight r %}
+```r
 #Cost of one round of proofcalculation (say in number of working days)
 Cp <- 1
 #Cost of finding errors after n round of proofcalculation
 cn <- function(n) 10*0.9^(2*(n+1))
 #Expected number of errors
 (lambda <- M_est$Nhat - sum(testP))
-{% endhighlight %}
+```
 
-
-
-{% highlight text %}
+```
 ## [1] 37
-{% endhighlight %}
+```
 
-
-
-{% highlight r %}
+```r
 #Probabilty of detecting an error in round j+1
 pj <- function(j) {
   0.8^(j+1)
@@ -318,26 +302,24 @@ Yn <- Vectorize(function(n) {
 
 #Make a data.frame with the results.
 df <- data.frame(n=1:20) %>% mutate(Yn=Yn(n),cn=cn(n),pn=pj(n-1))
-{% endhighlight %}
+```
 
 The above choice of parameters leads to the following functional forms:
 
-![plot of chunk unnamed-chunk-7](http://hoehleatsu.github.io/figure/source/2016-05-22-proofCalculation/unnamed-chunk-7-1.png)
+![plot of chunk unnamed-chunk-7](http://staff.math.su.se/hoehle/blog/figure/source/2016-05-22-proofCalculation/unnamed-chunk-7-1.png)
 
 
 
 The optimal strategy is thus found as:
 
-{% highlight r %}
+```r
 df %>% filter(rank(Yn) == 1) %>% select(n,Yn)
-{% endhighlight %}
+```
 
-
-
-{% highlight text %}
+```
 ##   n       Yn
 ## 1 5 6.457426
-{% endhighlight %}
+```
 In other words, one should test after \\(n_{\text{stop}}=5\\) additional rounds.
 
 
@@ -347,7 +329,7 @@ Is any of the above **useful**?
 Well, I have not heard about such approaches being used seriously in software engineering. The presented methods narrow down a complex problem down using assumptions in order to make the problem mathematically tractable. You may not agree with the assumptions as, e.g., Bolton (2010) -- yet, such assumptions are a good way to get started. The point is that statisticians appear to be very good at enlightening others about the **virtues of statistics** (repeat your measurements, have a sampling plan, pantomimic acts visualizing the horror of p-values). However, when it comes to our own analyses, we are surprisingly statistics-illiterate at times.
 
 
-![]({{ site.url }}/figure/source/2016-05-22-proofCalculation/look_for_the_pattern-300px.png "Source: https://openclipart.org/detail/248382/dropping-numbers")
+![]({{ site.baseurl }}/figure/source/2016-05-22-proofCalculation/look_for_the_pattern-300px.png "Source: https://openclipart.org/detail/248382/dropping-numbers")
 
 # Literature
 

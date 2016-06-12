@@ -22,8 +22,12 @@ shipping. The problem is translated into a sequential decision problem, where an
 We sketch the main result of their paper and apply their stopping rule to an example
 using R code.
 
-This text & source code is available under the MIT license from [Github](https://github.com/hoehleatsu/When2Stop). Furthermore, it is also available as a [RPubs](http://rpubs.com/hoehle/179204). This publication was announced 
-via [twitter](https://twitter.com/m_hoehle/status/729107184789954561).
+<br>
+<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"/></a><br/>
+This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
+Attribution-ShareAlike 4.0 International License</a>.
+The markdown+Rknitr source code of this blog is available from [![github]({{ site.baseurl }}/images/GitHub-Mark-32px.png)](https://github.com/hoehleatsu/hoehleatsu.github.io).
 
 # Introduction
 
@@ -36,7 +40,7 @@ of Dalal and Mallows (1988) from the testing of a large
 software system at a telecommunications research company.
 
 ```{r,echo=FALSE,fig.align='center',results='hide',fig.keep='last'}
-#Simulate some data, which look like Fig. 1 of the paper. 
+#Simulate some data, which look like Fig. 1 of the paper.
 set.seed(123)
 t <- 0:175
 mu <- 0.02
@@ -65,20 +69,20 @@ We see that the number of bugs appears to level off. The question is now *how lo
 
 In order to answer the above question the following notation and assumptions are introduced:
 
-* The total number of bugs is assumed to be Poisson distributed $$N \sim \text{Po}(\lambda).$$ However, practice shows that the number of bugs in different modules has more variation that given by the Poisson distribution. Hence, let \\(\lambda \sim \text{Ga}(\alpha,\beta)\\) and thus the marginal distribution of \\(N\\) is negative binomial. 
+* The total number of bugs is assumed to be Poisson distributed $$N \sim \text{Po}(\lambda).$$ However, practice shows that the number of bugs in different modules has more variation that given by the Poisson distribution. Hence, let \\(\lambda \sim \text{Ga}(\alpha,\beta)\\) and thus the marginal distribution of \\(N\\) is negative binomial.
 
-* The amount of time until discovery of each bug during the testing period is distributed according to the known distribution \\(G\\) with density \\(g\\). Furthermore, it can be assumed that the discoveries times are independent of each other. 
-Example : The simplest example is to assume that the discovery distribution is exponential, i.e. \\(g(t)=\mu\exp(-\mu t)\\), 
-where we measure time in number of person-days spent on the testing. 
+* The amount of time until discovery of each bug during the testing period is distributed according to the known distribution \\(G\\) with density \\(g\\). Furthermore, it can be assumed that the discoveries times are independent of each other.
+Example : The simplest example is to assume that the discovery distribution is exponential, i.e. \\(g(t)=\mu\exp(-\mu t)\\),
+where we measure time in number of person-days spent on the testing.
 Thus, \\(1/\mu\\) is the expected time until discovery of a bug.
 
-* Let \\(K(t)\\) be the total number of bugs found up to time \\(t\\). In other words, if \\(t_1,\ldots,t_N\\) denote the discovery times of the \\(N\\) bugs then 
+* Let \\(K(t)\\) be the total number of bugs found up to time \\(t\\). In other words, if \\(t_1,\ldots,t_N\\) denote the discovery times of the \\(N\\) bugs then
 
     $$K(t)=\sum_{i=1}^N I(t_i \leq t),$$
 
 where \\(I(\cdot)\\) is the indicator function. However, note that at time point \\(t\\), only bugs with a discovery time smaller or equal to \\(t\\) would already have been observed and, hence, would be known to exist (right-truncation). Thus, even though \\(K(t)\\) is proportional to the empirical cumulative distribution function of the discovery distribution \\(\hat{G}(t)\\), the factor of proportionality is \\(N\\), which is unknown at the time \\(t\\).
 
-Note: The paper actually showns that the Poisson-Gamma distribution assumption for \\(N\\) is not crucial. An asymptotic argument is given that as long as the process does not terminate quickly (i.e. the number of bugs is relatively large) the results hold for more general distributions of \\(N\\). Hence, in the analysis that follows, the parameter \\(\lambda\\) is not needed as we only proceed with the asymptotic approach of the paper. 
+Note: The paper actually showns that the Poisson-Gamma distribution assumption for \\(N\\) is not crucial. An asymptotic argument is given that as long as the process does not terminate quickly (i.e. the number of bugs is relatively large) the results hold for more general distributions of \\(N\\). Hence, in the analysis that follows, the parameter \\(\lambda\\) is not needed as we only proceed with the asymptotic approach of the paper.
 
 ### Loss function
 In order to make a decision about when to stop testing based on expected loss/gain we need two further assumptions:
@@ -127,7 +131,7 @@ r the release).
 
 # Example
 
-Taking the testing data from the above figure, the first step consists of estimating \\(\mu\\) from the available data. It is important to realize that the available data are a right-truncated sample, because only errors with a 
+Taking the testing data from the above figure, the first step consists of estimating \\(\mu\\) from the available data. It is important to realize that the available data are a right-truncated sample, because only errors with a
 discovery time smaller than the current observation time are observed.
 Furthermore, if only data on the daily number of bug discoveries are available, then
 the data are also interval censored. We set up the loglikelihood function accordingly.
@@ -163,7 +167,7 @@ period. In practice, one would instead sequentially update the \\(\mu\\) estimat
 
 ```{r,fig.align='center',warning=FALSE,echo=FALSE}
 ####################################################################################
-# Show situation at time 'time'. 
+# Show situation at time 'time'.
 #
 # Paramaters:
 #  time   - timepoint of the testing period. If NULL then the situation at the end
@@ -178,34 +182,34 @@ stoptime_at_time <- function(time=NULL,mu.hat=NULL,testProcess, plot=TRUE,no_Kha
   if (!is.null(time)) {
     tP_at_time <- testProcess %>% filter(t <= time) %>% select(t,K)
   } else {
-    tP_at_time <- testProcess 
-    time <- max(testProcess$t) 
+    tP_at_time <- testProcess
+    time <- max(testProcess$t)
   }
-  
+
   #Estimate mu.hat
   if (is.null(mu.hat)) {
     mle <- optim(log(0.01),ll, testProcess=tP_at_time,control=list(fnscale=-1),method="BFGS")
     mu.hat <- exp(mle$par)
-  } 
-  
+  }
+
   #Add model based estimate for K(t)
   lastRow <- tP_at_time %>% filter(row_number()==n())
   N_estimate <- with(lastRow, K/pexp(t,rate=mu.hat))
   testProcess <- testProcess %>% mutate(K_estimate=N_estimate*pexp(t,rate=mu.hat))
-  
+
   #Add curves to intersect with to the dataset
   testProcess <- testProcess %>% mutate(sol5=lhs(5,mu=mu.hat,testProcess),
                                       sol1=lhs(1,mu=mu.hat,testProcess)) %>% select(-K)
-  
+
   tP_at_time <- inner_join(tP_at_time,testProcess,by="t")
   #Do we have some intersections?
   theSol5 <- tP_at_time %>% filter(sol5>K) %>% filter(row_number()==1)
-  theSol1 <- tP_at_time %>% filter(sol1>K) %>% filter(row_number()==1) 
-  
+  theSol1 <- tP_at_time %>% filter(sol1>K) %>% filter(row_number()==1)
+
   #Plot it - first extract the y's of the labels
   y5 <- testProcess %>% filter(t==50) %>% .[["sol5"]]
   y1 <- testProcess %>% filter(t==100) %>% .[["sol1"]]
-  
+
   #Now make the plot
   p_sol <- ggplot(tP_at_time, aes(x=t,y=K)) + geom_line() +
     annotate("text",x=20,y=1.05*filter(tP_at_time,t==25)$K, label="K(t)",hjust=0.5,vjust=0) +
@@ -215,10 +219,10 @@ stoptime_at_time <- function(time=NULL,mu.hat=NULL,testProcess, plot=TRUE,no_Kha
     geom_line(data=testProcess, aes(x=t,y=sol1),lty=3) +
     annotate("text",x=115,y=y1, label="f/c=1") +
     geom_point(data=theSol1,aes(x=t,y=K),size=4,col="red")  +
-   
+
     xlab("Time (testing days)") + ylab("Cumulative Number of Bugs found") +
     ylim(c(0,1600)) + xlim(0,max(t)+1) + ggtitle(paste0("With mu.hat at time t=",time))
-  
+
   if (nrow(theSol5)>0) {
     p_sol <- p_sol + geom_linerange(data=theSol5,aes(ymin = 0, ymax = K),col="red",lty=2) +
       annotate("text",x=theSol5$t,y=0,vjust=1,label=theSol5$t,col="red")
@@ -229,8 +233,8 @@ stoptime_at_time <- function(time=NULL,mu.hat=NULL,testProcess, plot=TRUE,no_Kha
   }
   if (!no_Khat) {
     p_sol <- p_sol + geom_line(data=testProcess, aes(x=t,y=K_estimate),lty=4,col="steelblue",alpha=0.25) +
-    annotate("text",x=175,y=0.95*filter(testProcess,t==175)$K_estimate, label="K.hat(t)") 
-  }   
+    annotate("text",x=175,y=0.95*filter(testProcess,t==175)$K_estimate, label="K.hat(t)")
+  }
   if (plot) { print(p_sol) }
   #Done
   invisible(list(stopTimefc5=theSol5,stopTimefc1=theSol1))
@@ -250,8 +254,8 @@ The animation belows shows the above computations in sequential fashion:
 
 * At a given time \\(t\\) of the testing process, \\(\hat{\mu}\\) is
 determined from the curve of cumulative bugs found up to time
-\\(t\\). 
-* This  \\(\hat{\mu}\\) estimate is then use to determine the intersecting curves as described above. 
+\\(t\\).
+* This  \\(\hat{\mu}\\) estimate is then use to determine the intersecting curves as described above.
 * Once the \\(K(t)\\) curve and the curve for a given \\(f/c\\) ratio intersect, we would stop the testing.
 
 
@@ -267,19 +271,19 @@ saveGIF(sapply(t_grid,stoptime_at_time,testProcess=testProcess),
         movie.name=file.path(knitr::opts_knit$get("base.dir"),"downloads","animation.gif"))
 ```
 
-![]({{ site.url }}/downloads/animation.gif)
+![]({{ site.baseurl }}/downloads/animation.gif)
 
 
 # Discussion
 
-* Assuming that the time periods until discovery of the bugs are independently distributed appears convenient, butnot so realistic. The paper has a section about analysing the situation in case of different classes of bugs. However, fixing a bug often spawns new bugs. Hence, the bug-process could instead be more realistically  modelled by a self-exiciting process such as the Hawkes' process (Hawkes, 1971). 
+* Assuming that the time periods until discovery of the bugs are independently distributed appears convenient, butnot so realistic. The paper has a section about analysing the situation in case of different classes of bugs. However, fixing a bug often spawns new bugs. Hence, the bug-process could instead be more realistically  modelled by a self-exiciting process such as the Hawkes' process (Hawkes, 1971).
 
 * For Open Source Software and in particular R packages, which nobody might ever use, is \\(c\\) really bigger than zero? Ship and fix might be a good way to test, if a package actually addresses any kind of need?
 
-* How to extract the daily number of bugs found from your bug tracking ticket system? 
+* How to extract the daily number of bugs found from your bug tracking ticket system?
 
 # Literature
 
-* Dalal, S. R. and C. L. Mallows. “[When Should One Stop Testing Software?](http://www.jstor.org/stable/2289319)”. Journal of the American Statistical Association (1988), 83(403):872–879. 
+* Dalal, S. R. and C. L. Mallows. “[When Should One Stop Testing Software?](http://www.jstor.org/stable/2289319)”. Journal of the American Statistical Association (1988), 83(403):872–879.
 
 * Hawkes, A. G. "[Spectra of some self-exciting and mutually exciting point processes](http://biomet.oxfordjournals.org/content/58/1/83.abstract)". Biometrika (1971), 58(1):83-90.

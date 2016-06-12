@@ -23,8 +23,10 @@ local({
     # you may want to adapt them to your own website
 
     knitr::opts_knit$set(
+##    base.dir = '/Users/hoehle/Sandbox/Blog/',
+##    base.url = 'http://hoehleatsu.github.io/'
       base.dir = '/Users/hoehle/Sandbox/Blog/',
-      base.url = 'http://hoehleatsu.github.io/'
+      base.url = 'http://staff.math.su.se/hoehle/blog/'
     )
   }
   knitr::opts_knit$set(width = 70)
