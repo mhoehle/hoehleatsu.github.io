@@ -2,42 +2,38 @@
 layout: post
 title: "Optimal Choice - Mathematical Advice for Real Life"
 tags: [datascience, rstats, debugging]
+disqus_identifier: "8C3FF64F-EE03-4B67-A0E5-198A74E7E0B3"
 comments: true
 ---
 
 ```{r,include=FALSE,echo=FALSE,message=FALSE}
-knitr::opts_chunk$set(echo = TRUE,fig.width=6,fig.height=4)
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='')
 options(width=90)
 library("dplyr")
 library("ggplot2")
 library("tidyr")
+library("animation")
 ```
 
-<br>
-<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"/></a>
-This work is licensed under a <a rel="license"
-href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
-Attribution-ShareAlike 4.0 International License</a>.
-The markdown+Rknitr source code of this blog is available from [![github]({{ site.baseurl }}/images/GitHub-Mark-32px.png)](https://github.com/hoehleatsu/hoehleatsu.github.io).
-
+{% include license.html %}
 
 ## Abstract
 
 We discuss how to choose the optimal candidate from a rankable sequence of
 candidates arriving one by one. The candidates could for example be job applicants, princes, tinder profiles or flats. This **choice problem** is casted into the context of sequential
 decision making and is solved using optimal stopping theory. Two R functions are provided to
-compute optimal selection strategies for in two specific instances of the problem. Altogether,
+compute optimal selection strategies in two specific instances of the problem. Altogether,
 the mathematical inclined decision maker is given valuable open-source tools to support prudent
-real life decisions.
+real life decision making.
 
 # Introduction
 
-Life is full of choices. The prudent [decision maker](https://en.wikipedia.org/wiki/Decision-making) likes to rationally balance alternatives, assess uncertain outcomes, gather additional information and -- when ready -- pick the best action. A mathematical approach to such decision making under uncertainty is based on maximizing an adequate utility function subject to the identified stochasticity, e.g., by maximizing expected utility. The ultimate statistical guides to such [optimal decision making](https://en.wikipedia.org/wiki/Optimal_decision) are the books by @degroot1970 and @berger1985. [Influence diagrams](https://en.wikipedia.org/wiki/Influence_diagram) are compact representations of decision problems embedded within the graphical modelling toolset of Bayesian networks, see e.g. @jensen_nielsen2007.
+Life is full of choices. The prudent [decision maker](https://en.wikipedia.org/wiki/Decision-making) likes to rationally balance alternatives, assess uncertain outcomes, gather additional information and - when ready - pick the best action. A mathematical approach to such decision making under uncertainty is based on maximizing an adequate utility function subject to the identified stochasticity, e.g., by maximizing expected utility. The ultimate statistical guides to such [optimal decision making](https://en.wikipedia.org/wiki/Optimal_decision) are the books by @degroot1970 and @berger1985. [Influence diagrams](https://en.wikipedia.org/wiki/Influence_diagram) are compact representations of decision problems embedded within the graphical modelling toolset of Bayesian networks, see e.g. @jensen_nielsen2007.
 
-![]({{ site.baseurl }}/figure/source/2016-06-12-optimalChoice/indecisive-silhouette-300px-scaled.png "Source: https://openclipart.org/detail/171299/indecisive-silhouettesvg")
+<center>![]({{ site.baseurl }}/figure/source/2016-06-12-optimalChoice/indecisive-silhouette-300px-scaled.png "Source: https://openclipart.org/detail/171299/indecisive-silhouettesvg")</center>
 <br>
 
-In this note we consider the very simple -- but entertaining -- sequential decision problem known as the optimal choice, secretary, marriage, dowry or game of googol problem [@ferguson1989]. Scientific publishing about the [*optimal choice problem*](https://en.wikipedia.org/wiki/Secretary_problem) dates back to the 1950's and 1960's, but accounts of variations of the problem date back as far as [1613](https://en.wikipedia.org/wiki/Johannes_Kepler#Second_marriage).
+In this note we consider the very simple -- but entertaining -- sequential decision problem known as the optimal choice, secretary, marriage, dowry or game of googol problem [@ferguson1989]. Scientific publishing about the [**optimal choice problem**](https://en.wikipedia.org/wiki/Secretary_problem) dates back to the 1950's and 1960's, but accounts of variations of the problem date back as far as [1613](https://en.wikipedia.org/wiki/Johannes_Kepler#Second_marriage).
 To illustrate the problem we use the process of finding a real estate property in an overheated housing market as example.
 Of course, the human resource manager, wooed princess, [Johannes Kepler](http://www.npr.org/sections/krulwich/2014/05/15/312537965/how-to-marry-the-right-girl-a-mathematical-solution), tinder hustler as well as the mathematical enthusiast (subsets might overlap) should easily be able to adapt terminology to their needs.
 
@@ -121,7 +117,7 @@ r <- df %>% filter(phi==max(phi))  %>% select(i)  %>% unlist() %>% as.numeric()
 
 We can illustrate $\phi_n(r)$ as a function of $r$:
 
-```{r,PHIPLOT,echo=FALSE,fig.cap=''}
+```{r,PHIPLOT,echo=FALSE}
 idx <- which.max(df$phi)
 line <- data.frame(x=as.numeric(rep(df[idx,"i"],2)),y=as.numeric(c(0,df[idx,"phi"])))
 ggplot(df, aes(x=i,y=phi)) + geom_line() +
@@ -143,7 +139,7 @@ In the example we thus actually manage to select the best candidate! However, th
 In order to compare the decision strategy with later formulations we denote by $\mathbf{s}=(s_1,\ldots,s_n)$ a strategy which at time $i$ selects candidate $i$, if $y_i \leq s_i$.
 In other words, the above strategy for $n=`r n`$ is:
 ```{r}
-s <- c(rep(0,r-1),rep(1,n-(r-1)))
+s <- c(rep(0,r-1),rep(1,n-(r-1)-1),n)
 s
 ```
 And the selected candidate can easily found as
@@ -162,6 +158,7 @@ asymptotic probability of success, i.e. finding the overall best
 candidate, when following the such a procedure is also about $1/e$=`r sprintf("%.0f",1/exp(1)*100)`% [@gilbert_mosteller1966].
 Below we show a small table illustrating the precision of the asymptotic approximation.
 
+<center>
 ```{r, echo=FALSE}
 n_grid <- 10^(1:4)
 #Find optimal r
@@ -176,6 +173,7 @@ df <- data_frame("$n$"=n_grid,"$r-1$"=sapply(n_grid, find_r))
 df <- df %>% mutate("$(r-1)/n$ (%)"=`$r-1$`/`$n$`*100)
 knitr::kable(df)
 ```
+</center>
 
 We summarise our above findings for how to find the best candidate in the following function:
 
@@ -186,21 +184,21 @@ strategy_best <- function(n) {
   return(s)
 }
 
-strategy_best(n)
+(s <- strategy_best(n))
 ```
 
 ...and sometimes one animation says more than a lot of text and equations:
 
 ```{r,echo=FALSE,results='hide',message=FALSE}
-library("animation")
-plotFun <- function() {
-  stopIdx <- which(y <= s)
+plotFun <- function(s) {
+  stopIdx <- which.max(y <= s)
   for (i in 1:stopIdx) {
     plot(seq_len(i),y[1:i],type="p",xlim=c(1,n),ylim=c(0,max(y[1:stopIdx])+1),xlab="Candidate no.",ylab="Relative rank",pch=20,cex=2)
-    lines(seq_len(n),s+0,type="S",col="red",lty=2)
+    lines(seq_len(n),s,type="s",col="red",lty=2)
+    title("Candidates arriving one by one...")
   }
   lines( rep(stopIdx,2), c(0, y[stopIdx]),col="red",lty=1)
-  points(stopIdx,y[stopIdx],col="red",pch=20,cex=4)
+  points(stopIdx,y[stopIdx],col="red",pch=20,cex=2)
   text(stopIdx,0,paste0("Picked candidate ",stopIdx))
   invisible()
 }
@@ -210,8 +208,7 @@ curwd <- getwd()
 ##Assume we are in the _source subfolder. Not always the best approach
 setwd(file.path("..",path))
 print(getwd())
-par(mar=c(5,4,1,2)+0.1)
-saveGIF(plotFun(),movie.name="animation-select.gif",ani.width=600,ani.height=400)
+saveGIF(plotFun(s),movie.name="animation-select.gif",ani.width=600,ani.height=400)
 setwd(curwd)
 ```
 
@@ -222,9 +219,9 @@ setwd(curwd)
 
 As attractive as it may sound, finding the overall best candidate
 appears a pedant's criterion. In reality, you would typically settle with a lesser
-rank, as long as you know the candidate is good and it's yours to keep. Hence, finding a [satisficing](https://en.wikipedia.org/wiki/Satisficing) strategy to minimize, e.g., the expected rank appears a more prudent objective for the risk adverse decision maker. This problem was addressed by @chow_etal1964 - we shall follow their treatment in what follows.
+rank, as long as you know the candidate is good and it's yours to keep. Hence, finding a [satisficing](https://en.wikipedia.org/wiki/Satisficing) strategy to minimize, e.g., the expected rank appears a more prudent objective for the risk adverse decision maker. This problem was addressed by @chow_etal1964, we shall follow their treatment in what follows.
 
-In their paper they show that the relative ranks $y_1,\ldots,y_n$ are independent and the probability mass function of the $i$' relative rank is $P(y_i=j)=1/i$, $j=1,\ldots,i$. Furthermore, the sequence of relative ranks has the Markov property and, hence,
+In their paper they show that the relative ranks $y_1,\ldots,y_n$ are independent and the probability mass function of the $i$'s relative rank is $P(y_i=j)=1/i$, $j=1,\ldots,i$. Furthermore, the sequence of relative ranks has the Markov property and, hence,
 
 $$
 P(x_i=k|y_1=j_1,\ldots,y_{i-1}=j_{i-1},y_i=j) = P(x_i=k|y_i=j) =
@@ -237,21 +234,21 @@ $$
 E(x_i|y_i=j) = \sum_{k=1}^n k\cdot P(x_i=k|y_i=j) = \frac{n+1}{i+1} j.
 $$
 
-Let $c_i=c_i(n)$ be the minimal possible expected overall rank selected if we limit us to strategies of the following type: use the first $i$ candidates to generate a baseline and then, starting from $i+1$, select the first candidate better than the baseline.
-@chow_etal1964 now shows that $c_i$ can be computed by backwards recursion:
+Define $c_i=c_i(n)$ to be the minimal possible expected overall rank selected if we limit us to strategies of the following type: use the first $i$ candidates to generate a baseline and then, starting from $i+1$, select the first candidate better than the baseline.
+@chow_etal1964 shows that $c_i$ can be computed by backwards recursion: Beginning with
 
 $$
 c_{n-1} = E\left(\frac{n+1}{n+1}y_n\right) = \frac{1}{n} \sum_{j=1}^n
-j = \frac{n+1}{2}.
+j = \frac{n+1}{2},
 $$
-and for $i=n-1,n-2,\ldots,1$ let
+and then for $i=n-1,n-2,\ldots,1$ letting
 $$
 s_i     = \left[ \frac{i+1}{n+1} c_i\right] \\
 c_{i-1} = \frac{1}{i} \left[ \frac{n+1}{i+1} \cdot \frac{s_i(s_i+1)}{2}+ (i-s_i)c_i \right],
 $$
 where $[x]$ denotes the largest integer smaller or equal to $x$,
-i.e. `floor(x)`. Because at each decision time $i$ we select between
-either selecting the current candidate or proceeding with the next, we
+i.e. `floor(x)`. Because at each decision time $i$ we choose between
+either picking the current candidate or proceeding to the next candidate, we
 can evaluate the two options according to their expected payoff:
 
 
@@ -265,8 +262,8 @@ $$
 \min_{i\in \{1,\ldots,n\}} \{ E(x_i|y_i=j) \geq c_{i} \> \text{or} \> i=n \}.
 $$
 
-Implicitly, the above sequence of $s_i$'s computed actualy contains
-the obtained decision strategy [@chow_etal1964]. We transfer the procedure
+Implicitly, the above computed sequence of $s_i$'s actually contains
+the resulting decision strategy [@chow_etal1964]. We transfer the procedure
 into R code as follows:
 
 ```{r}
@@ -287,19 +284,64 @@ strategy_erank <- function(n) {
 
 print(strategy_erank(n),digits=4)
 ```
-Note that in the above, the first element of the vectors `s` and `c` is the element 0. Hence, $s_1$ is located at position two of the vector. It's interesting to observe that for the example one forms a baseline for the same amount of time, but after a while becomes more 'desperate' and accepts candidates who are not optimal.
-
+Note that in the above, the first element of the vectors `s` and `c` is the element 0. Hence, $s_1$ is located at position two of the vector. It is interesting to observe that for the example one forms a baseline for the same amount of time, but after a while becomes more **desperate** and accepts candidates who are not optimal.
 
 Finally, it is interesting to compare the two strategies for any $n$ we like, e.g. $n=15$:
 ```{r}
-rbind(best=strategy_best(n=15), erank=strategy_erank(n=15)$s[-1])
+(two_s <- rbind(best=strategy_best(n=15), erank=strategy_erank(n=15)$s[-1]))
 ```
-Again, with the expected minimizing rank strategy our training sample is slightly smaller. Furthermore, we again adapt our relative-rank criterion as one becomes more desperate towards the end.
+Again, for the expected minimizing rank strategy our training sample is slightly smaller than for the selecting the best strategy. Furthermore, we again adapt our relative-rank criterion as one becomes more desperate towards the end. Finally, we illustrate the two strategies on the $n=15$ sequence with ranks $x$ (and resulting relative ranks $y$):
+```{r,echo=FALSE}
+#Example with n=15
+set.seed(10)
+new_n <- 15L
+x <- sample(seq_len(new_n),size=new_n,replace=FALSE)
+y <- relrank(x)
+rbind(x=x,y=y)
+```
+
+```{r,echo=FALSE,results='hide',message=FALSE}
+#somewhat dirty function to make the plot -> future: do this with gganimate
+plotFun_bestanderank <- function(two_s) {
+  stopIdx <- apply(two_s, 1, function(s) which.max(y <= s))
+  for (i in 1:max(stopIdx)) {
+    plot(seq_len(i),y[1:i],type="p",xlim=c(1,new_n),ylim=c(0,max(y[1:max(stopIdx)])+1),xlab="Candidate no.",ylab="Relative rank",pch=20,cex=2)
+    matlines(seq_len(ncol(two_s)),t(two_s),type="s",col=c("red","orange"),lty=2,lwd=2)
+    legend(x="topleft",c("strategy for best candidate","strategy for max expected rank"),lty=2,lwd=2,col=c("red","orange"))
+    
+    stopped <- stopIdx <= i
+    for (j in 1:2) {
+      if (stopIdx[j] <= i) {
+        time <- stopIdx[j]
+        col <- ifelse(j==1,"red","orange")
+        lines( rep(time,2), c(0, y[time]),col=col,lty=1)
+        points(time,y[time],col=col,pch=20,cex=2)
+        if (stopIdx[1]==stopIdx[2]) points(time,y[time],col="orange",pch=20,cex=1)
+        text(time,1,paste0("Picked candidate ",time," (overall rank: ",x[time],")"),srt=90,adj=c(0,0.5))
+      }
+    }
+    title("Candidates arriving one by one...")
+  }     
+  invisible()
+}
+
+path <- knitr::opts_chunk$get("fig.path")
+print(path)
+curwd <- getwd()
+##Assume we are in the _source subfolder. Not always the best approach
+setwd(file.path("..",path))
+print(getwd())
+saveGIF(plotFun_bestanderank(two_s),movie.name="animation-select2.gif",ani.width=600,ani.height=400)
+setwd(curwd)
+```
+
+![]({{ site.baseurl }}/figure/source/2016-06-12-optimalChoice/animation-select2.gif)
+
 
 
 # Monte Carlo simulation
 
-Using classical Monte Carlo integration we can for a given $n$ compute the expected rank obtained by each of the strategies.
+Using Monte Carlo integration we can for a given $n$ compute the expected rank obtained by each of the strategies.
 
 ```{r,cache=TRUE}
 simulate <- function(s,n) {
@@ -318,8 +360,8 @@ res <- lapply(strategies, function(s) replicate(1e5, simulate(s=s,n=n)))
 ```
 
 From the results it becomes clear that the expected rank optimizing
-function on average takes a little less time to decide. Furthermore,
-the expected rank is somewhat better than for the overall best
+strategy on average takes a little less time before selecting a candidate. 
+Furthermore, the obtained expected rank is somewhat better than for the overall best
 decision strategy. We can also compare the Monte Carlo estimate
 `sim["erank","rank"]`=`r sprintf("%.3f",sim["erank","rank"])`  against
 the theoretical value of $c_0$=`r sprintf("%.3f",strategy_erank(n)$c[1])`.
@@ -333,7 +375,6 @@ these assumptions, but given that framework, the two functions `strategy_best`an
 `strategy_erank` give practical advice for a certain class of decisions. The
 methods are also clearly superior to [Sheldon Cooper's dice
 strategy](https://www.youtube.com/watch?v=BVIjqd8DBGw).
-
 Furthermore, assumptions 1-6 have
 been improved upon in a multitude of ways [@freeman1983]. For example:
 
@@ -345,16 +386,16 @@ been improved upon in a multitude of ways [@freeman1983]. For example:
 Altogether, such methods provide decision support: One can evaluate a
 potential decision and  compare results with other ways of reaching
 the decision. @frey_eichenberger1996 discuss that for marriage
-decisions empirical investigations show that individuals decide rather
+decisions investigations show that individuals decide rather
 quickly marrying the first reasonably serious partner. Where does this
 misalignment between theory and practice originate from? Some of it
 appears to be consequences of additional effects not addressed by the
 theory, e.g., little marginal gain of searching longer, *lemon
 effects*, satisficing, endowment effects, etc... **Life is
 complicated**. Finding a satisficing complexity representation is
-non-trivial -- even for mathematicians. :-)
+non-trivial - even for mathematicians. :-)
 
-```{r,echo=FALSE,fig.align='center',fig.width=4,fig.height=4,fig.cap=''}
+```{r,echo=FALSE,fig.align='center',fig.width=5,fig.height=5}
 #Modified code from Atte Tenkanen (http://users.utu.fi/attenka/julia_set.R).
 #See also http://fractalswithr.blogspot.de/
 

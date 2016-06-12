@@ -7,18 +7,14 @@ comments: true
 
 
 
-<br>
-<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"/></a><br/>
-This work is licensed under a <a rel="license"
-href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
-Attribution-ShareAlike 4.0 International License</a>.
-The markdown+Rknitr source code of this blog is available from [![github]({{ site.baseurl }}/images/GitHub-Mark-32px.png)](https://github.com/hoehleatsu/hoehleatsu.github.io).
+{% include license.html %}
+
 
 ## Abstract
 
-How does a statistician ensure that an analysis that comprises of outputting \\(N\\) results is
+How does a statistician ensure that an analysis that comprises of outputting $N$ results is
 correct? Can this be done without manually checking each of the results? Some statistical
-approaches for this task of **proof-calculation** are described -- e.g. capture-recapture
+approaches for this task of **proof-calculation** are described - e.g. capture-recapture
 estimation and sequential decision making.
 
 
@@ -51,8 +47,8 @@ to ensure correctness). However, spraying out numbers (even from the most beauti
 
 The on-going discussion of **reproducible research** aims at the core of this problem: How to
 ensure that your analysis re-producible and correct?
-As modern statistics becomes more and more programming oriented it appears natural to seek inspiration from the discipline of **software testing**. Another entertaining source of inspiration is the concept of optimal **proofreading**. This dates back to the 1970-1980s,  where the problem is formulated as the search for an optimal stopping rules for the process of checking a text consisting of \\(M\\) words -- see for example Yang et al. (1982).
-Periodically, the software development community re-visits these works -- see for example Hayes (2010). Singpurwalla and Wilson (1999) give a thorough exposition of
+As modern statistics becomes more and more programming oriented it appears natural to seek inspiration from the discipline of **software testing**. Another entertaining source of inspiration is the concept of optimal **proofreading**. This dates back to the 1970-1980s,  where the problem is formulated as the search for an optimal stopping rules for the process of checking a text consisting of $M$ words - see for example Yang et al. (1982).
+Periodically, the software development community re-visits these works - see for example Hayes (2010). Singpurwalla and Wilson (1999) give a thorough exposition of
 treating uncertainty in the context of software engineering by
 interfacing between statistics and software engineering.
 
@@ -72,12 +68,12 @@ single programmers coding independently and then compare results appears a bette
 way to quality-control critical code & analysis segments.
 
 Formalizing the validation task into mathematical notation, let's assume the
-report of interest consists of a total of \\(N\\) numbers. These numbers
+report of interest consists of a total of $N$ numbers. These numbers
 have a hierarchical structure, e.g., they relate to
 various parts of the analysis or are part of individual tables. Error
 search is performed along this hierarchical structure.  Good
 proofcalculation strategies follow the principles of
-software testing -- for example it may be worthwhile to remember
+software testing - for example it may be worthwhile to remember
 **Pareto's law**: 80 percent of the error are found in 20 percent of
 the modules to test. In other words: keep looking for errors at places
 where you already found some. Further hints on a well structured debugging
@@ -98,8 +94,8 @@ methodology section, e.g., use of an extra unintended covariate. Even
 worse are problems in the data-prepossessing step resulting in a wrong
 data foundation and, hence, invalidating a large part of the
 results. Altogether, a result be wrong in more than one way
-and one error can invalidate several results: the \\(M\\) results are just
-the final output -- what matters is what happens along your **analysis
+and one error can invalidate several results: the $M$ results are just
+the final output - what matters is what happens along your **analysis
 pipeline**. Detecting a wrong result is thus merely a symptom of a
 flawed pipeline. This also means that fixing the bug causing a number to
 be wrong does not necessarily ensure that the number is correct afterwards.
@@ -107,22 +103,22 @@ be wrong does not necessarily ensure that the number is correct afterwards.
 We summarise the above discussion by making the following
 simplifying abstractions:
 
-* The number of results which is wrong is a function of the number of errors \\(M\\). One error invalidates at least one result, but it can invalidate several jointly and errors can overlap thus invalidating the same number.
+* The number of results which is wrong is a function of the number of errors $M$. One error invalidates at least one result, but it can invalidate several jointly and errors can overlap thus invalidating the same number.
 
 * We deliberately keep the definition of an error vague, but mean a mechanism which causes a result to be wrong. The simplest form of a result is a number. The simplest error is a number which is wrong.
 
-* The hierarchical structure of the numbers and the intertwined code generating them is ignored. Instead, we simply assume there are \\(M\\) errors and assume that these errors are independent of each other.
+* The hierarchical structure of the numbers and the intertwined code generating them is ignored. Instead, we simply assume there are $M$ errors and assume that these errors are independent of each other.
 
 We shall now describe an estimation approach a decision theoretic approach for the problem.
 
 # Team Based Validation
 
 Consider the situation where a team of two statisticians together validate the same report. Say the team use a fixed amount of time (e.g. one day)
-trying to find as many errors in the numbers as possible. During the test period no errors are fixed -- this happens only after the end of the period. Let's assume that
- during the test period the two statistician found \\(n_1\\) and \\(n_2\\) wrong numbers,
-respectively. Let \\(0 \leq n_{12} \leq \min(n_1,n_2)\\) be the number of wrong numbers which were found by both statisticians.
+trying to find as many errors in the numbers as possible. During the test period no errors are fixed - this happens only after the end of the period. Let's assume that
+ during the test period the two statistician found $n_1$ and $n_2$ wrong numbers,
+respectively. Let $0 \leq n_{12} \leq \min(n_1,n_2)$ be the number of wrong numbers which were found by both statisticians.
 
-The data in alternative representation: Denote by \\(f_i, i=1,2\\) the number of wrong numbers found by \\(i\\) of the testers, i.e.
+The data in alternative representation: Denote by $f_i, i=1,2$ the number of wrong numbers found by $i$ of the testers, i.e.
 
 $$
 \begin{aligned}
@@ -132,8 +128,8 @@ f_2 &= n_{12}.
 $$
 
 These are the wrong numbers found by only one of the testers and by both testers, respectively.
-Let \\(S=f_1+f_2=n_1+n_2-n_{12}\\) be the total number of erroneous numbers found in the test phase. Assuming that we in the subsequent debugging phase
-are able to remove all these \\(S\\) errors, we are interested in estimating the number of remaining errors, i.e. \\(f_0\\) or, alternatively, the total number of errors \\(M=S+f_0\\).
+Let $S=f_1+f_2=n_1+n_2-n_{12}$ be the total number of erroneous numbers found in the test phase. Assuming that we in the subsequent debugging phase
+are able to remove all these $S$ errors, we are interested in estimating the number of remaining errors, i.e. $f_0$ or, alternatively, the total number of errors $M=S+f_0$.
 
 Assume that after the first day of proofcalculation the two statisticians obtain the following results:
 
@@ -148,7 +144,7 @@ testP
 ##   01 10 11
 ## 1  9 12  6
 ```
-i.e. \\(n_1=9\\), \\(n_2=12\\)  and \\(n_{12}=6\\). The total number of errors found so far is \\(S=27\\). In the above code we use index `01`, `10` and `11` specifying the results in two binary variable bit-notation -- this is necessary for the  `CARE1` package used in the next section.
+i.e. $n_1=9$, $n_2=12$  and $n_{12}=6$. The total number of errors found so far is $S=27$. In the above code we use index `01`, `10` and `11` specifying the results in two binary variable bit-notation - this is necessary for the  `CARE1` package used in the next section.
 
 
 
@@ -166,7 +162,7 @@ $$
 \hat{M} = \frac{n_1 \cdot n_2}{n_{12}}.
 $$
 
-Note that this estimator puts no upper-bound on \\(N\\). The estimator can be computed using, e.g., the [`CARE1`](https://cran.r-project.org/web/packages/CARE1/index.html) package:
+Note that this estimator puts no upper-bound on $N$. The estimator can be computed using, e.g., the [`CARE1`](https://cran.r-project.org/web/packages/CARE1/index.html) package:
 
 ```r
 (M.hat <- CARE1::estN.pair(testP))
@@ -176,7 +172,7 @@ Note that this estimator puts no upper-bound on \\(N\\). The estimator can be co
 ##  Petersen   Chapman        se       cil       ciu 
 ## 45.000000 42.428571  9.151781 32.259669 72.257758
 ```
-In other words, the estimated total number of errors is 45. A 95% confidence interval (CI) for \\(M\\) is 32-72 -- see the package documentation for details on the method for computing the (CI). To verify the computations one could alternatively compute the Lincoln-Petersen estimator manually:
+In other words, the estimated total number of errors is 45. A 95% confidence interval (CI) for $M$ is 32-72 - see the package documentation for details on the method for computing the (CI). To verify the computations one could alternatively compute the Lincoln-Petersen estimator manually:
 
 
 ```r
@@ -188,7 +184,7 @@ In other words, the estimated total number of errors is 45. A 95% confidence int
 ## 1 45
 ```
 
-Finally, an estimate on the number of errors left to find is \\(\hat{M}-S=18.0\\).
+Finally, an estimate on the number of errors left to find is $\hat{M}-S=18.0$.
 
 ## Heterogeneous Sampling Probabilities
 
@@ -199,7 +195,7 @@ $$
 $$
 
 The above estimator is based on the assumption that the two statisticians are equally good at spotting errors, but unlike for the Petersen-Lincoln estimator, errors can have heterogeneous detection probabilities. No specific parametric model for the detection is although required. An R implementation of the estimator is readily available as part of the [`SPECIES`](https://cran.r-project.org/web/packages/SPECIES/index.html) package.
-For this, data first need to be stored as a `data.frame` containing \\(f_1, f_2\\):
+For this, data first need to be stored as a `data.frame` containing $f_1, f_2$:
 
 ```r
 testPaggr <- data.frame(j=1:2,f_j=as.numeric(c(sum(testP[1:2]),testP[3])))
@@ -227,7 +223,7 @@ testPaggr
 ##      lb  ub
 ## [1,] 39 139
 ```
-In this case the estimator for the total number of errors is \\(\hat{M}=64\\) (95% CI: 39-139). Again see the package documentation for methodological details.
+In this case the estimator for the total number of errors is $\hat{M}$=64 (95% CI: 39-139). Again see the package documentation for methodological details.
 
 <!-- ### Manual computation -->
 
@@ -241,40 +237,40 @@ In this case the estimator for the total number of errors is \\(\hat{M}=64\\) (9
 # Knowing when to Stop
 
 Whereas the above estimates are nice to know, they give little guidance on how, after the first day of testing, to decide between the following two alternatives: continue validating numbers for another day or stop
-the testing process and ship the report. We address this sequential decision making problem by casting it into a decision theoretic framework. Following the work of Ferguson and Hardwick (1989): let's assume that each futher round of proofcalculation costs an amount of \\(C_p>0\\) units and that each error undetected after additional \\(n\\) rounds of proofcalculation costs \\(c_n>0\\) units. Treating the total number of wrong results  \\(M\\) as a random variable and letting \\(X_1,\ldots,X_n\\), be the number of wrong results found in each of the additional proofcalculation rounds \\(1,\ldots,n\\), we know that \\(X_i\in N_0\\) and \\(\sum_{j=1}^n X_j \leq N\\). One then formulates the conditional expected loss after \\(n, n=0, 1, 2, \ldots,\\) additional rounds of proofcalculation:
+the testing process and ship the report. We address this sequential decision making problem by casting it into a decision theoretic framework. Following the work of Ferguson and Hardwick (1989): let's assume that each futher round of proofcalculation costs an amount of $C_p>0$ units and that each error undetected after additional $n$ rounds of proofcalculation costs $c_n>0$ units. Treating the total number of wrong results  $M$ as a random variable and letting $X_1,\ldots,X_n$, be the number of wrong results found in each of the additional proofcalculation rounds $1,\ldots,n$, we know that $X_i\in \mathbb{N}_0$ and $\sum_{j=1}^n X_j \leq N$. One then formulates the conditional expected loss after $n, n=0, 1, 2, \ldots,$ additional rounds of proofcalculation:
 
 $$
 Y_n = n C_p + c_n E(M_n|X_1,\ldots,X_n),
 $$
 
-where \\(M_n = M -(\sum_{j=1}^n X_j)\\).  If we further assume that in the \\((n+1)\\)'th proofcalculation round errors are detected independently of each other with probability \\(p_n, 0 \leq p_n \leq 1\\) and \\(p_n\\) being a known number we obtain that
+where $M_n = M -(\sum_{j=1}^n X_j)$.  If we further assume that in the $(n+1)$'th proofcalculation round errors are detected independently of each other with probability $p_n, 0 \leq p_n \leq 1$ and $p_n$ being a known number we obtain that
 
 $$
 X_{n+1} \>|\> M, X_1,\ldots,X_n \sim \text{Bin}(M_n, p_n), \quad n=0,1,2,\ldots.
 $$
 
-Under the further assumption that \\(M\sim \text{Po}(\lambda)\\) with \\(\lambda>0\\) being known,  one can show that the loss function is independent of the observations (Ferguson and Hardwick, 1989), i.e.
+Under the further assumption that $M\sim \text{Po}(\lambda)$ with $\lambda>0$ being known,  one can show that the loss function is independent of the observations (Ferguson and Hardwick, 1989), i.e.
 
 $$
 Y_n = n C_p + c_n \lambda \prod_{j=0}^{n-1} (1-p_j), \quad n=0,1,2,\ldots.
 $$
 
-The above Poisson assumption seems to be an acceptable approximation if the total number of results \\(M\\) is large and the probability of a result being wrong is low. In this case the optimal stopping rule is given by:
+The above Poisson assumption seems to be an acceptable approximation if the total number of results $M$ is large and the probability of a result being wrong is low. In this case the optimal stopping rule is given by:
 
 $$
 n_{\text{stop}} = \min_{n\geq 0} Y_n.
 $$
 
-One limitation of the above approach is that we have used a **guesstimate** on how  the detection probability \\(p_n\\) evolves over time. An extension would be to sequentially estimate this parameter from the obtained results.
+One limitation of the above approach is that we have used a **guesstimate** on how  the detection probability $p_n$ evolves over time. An extension would be to sequentially estimate this parameter from the obtained results.
 This goes along the lines of Dalal and Mallows (1988) which discuss
-when to stop testing your software -- see the following
-[blog entry]({{ site.url }}/2016/05/06/when2stop.html) for a short statistical treatment of their approach.
+when to stop testing your software - see the following
+[blog entry]({{ site.baseurl }}/2016/05/06/when2stop.html) for a short statistical treatment of their approach.
 
 ### Numerical example
 
 We consider a setup where the costly errors have substantial ramifications and thus
 are easy to detect early on. As time passes on the errors become
-more difficult to detect. This is reflected by the subsequent choices of \\(p_n\\) and \\(c_n\\) -- see below. Furthermore, the expected number of bugs is taken to be the non-homogeneous capture-recapture estimate of the remaining errors. This coupling of the two procedures is somewhat pragmatic: it does not include the first round of proofcalculation in the decision making as this is used to estimate \\(\lambda\\). Furthermore, no estimation uncertainty in \\(\lambda\\) from this stage is transferred to the subsequent stages.
+more difficult to detect. This is reflected by the subsequent choices of $p_n$ and $c_n$ - see below. Furthermore, the expected number of bugs is taken to be the non-homogeneous capture-recapture estimate of the remaining errors. This coupling of the two procedures is somewhat pragmatic: it does not include the first round of proofcalculation in the decision making as this is used to estimate $\lambda$. Furthermore, no estimation uncertainty in $\lambda$ from this stage is transferred to the subsequent stages.
 
 
 ```r
@@ -306,7 +302,7 @@ df <- data.frame(n=1:20) %>% mutate(Yn=Yn(n),cn=cn(n),pn=pj(n-1))
 
 The above choice of parameters leads to the following functional forms:
 
-![plot of chunk unnamed-chunk-7](http://staff.math.su.se/hoehle/blog/figure/source/2016-05-22-proofCalculation/unnamed-chunk-7-1.png)
+![](http://staff.math.su.se/hoehle/blog/figure/source/2016-05-22-proofCalculation/unnamed-chunk-7-1.png)
 
 
 
@@ -320,13 +316,13 @@ df %>% filter(rank(Yn) == 1) %>% select(n,Yn)
 ##   n       Yn
 ## 1 5 6.457426
 ```
-In other words, one should test after \\(n_{\text{stop}}=5\\) additional rounds.
+In other words, one should test after $n_{\text{stop}}=5$ additional rounds.
 
 
 # Discussion
 
 Is any of the above **useful**?
-Well, I have not heard about such approaches being used seriously in software engineering. The presented methods narrow down a complex problem down using assumptions in order to make the problem mathematically tractable. You may not agree with the assumptions as, e.g., Bolton (2010) -- yet, such assumptions are a good way to get started. The point is that statisticians appear to be very good at enlightening others about the **virtues of statistics** (repeat your measurements, have a sampling plan, pantomimic acts visualizing the horror of p-values). However, when it comes to our own analyses, we are surprisingly statistics-illiterate at times.
+Well, I have not heard about such approaches being used seriously in software engineering. The presented methods narrow down a complex problem down using assumptions in order to make the problem mathematically tractable. You may not agree with the assumptions as, e.g., Bolton (2010) - yet, such assumptions are a good way to get started. The point is that statisticians appear to be very good at enlightening others about the **virtues of statistics** (repeat your measurements, have a sampling plan, pantomimic acts visualizing the horror of p-values). However, when it comes to our own analyses, we are surprisingly statistics-illiterate at times.
 
 
 ![]({{ site.baseurl }}/figure/source/2016-05-22-proofCalculation/look_for_the_pattern-300px.png "Source: https://openclipart.org/detail/248382/dropping-numbers")

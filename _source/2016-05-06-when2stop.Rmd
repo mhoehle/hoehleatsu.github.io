@@ -6,12 +6,16 @@ comments: true
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,fig.width=6,fig.height=4)
 library("ggplot2")
 library("dplyr")
 library("animation")
+
+##knitr setup
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='')
+options(width=90)
 ```
 
+{% include license.html %}
 
 # Abstract
 
@@ -22,17 +26,10 @@ shipping. The problem is translated into a sequential decision problem, where an
 We sketch the main result of their paper and apply their stopping rule to an example
 using R code.
 
-<br>
-<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"/></a><br/>
-This work is licensed under a <a rel="license"
-href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
-Attribution-ShareAlike 4.0 International License</a>.
-The markdown+Rknitr source code of this blog is available from [![github]({{ site.baseurl }}/images/GitHub-Mark-32px.png)](https://github.com/hoehleatsu/hoehleatsu.github.io).
-
 # Introduction
 
 Imagine that a team of developers of a new R package needs to structure a test
-plan before the release of the package to CRAN. Let \\(N\\) be the (unknown) number
+plan before the release of the package to CRAN. Let $N$ be the (unknown) number
 of bugs in the package. The team starts their testing at time zero and subsequently
 find an increasing number of bugs as the test period passes by. The figure below
 shows such a testing process mimicking the example
@@ -69,44 +66,44 @@ We see that the number of bugs appears to level off. The question is now *how lo
 
 In order to answer the above question the following notation and assumptions are introduced:
 
-* The total number of bugs is assumed to be Poisson distributed $$N \sim \text{Po}(\lambda).$$ However, practice shows that the number of bugs in different modules has more variation that given by the Poisson distribution. Hence, let \\(\lambda \sim \text{Ga}(\alpha,\beta)\\) and thus the marginal distribution of \\(N\\) is negative binomial.
+* The total number of bugs is assumed to be Poisson distributed $$N \sim \text{Po}(\lambda).$$ However, practice shows that the number of bugs in different modules has more variation that given by the Poisson distribution. Hence, let $\lambda \sim \text{Ga}(\alpha,\beta)$ and thus the marginal distribution of $N$ is negative binomial.
 
-* The amount of time until discovery of each bug during the testing period is distributed according to the known distribution \\(G\\) with density \\(g\\). Furthermore, it can be assumed that the discoveries times are independent of each other.
-Example : The simplest example is to assume that the discovery distribution is exponential, i.e. \\(g(t)=\mu\exp(-\mu t)\\),
+* The amount of time until discovery of each bug during the testing period is distributed according to the known distribution $G$ with density $g$. Furthermore, it can be assumed that the discoveries times are independent of each other.
+Example : The simplest example is to assume that the discovery distribution is exponential, i.e. $g(t)=\mu\exp(-\mu t)$,
 where we measure time in number of person-days spent on the testing.
-Thus, \\(1/\mu\\) is the expected time until discovery of a bug.
+Thus, $1/\mu$ is the expected time until discovery of a bug.
 
-* Let \\(K(t)\\) be the total number of bugs found up to time \\(t\\). In other words, if \\(t_1,\ldots,t_N\\) denote the discovery times of the \\(N\\) bugs then
+* Let $K(t)$ be the total number of bugs found up to time $t$. In other words, if $t_1,\ldots,t_N$ denote the discovery times of the $N$ bugs then
 
     $$K(t)=\sum_{i=1}^N I(t_i \leq t),$$
 
-where \\(I(\cdot)\\) is the indicator function. However, note that at time point \\(t\\), only bugs with a discovery time smaller or equal to \\(t\\) would already have been observed and, hence, would be known to exist (right-truncation). Thus, even though \\(K(t)\\) is proportional to the empirical cumulative distribution function of the discovery distribution \\(\hat{G}(t)\\), the factor of proportionality is \\(N\\), which is unknown at the time \\(t\\).
+where $I(\cdot)$ is the indicator function. However, note that at time point $t$, only bugs with a discovery time smaller or equal to $t$ would already have been observed and, hence, would be known to exist (right-truncation). Thus, even though $K(t)$ is proportional to the empirical cumulative distribution function of the discovery distribution $\hat{G}(t)$, the factor of proportionality is $N$, which is unknown at the time $t$.
 
-Note: The paper actually showns that the Poisson-Gamma distribution assumption for \\(N\\) is not crucial. An asymptotic argument is given that as long as the process does not terminate quickly (i.e. the number of bugs is relatively large) the results hold for more general distributions of \\(N\\). Hence, in the analysis that follows, the parameter \\(\lambda\\) is not needed as we only proceed with the asymptotic approach of the paper.
+Note: The paper actually showns that the Poisson-Gamma distribution assumption for $N$ is not crucial. An asymptotic argument is given that as long as the process does not terminate quickly (i.e. the number of bugs is relatively large) the results hold for more general distributions of $N$. Hence, in the analysis that follows, the parameter $\lambda$ is not needed as we only proceed with the asymptotic approach of the paper.
 
 ### Loss function
 In order to make a decision about when to stop testing based on expected loss/gain we need two further assumptions:
 
-* Let \\(c\\) be the net cost of fixing a bug *after* release of the software instead of *before* the release. Hence, \\(c\\) is the price of fixing a bug after release minus the price of fixing a bug before release. The practice of software development tells us that \\(c>0\\).
+* Let $c$ be the net cost of fixing a bug *after* release of the software instead of *before* the release. Hence, $c$ is the price of fixing a bug after release minus the price of fixing a bug before release. The practice of software development tells us that $c>0$.
 
-* Let \\(f(t)\\) be a known non-negative and monotone increasing function reflecting the cost of testing plus the opportunity cost of not releasing the software up to time \\(t\\). Note that the cost of testing does not contain the costs of fixing bugs, once they are found. A simple example for \\(f\\) is the linear loss function, i.e. \\(f(t) = f \cdot t\\), where \\(f>0\\) is a known constant.
+* Let $f(t)$ be a known non-negative and monotone increasing function reflecting the cost of testing plus the opportunity cost of not releasing the software up to time $t$. Note that the cost of testing does not contain the costs of fixing bugs, once they are found. A simple example for $f$ is the linear loss function, i.e. $f(t) = f \cdot t$, where $f>0$ is a known constant.
 
 The above assumptions in summary imply the analysis of the following loss function:
 
 $$L(t,K(t),N) = f(t) - c K(t) + b\cdot N.$$
 
-As time passes, one obtains information about the number of bugs found through \\(K(t)\\). At each time point the following decision has to be made: stop testing & ship the package or continue to test. Seen in a statistical context this can
+As time passes, one obtains information about the number of bugs found through $K(t)$. At each time point the following decision has to be made: stop testing & ship the package or continue to test. Seen in a statistical context this can
 be rephrased into formulating a stopping rule such that the above loss function is minimized.
 
 ### Optimal Stopping Time
 
-In the simple model with exponential discovery times having rate \\(\mu\\), the stopping rule  stated as equation (4.6) of Dalal and Mallows (1988) is to stop as soon as the number, \\(k\\), of bugs found at time \\(t\\), i.e. \\(K(t)=k\\), is such that:
+In the simple model with exponential discovery times having rate $\mu$, the stopping rule  stated as equation (4.6) of Dalal and Mallows (1988) is to stop as soon as the number, $k$, of bugs found at time $t$, i.e. $K(t)=k$, is such that:
 
 $$
 \frac{f}{c}\cdot \frac{\exp(\mu t) -1}{\mu} \geq k.
 $$
 
-At this time point, the estimated number of bugs left is Poisson with mean \\(f/(c\mu)\\).
+At this time point, the estimated number of bugs left is Poisson with mean $f/(c\mu)$.
 
 ```{r}
 ##########################################################################
@@ -123,15 +120,15 @@ lhs <- function(fdivc,mu,testProcess) {
 }
 ```
 
-In the above, the quantity \\(c/f\\) measures the amount saved by finding a bug (and hence fixing it before release) measured in units of testing days. As an example: if \\(c/f=0.2 \Leftrightarrow f/c=5\\) then the gain in detecting a bug before release corresponds to 0.2
-testing days. Throughout the subsequent example we shall work with both \\(c/f=0.2\\)
-(ship early and fix later is acceptable) and \\(c/f=1\\) (high costs of fixing bugs afte
+In the above, the quantity $c/f$ measures the amount saved by finding a bug (and hence fixing it before release) measured in units of testing days. As an example: if $c/f=0.2 \Leftrightarrow f/c=5$ then the gain in detecting a bug before release corresponds to 0.2
+testing days. Throughout the subsequent example we shall work with both $c/f=0.2$
+(ship early and fix later is acceptable) and $c/f=1$ (high costs of fixing bugs afte
 r the release).
 
 
 # Example
 
-Taking the testing data from the above figure, the first step consists of estimating \\(\mu\\) from the available data. It is important to realize that the available data are a right-truncated sample, because only errors with a
+Taking the testing data from the above figure, the first step consists of estimating $\mu$ from the available data. It is important to realize that the available data are a right-truncated sample, because only errors with a
 discovery time smaller than the current observation time are observed.
 Furthermore, if only data on the daily number of bug discoveries are available, then
 the data are also interval censored. We set up the loglikelihood function accordingly.
@@ -162,7 +159,7 @@ c(mu=mu, mu.hat=mu.hat)
 ```
 
 Note that we in the above used all data obtained over the entire testing
-period. In practice, one would instead sequentially update the \\(\mu\\) estimate each day as the information arrives -- see the animated sequential procedure in the next section.
+period. In practice, one would instead sequentially update the $\mu$ estimate each day as the information arrives -- see the animated sequential procedure in the next section.
 
 
 ```{r,fig.align='center',warning=FALSE,echo=FALSE}
@@ -246,17 +243,17 @@ stopTime$stopTimefc5
 
 ```
 
-The optimal stopping time in the example, in the case of \\(f/c=5\\), is to stop the testing after `r stopTime$stopTimefc5$t` testing days. An estimate of the expected number of remaining bugs at this stopping time would be `r sprintf("%.1f",5/mu.hat)`, which appears to agree quite well with the empirical data -- actually, they were simulated with \\(N=`r N`\\).
+The optimal stopping time in the example, in the case of $f/c=5$, is to stop the testing after `r stopTime$stopTimefc5$t` testing days. An estimate of the expected number of remaining bugs at this stopping time would be `r sprintf("%.1f",5/mu.hat)`, which appears to agree quite well with the empirical data -- actually, they were simulated with $N=`r N`$.
 
 # Animation
 
 The animation belows shows the above computations in sequential fashion:
 
-* At a given time \\(t\\) of the testing process, \\(\hat{\mu}\\) is
+* At a given time $t$ of the testing process, $\hat{\mu}$ is
 determined from the curve of cumulative bugs found up to time
-\\(t\\).
-* This  \\(\hat{\mu}\\) estimate is then use to determine the intersecting curves as described above.
-* Once the \\(K(t)\\) curve and the curve for a given \\(f/c\\) ratio intersect, we would stop the testing.
+$t$.
+* This  $\hat{\mu}$ estimate is then use to determine the intersecting curves as described above.
+* Once the $K(t)$ curve and the curve for a given $f/c$ ratio intersect, we would stop the testing.
 
 
 ```{r,eval=FALSE,warning=FALSE,echo=FALSE,results='hide',message=FALSE,fig.width=6,fig.height=4}
@@ -278,7 +275,7 @@ saveGIF(sapply(t_grid,stoptime_at_time,testProcess=testProcess),
 
 * Assuming that the time periods until discovery of the bugs are independently distributed appears convenient, butnot so realistic. The paper has a section about analysing the situation in case of different classes of bugs. However, fixing a bug often spawns new bugs. Hence, the bug-process could instead be more realistically  modelled by a self-exiciting process such as the Hawkes' process (Hawkes, 1971).
 
-* For Open Source Software and in particular R packages, which nobody might ever use, is \\(c\\) really bigger than zero? Ship and fix might be a good way to test, if a package actually addresses any kind of need?
+* For Open Source Software and in particular R packages, which nobody might ever use, is $c$ really bigger than zero? Ship and fix might be a good way to test, if a package actually addresses any kind of need?
 
 * How to extract the daily number of bugs found from your bug tracking ticket system?
 
