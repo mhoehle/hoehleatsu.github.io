@@ -43,13 +43,13 @@ The rules of the game are as follows:
 1. You want to choose exactly one property (say, buy a **flat**) within a given period of time
 2. The number of candidate flats available on the market and inspectable in the given time period is assumed to be known. We shall denote this number by $n$.
 3. The flats are assumed to be rankable from best (rank 1) to worst
-(rank $n$)) without ties.
+(rank $n$) without ties.
 4. The flats can only be inspected sequentially and in some random order.
 5. After seeing a flat one has to decide whether to pick this flat or not.
 6. Once a flat is rejected, this choice is permanent and cannot be re-called.
 
 Your objective is to find the *best candidate* among the $n$ flats. Less will not work for you, i.e. you have no interest in the 2nd best candidate or any other worse candidate.
-Furthermore, the decision at each time is to select this flat or reject it and inspect a new flat. Which flat to pick thus at each time point is based only on the flat's relative rank within the set of flats seen up to now. Our goal is to find a strategy s.t. we end up with the best flat, i.e. rank 1, among all of the $n$ flats. Note that simply looking at all candidates and then picking the best one will not work due to rules 5 and 6.
+Furthermore, the decision you have to make at each decision time is to either select the current candidate flat or reject it and inspect futher candidate flats. Which flat to pick thus at each time point is based only on the flat's relative rank within the set of flats seen up to now. Our goal is to find a strategy s.t. we end up with the best flat, i.e. rank 1, among all of the $n$ flats. Note that simply looking at all candidates and then picking the best one will not work due to rules 5 and 6.
 
 ## Mathematical notation
 

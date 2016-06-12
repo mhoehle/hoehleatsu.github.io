@@ -6,8 +6,8 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 13 Jun 2016 00:26:02 +0200</pubDate>
-    <lastBuildDate>Mon, 13 Jun 2016 00:26:02 +0200</lastBuildDate>
+    <pubDate>Mon, 13 Jun 2016 01:20:32 +0200</pubDate>
+    <lastBuildDate>Mon, 13 Jun 2016 01:20:32 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
@@ -28,12 +28,12 @@ href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Comm
 &lt;ol type=&quot;1&quot;&gt;
 &lt;li&gt;You want to choose exactly one property (say, buy a &lt;strong&gt;flat&lt;/strong&gt;) within a given period of time&lt;/li&gt;
 &lt;li&gt;The number of candidate flats available on the market and inspectable in the given time period is assumed to be known. We shall denote this number by &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt;.&lt;/li&gt;
-&lt;li&gt;The flats are assumed to be rankable from best (rank 1) to worst (rank &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt;)) without ties.&lt;/li&gt;
+&lt;li&gt;The flats are assumed to be rankable from best (rank 1) to worst (rank &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt;) without ties.&lt;/li&gt;
 &lt;li&gt;The flats can only be inspected sequentially and in some random order.&lt;/li&gt;
 &lt;li&gt;After seeing a flat one has to decide whether to pick this flat or not.&lt;/li&gt;
 &lt;li&gt;Once a flat is rejected, this choice is permanent and cannot be re-called.&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;Your objective is to find the &lt;em&gt;best candidate&lt;/em&gt; among the &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; flats. Less will not work for you, i.e. you have no interest in the 2nd best candidate or any other worse candidate. Furthermore, the decision at each time is to select this flat or reject it and inspect a new flat. Which flat to pick thus at each time point is based only on the flat&#39;s relative rank within the set of flats seen up to now. Our goal is to find a strategy s.t. we end up with the best flat, i.e. rank 1, among all of the &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; flats. Note that simply looking at all candidates and then picking the best one will not work due to rules 5 and 6.&lt;/p&gt;
+&lt;p&gt;Your objective is to find the &lt;em&gt;best candidate&lt;/em&gt; among the &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; flats. Less will not work for you, i.e. you have no interest in the 2nd best candidate or any other worse candidate. Furthermore, the decision you have to make at each decision time is to either select the current candidate flat or reject it and inspect futher candidate flats. Which flat to pick thus at each time point is based only on the flat&#39;s relative rank within the set of flats seen up to now. Our goal is to find a strategy s.t. we end up with the best flat, i.e. rank 1, among all of the &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; flats. Note that simply looking at all candidates and then picking the best one will not work due to rules 5 and 6.&lt;/p&gt;
 &lt;h2 id=&quot;mathematical-notation&quot;&gt;Mathematical notation&lt;/h2&gt;
 &lt;p&gt;Following &lt;span class=&quot;citation&quot; data-cites=&quot;chow_etal1964&quot;&gt;Chow et al. (1964)&lt;/span&gt; we introduce the following mathematical notation: Let &lt;span class=&quot;math inline&quot;&gt;\(x_1,\ldots, x_n\)&lt;/span&gt; be a permutation of the integers between 1 and &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt;. At the time we are considering the &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt;&#39;th candidate in our ordered sequence we have seen the candidates &lt;span class=&quot;math inline&quot;&gt;\(1,\ldots,i\)&lt;/span&gt;. Let &lt;span class=&quot;math inline&quot;&gt;\(y_i\)&lt;/span&gt;, &lt;span class=&quot;math inline&quot;&gt;\(y_i \in \{1,\ldots,i\}\)&lt;/span&gt;, denote the rank of the &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt;&#39;th candidate among these &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt; candidates We call this the &lt;strong&gt;relative rank&lt;/strong&gt; at time &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt; of the &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt;&#39;th candidate. Note that the relative rank can be 1 even though a candidates&#39; &lt;strong&gt;overall rank&lt;/strong&gt; is not 1. This is a consequence of the overall rank being only partially revealed by knowing more of the candidates.&lt;/p&gt;
 &lt;p&gt;A code example illustrates the concept:&lt;/p&gt;
