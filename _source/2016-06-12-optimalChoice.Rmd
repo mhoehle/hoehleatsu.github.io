@@ -192,12 +192,13 @@ strategy_best <- function(n) {
 plotFun <- function(s) {
   stopIdx <- which.max(y <= s)
   for (i in 1:stopIdx) {
-    plot(seq_len(i),y[1:i],type="p",xlim=c(1,n),ylim=c(0,max(y[1:stopIdx])+1),xlab="Candidate no.",ylab="Relative rank",pch=20,cex=2)
+    plot(seq_len(i),y[1:i],type="p",xlim=c(1,n),ylim=c(0,max(y[1:stopIdx])+1),xlab="Candidate no.",ylab="Relative rank",pch=20,cex=4)
     lines(seq_len(n),s,type="s",col="red",lty=2)
     title("Candidates arriving one by one...")
+     legend(x="topleft",c("strategy for best candidate"),lty=2,lwd=1,col=c("red"))
   }
   lines( rep(stopIdx,2), c(0, y[stopIdx]),col="red",lty=1)
-  points(stopIdx,y[stopIdx],col="red",pch=20,cex=2)
+  points(stopIdx,y[stopIdx],col="red",pch=20,cex=4)
   text(stopIdx,0,paste0("Picked candidate ",stopIdx))
   invisible()
 }
@@ -304,7 +305,7 @@ rbind(x=x,y=y)
 plotFun_bestanderank <- function(two_s) {
   stopIdx <- apply(two_s, 1, function(s) which.max(y <= s))
   for (i in 1:max(stopIdx)) {
-    plot(seq_len(i),y[1:i],type="p",xlim=c(1,new_n),ylim=c(0,max(y[1:max(stopIdx)])+1),xlab="Candidate no.",ylab="Relative rank",pch=20,cex=2)
+    plot(seq_len(i),y[1:i],type="p",xlim=c(1,new_n),ylim=c(0,max(y[1:max(stopIdx)])+1),xlab="Candidate no.",ylab="Relative rank",pch=20,cex=4)
     matlines(seq_len(ncol(two_s)),t(two_s),type="s",col=c("red","orange"),lty=2,lwd=2)
     legend(x="topleft",c("strategy for best candidate","strategy for max expected rank"),lty=2,lwd=2,col=c("red","orange"))
     
@@ -314,8 +315,8 @@ plotFun_bestanderank <- function(two_s) {
         time <- stopIdx[j]
         col <- ifelse(j==1,"red","orange")
         lines( rep(time,2), c(0, y[time]),col=col,lty=1)
-        points(time,y[time],col=col,pch=20,cex=2)
-        if (stopIdx[1]==stopIdx[2]) points(time,y[time],col="orange",pch=20,cex=1)
+        points(time,y[time],col=col,pch=20,cex=4)
+        if (stopIdx[1]==stopIdx[2]) points(time,y[time],col="orange",pch=20,cex=2)
         text(time,1,paste0("Picked candidate ",time," (overall rank: ",x[time],")"),srt=90,adj=c(0,0.5))
       }
     }
