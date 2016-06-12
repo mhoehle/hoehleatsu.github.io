@@ -19,8 +19,8 @@ gems:
    - jekyll-pandoc
 
 # Build settings
-markdown: kramdown
-# markdown: Pandoc
+#markdown: kramdown
+markdown: Pandoc
 
 pandoc:
   extensions:
