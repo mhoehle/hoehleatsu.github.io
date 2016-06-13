@@ -307,8 +307,8 @@ plotFun_bestanderank <- function(two_s) {
   for (i in 1:max(stopIdx)) {
     plot(seq_len(i),y[1:i],type="p",xlim=c(1,new_n),ylim=c(0,max(y[1:max(stopIdx)])+1),xlab="Candidate no.",ylab="Relative rank",pch=20,cex=4)
     matlines(seq_len(ncol(two_s)),t(two_s),type="s",col=c("red","orange"),lty=2,lwd=2)
-    legend(x="topleft",c("strategy for best candidate","strategy for max expected rank"),lty=2,lwd=2,col=c("red","orange"))
-    
+    legend(x="topleft",c("strategy for best candidate","strategy for min expected rank"),lty=2,lwd=2,col=c("red","orange"))
+
     stopped <- stopIdx <= i
     for (j in 1:2) {
       if (stopIdx[j] <= i) {
@@ -321,7 +321,7 @@ plotFun_bestanderank <- function(two_s) {
       }
     }
     title("Candidates arriving one by one...")
-  }     
+  }
   invisible()
 }
 
@@ -360,7 +360,7 @@ res <- lapply(strategies, function(s) replicate(1e5, simulate(s=s,n=n)))
 ```
 
 From the results it becomes clear that the expected rank optimizing
-strategy on average takes a little less time before selecting a candidate. 
+strategy on average takes a little less time before selecting a candidate.
 Furthermore, the obtained expected rank is somewhat better than for the overall best
 decision strategy. We can also compare the Monte Carlo estimate
 `sim["erank","rank"]`=`r sprintf("%.3f",sim["erank","rank"])`  against

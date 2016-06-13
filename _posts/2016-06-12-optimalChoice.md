@@ -341,7 +341,7 @@ res <- lapply(strategies, function(s) replicate(1e5, simulate(s=s,n=n)))
 ```
 
 From the results it becomes clear that the expected rank optimizing
-strategy on average takes a little less time before selecting a candidate. 
+strategy on average takes a little less time before selecting a candidate.
 Furthermore, the obtained expected rank is somewhat better than for the overall best
 decision strategy. We can also compare the Monte Carlo estimate
 `sim["erank","rank"]`=2.556  against
