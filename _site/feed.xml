@@ -6,8 +6,8 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 13 Jun 2016 08:28:24 +0200</pubDate>
-    <lastBuildDate>Mon, 13 Jun 2016 08:28:24 +0200</lastBuildDate>
+    <pubDate>Mon, 13 Jun 2016 22:28:29 +0200</pubDate>
+    <lastBuildDate>Mon, 13 Jun 2016 22:28:29 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
@@ -233,7 +233,7 @@ res &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot
 &lt;li&gt;Candidate score originating from a known underlying distribution, e.g. the uniform or the normal&lt;/li&gt;
 &lt;li&gt;Candidate score originating from an &lt;span class=&quot;math inline&quot;&gt;\(U(a,b)\)&lt;/span&gt; uniform with unknown &lt;span class=&quot;math inline&quot;&gt;\(a&amp;lt;b\)&lt;/span&gt;, but with a conjugate and sequentially updated bivariate Pareto prior on &lt;span class=&quot;math inline&quot;&gt;\((a,b)\)&lt;/span&gt;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Altogether, such methods provide decision support: One can evaluate a potential decision and compare results with other ways of reaching the decision. &lt;span class=&quot;citation&quot; data-cites=&quot;frey_eichenberger1996&quot;&gt;Frey and Eichenberger (1996)&lt;/span&gt; discuss that for marriage decisions investigations show that individuals decide rather quickly marrying the first reasonably serious partner. Where does this misalignment between theory and practice originate from? Some of it appears to be consequences of additional effects not addressed by the theory, e.g., little marginal gain of searching longer, &lt;em&gt;lemon effects&lt;/em&gt;, satisficing, endowment effects, etc... &lt;strong&gt;Life is complicated&lt;/strong&gt;. Finding a satisficing complexity representation is non-trivial - even for mathematicians. :-)&lt;/p&gt;
+&lt;p&gt;Altogether, such methods provide decision support: One can evaluate a potential decision and compare results with other ways of reaching the decision. &lt;span class=&quot;citation&quot; data-cites=&quot;frey_eichenberger1996&quot;&gt;Frey and Eichenberger (1996)&lt;/span&gt; discuss that for marriage decisions investigations show that individuals decide rather quickly marrying the first reasonably serious partner. Where does this misalignment between theory and practice originate from? Some of it appears to be consequences of additional effects not addressed by the model, e.g., little marginal gain of searching longer, &lt;em&gt;lemon effects&lt;/em&gt;, satisficing, endowment effects, etc... &lt;strong&gt;Life is complicated&lt;/strong&gt;. Finding a satisficing complexity representation is non-trivial - even for mathematicians. :-)&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-06-12-optimalChoice/unnamed-chunk-16-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
 &lt;h1 id=&quot;references&quot; class=&quot;unnumbered&quot;&gt;References&lt;/h1&gt;
 &lt;div id=&quot;refs&quot; class=&quot;references&quot;&gt;

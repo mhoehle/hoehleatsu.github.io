@@ -371,7 +371,7 @@ decisions investigations show that individuals decide rather
 quickly marrying the first reasonably serious partner. Where does this
 misalignment between theory and practice originate from? Some of it
 appears to be consequences of additional effects not addressed by the
-theory, e.g., little marginal gain of searching longer, *lemon
+model, e.g., little marginal gain of searching longer, *lemon
 effects*, satisficing, endowment effects, etc... **Life is
 complicated**. Finding a satisficing complexity representation is
 non-trivial - even for mathematicians. :-)
