@@ -2,8 +2,10 @@
 layout: post
 title: "Optimal Choice - Mathematical Advice for Real Life"
 tags: [datascience, rstats, debugging]
+bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
 ---
+
 
 ```{r,include=FALSE,echo=FALSE,message=FALSE}
 knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='')

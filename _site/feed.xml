@@ -6,14 +6,369 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 13 Jun 2016 22:28:29 +0200</pubDate>
-    <lastBuildDate>Mon, 13 Jun 2016 22:28:29 +0200</lastBuildDate>
+    <pubDate>Sun, 19 Jun 2016 15:30:47 +0200</pubDate>
+    <lastBuildDate>Sun, 19 Jun 2016 15:30:47 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
+    
+      <item>
+        <title>Princes Disguised in Uniforms</title>
+        <description>&lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
+href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
+&lt;p&gt;We revisit the &lt;strong&gt;secretary problem&lt;/strong&gt; as a mathematical fairy tale: Princes wooing a princess sequentially arrive each having a qualification score score originating from a known parametric distribution with all parameters known, e.g., the standard uniform distribution or the normal distribution with known mean and variance. For this so called &lt;strong&gt;full information game&lt;/strong&gt; the question of interest is: How does the optimal strategy look, which maximizes the expected score of the selected candidate? As a further twist: How does the strategy change, if we sequentially have to estimate the parameters of the distribution alongside? The later variant is called the &lt;strong&gt;partial information game&lt;/strong&gt; and is nicely addressed using sequential Bayesian updating.&lt;/p&gt;
+&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
+&lt;p&gt;In the last blog post &lt;a href=&quot;20160-06-12-optimalChoice.html&quot;&gt;&lt;em&gt;Optimal Choice - Mathematical Advice for Real Life&lt;/em&gt;&lt;/a&gt; our interest was in determining a strategy to select the overall best candidate from a sequence of &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; candidates (e.g. princes, job candidates, houses, bids or tinder profiles) arriving sequentially. It was shown that the optimal strategy is to screen a number of candidates &lt;span class=&quot;math inline&quot;&gt;\(r-1\)&lt;/span&gt; in order to form a baseline and then, starting from the &lt;span class=&quot;math inline&quot;&gt;\(r\)&lt;/span&gt;&#39;th candidate, select the first candidate better than the baseline. If no candidate was chosen before the &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt;&#39;th candidate this last candidate has to be selected no matter what. The intuitive phenomena of getting &lt;em&gt;desperate towards the end&lt;/em&gt; was observed, if the objective of finding &lt;em&gt;the&lt;/em&gt; best is changed to maximizing the expected rank of the selected candidate.&lt;/p&gt;
+&lt;p&gt;In this blog post we study the situation, where additional information about the absolute score of the candidates (instead of just their relative ranks) is available. In particular we assume that the candidate scores are known to originate from a known &lt;strong&gt;underlying distribution&lt;/strong&gt;, e.g. the uniform or the standard normal. This mean that not only the underlying parametric family of the scores are known, but also the parameters of the distribution. In what follows we use the work of &lt;span class=&quot;citation&quot; data-cites=&quot;guttman1960&quot;&gt;Guttman (1960)&lt;/span&gt; to describe the problem in mathematical notation and discuss solution strategies. Then we move on to the work of &lt;span class=&quot;citation&quot; data-cites=&quot;stewart1978&quot;&gt;Stewart (1978)&lt;/span&gt; in order to investigate how the strategy changes, if we also have to simultaneously estimate the parameters of the distribution alongside. &lt;a href=&quot;https://www.r-project.org/&quot;&gt;&lt;strong&gt;R code&lt;/strong&gt;&lt;/a&gt; implementing the optimal strategies is provided for both situations in order to enable prudent decision support for real-life problems.&lt;/p&gt;
+&lt;h1 id=&quot;methods&quot;&gt;Methods&lt;/h1&gt;
+&lt;p&gt;Let the &lt;strong&gt;score&lt;/strong&gt; of a candidate be represented by a random variable &lt;span class=&quot;math inline&quot;&gt;\(X\)&lt;/span&gt; with continuous probability density function &lt;span class=&quot;math inline&quot;&gt;\(f\)&lt;/span&gt; having support on &lt;span class=&quot;math inline&quot;&gt;\((a,b)\)&lt;/span&gt;, where &lt;span class=&quot;math inline&quot;&gt;\(a&amp;lt;b\)&lt;/span&gt;. Note that &lt;span class=&quot;math inline&quot;&gt;\(a\)&lt;/span&gt; and &lt;span class=&quot;math inline&quot;&gt;\(b\)&lt;/span&gt; are allowed to be &lt;span class=&quot;math inline&quot;&gt;\(\pm \infty\)&lt;/span&gt;, respectively. Let &lt;span class=&quot;math inline&quot;&gt;\(F\)&lt;/span&gt; be the corresponding cumulative distribution of the score. Furthermore, let &lt;span class=&quot;math inline&quot;&gt;\(\mu=E(X)=\int_{a}^b x \cdot f(x) dx\)&lt;/span&gt; be the expectation of &lt;span class=&quot;math inline&quot;&gt;\(X\)&lt;/span&gt;. In what follows we will assume that the distribution is such that the expectation exists. Assuming a total of &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; candidates we assume that their abilities/scores are independently and identically sampled from this distribution, i.e.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+X_1,\ldots,X_n \stackrel{\text{iid}}{\sim} F.
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;The &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; candidates arrive sequentially and for each candidate one has to decide whether to select this candidate or to keep looking at further candidates. Once a candidate is rejected there is no opportunity to regret this choice later.&lt;/p&gt;
+&lt;p&gt;Now we denote by &lt;span class=&quot;math inline&quot;&gt;\(E_{n}\)&lt;/span&gt; the expected score of the chosen candidate when one has to choose among &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; candidates according to some pre-described strategy. It is immediately obvious that &lt;span class=&quot;math inline&quot;&gt;\(E_1=\mu\)&lt;/span&gt;. If there are &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; candidates we would like to find the optimal stopping rule maximizing &lt;span class=&quot;math inline&quot;&gt;\(E_n\)&lt;/span&gt;. The standard stopping rule implies that we would already stop at the first candidate, if the observed value &lt;span class=&quot;math inline&quot;&gt;\(x\)&lt;/span&gt; is such that &lt;span class=&quot;math inline&quot;&gt;\(x &amp;gt; E_{n-1}\)&lt;/span&gt;. As a consequence,&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+\begin{align*}
+E_{n+1} &amp;amp;= P(X &amp;gt; E_n) \cdot E(X\&amp;gt;|\&amp;gt;X \geq E_n)  +
+P(X_{n+1} \leq E_n) \cdot E_n \\
+%&amp;amp;= \int_{E_n}^b x \cdot f(x) dx + E_n \int_{a}^{E_n} f(x) dx \\
+&amp;amp;= \int_{E_n}^b x \cdot f(x) dx + E_n \cdot (1-F(E_n)).
+\end{align*}
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;Example: In the case of &lt;span class=&quot;math inline&quot;&gt;\(X\sim U(0,1)\)&lt;/span&gt; we have &lt;span class=&quot;math inline&quot;&gt;\(E_{n+1}=\frac{1}{2}(1-E_n^2) + E_n^2 =\frac{1}{2}(1+E_n^2)\)&lt;/span&gt;. &lt;br&gt;&lt;/p&gt;
+&lt;p&gt;A function to perform these computations in R handling either general densities using numeric integration or analytic derivations would be:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;######################################################################
+##Compute E vector using either numerical integration, a function for
+##the computation of E[n+1] or using the analytic solution of
+##\int_{E_n}^b x df(x) dx.
+##
+## Parameters:
+##  n - number of candidates
+##  df - density function of the score distribution (i.e. f)
+##  pf - cumulative density function of the score distribution (i.e. F)
+##  intE_fun - function g(E_n) = \int_{E_n}^b x*f(x)dx (if available)
+##  Enp1_fun - function h(n,E_n) directly computing E_{n+1} from E_{n}
+##
+## Returns a vector of length (n+1) containing (E_0,...,E_n)&amp;#39;.
+######################################################################
+compute_E &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(n,df,pf,&lt;span class=&quot;dt&quot;&gt;intE_fun=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;NULL&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;Enp1_fun=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;NULL&lt;/span&gt;,...) {
+  E &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rep&lt;/span&gt;(&lt;span class=&quot;ot&quot;&gt;NA&lt;/span&gt;,n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)
+  E[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;
+  target &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(x) x*&lt;span class=&quot;kw&quot;&gt;df&lt;/span&gt;(x,...)
+
+  for (n in &lt;span class=&quot;kw&quot;&gt;seq_len&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;length&lt;/span&gt;(E)-&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;)) {
+    if (&lt;span class=&quot;kw&quot;&gt;is.null&lt;/span&gt;(Enp1_fun)) {
+      if (&lt;span class=&quot;kw&quot;&gt;is.null&lt;/span&gt;(intE_fun)) {
+        E[n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;integrate&lt;/span&gt;(target,E[n],&lt;span class=&quot;ot&quot;&gt;Inf&lt;/span&gt;)$value +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;E[n] *&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;pf&lt;/span&gt;(E[n],...)
+      } else {
+        E[n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;intE_fun&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;En=&lt;/span&gt;E[n]) +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;E[n] *&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;pf&lt;/span&gt;(E[n],...)
+      }
+    } else {
+      E[n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;Enp1_fun&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;n,&lt;span class=&quot;dt&quot;&gt;En=&lt;/span&gt;E[n],...)
+    }
+  }
+  &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(E)
+}&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Altogether, the optimal stopping time is thus&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+T_{\text{stop}} = \min_{1\leq i \leq n} \left\{x_i &amp;gt; E_{n-i}\right\}.
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;The sequential comparisons can be given in the same strategy vector format as for the &lt;a href=&quot;20160-06-12-optimalChoice.html&quot;&gt;secretary problem post&lt;/a&gt;, i.e. one selects the candidate &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt; if &lt;span class=&quot;math inline&quot;&gt;\(x_i&amp;gt;s_i\)&lt;/span&gt;.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;######################################################################
+## Strategy of full information variant of the secretary problem
+##
+## Parameters:
+##  n - number of candidates
+######################################################################
+
+strategy_fip &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(n,df,pf,&lt;span class=&quot;dt&quot;&gt;intE_fun=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;NULL&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;Enp1_fun=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;NULL&lt;/span&gt;,...) {
+  E &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;compute_E&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;n,&lt;span class=&quot;dt&quot;&gt;df=&lt;/span&gt;df,&lt;span class=&quot;dt&quot;&gt;pf=&lt;/span&gt;pf,&lt;span class=&quot;dt&quot;&gt;intE_fun=&lt;/span&gt;intE_fun,&lt;span class=&quot;dt&quot;&gt;Enp1_fun=&lt;/span&gt;Enp1_fun,...)
+  s &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;E[(n&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;:n)+&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;]
+  &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(s)
+}&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h4 id=&quot;example-u01&quot;&gt;Example: U(0,1)&lt;/h4&gt;
+&lt;p&gt;Given the above derivations, an R implementation of the strategy for the &lt;span class=&quot;math inline&quot;&gt;\(X_i\stackrel{\text{iid}}{\sim} U(0,1)\)&lt;/span&gt; case and, say, &lt;span class=&quot;math inline&quot;&gt;\(n=11\)&lt;/span&gt; looks as follows.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;strategy_unif &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(n) {
+  &lt;span class=&quot;kw&quot;&gt;strategy_fip&lt;/span&gt;(n,&lt;span class=&quot;dt&quot;&gt;Enp1_fun=&lt;/span&gt;function(n,En) {&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;/&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;*(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;+En^&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;)})
+}
+(s_unif &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;strategy_unif&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;11&lt;/span&gt;))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##  [1] 0.861 0.850 0.836 0.820 0.800 0.775 0.742 0.695 0.625 0.500 0.000&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We can thus compare the computed expectations by simulation:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;## Simulate selection from n candidates if following the strategy s.
+simulate &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(n,s) {
+  x &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;runif&lt;/span&gt;(n)
+  select_idx &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;which.max&lt;/span&gt;(x &amp;gt;&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;s)
+  &lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;score=&lt;/span&gt;x[select_idx],&lt;span class=&quot;dt&quot;&gt;select_idx=&lt;/span&gt;select_idx,&lt;span class=&quot;dt&quot;&gt;isOverallBest=&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;rank&lt;/span&gt;(x)[select_idx] ==&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;n))
+}
+
+## Small simulation study to get expected score of the selected candidate
+res &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;replicate&lt;/span&gt;(&lt;span class=&quot;fl&quot;&gt;1e5&lt;/span&gt;,&lt;span class=&quot;kw&quot;&gt;simulate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;length&lt;/span&gt;(s_unif),&lt;span class=&quot;dt&quot;&gt;s=&lt;/span&gt;s_unif))
+&lt;span class=&quot;kw&quot;&gt;apply&lt;/span&gt;(res,&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,mean)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##         score    select_idx isOverallBest 
+##         0.871         4.964         0.532&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;tail&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;compute_E&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;11&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;Enp1_fun=&lt;/span&gt;function(n,En) {&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;/&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;*(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;+En^&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;)}),&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] 0.871&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;As always, an animation says more than 1000 words and a few equations:&lt;/p&gt;
+&lt;figure&gt;
+&lt;img src=&quot;/hoehle/blog/figure/source/2016-06-19-princesAsUniforms/animation.gif&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;Finally, we can see how the expected score develops with increasing &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt;.&lt;/p&gt;
+&lt;center&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr class=&quot;header&quot;&gt;
+&lt;th style=&quot;text-align: left;&quot;&gt;&lt;/th&gt;
+&lt;th style=&quot;text-align: right;&quot;&gt;10&lt;/th&gt;
+&lt;th style=&quot;text-align: right;&quot;&gt;100&lt;/th&gt;
+&lt;th style=&quot;text-align: right;&quot;&gt;1000&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&quot;odd&quot;&gt;
+&lt;td style=&quot;text-align: left;&quot;&gt;score&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;0.862&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;0.981&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;0.998&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&quot;even&quot;&gt;
+&lt;td style=&quot;text-align: left;&quot;&gt;select_idx&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;4.589&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;34.943&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;333.724&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&quot;odd&quot;&gt;
+&lt;td style=&quot;text-align: left;&quot;&gt;isOverallBest&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;0.544&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;0.426&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;0.409&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/center&gt;
+&lt;p&gt;&lt;span class=&quot;citation&quot; data-cites=&quot;gilbert_mosteller1966&quot;&gt;Gilbert and Mosteller (1966)&lt;/span&gt; provide an approximation for the expectation:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;E_optE &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(n) { &lt;span class=&quot;dv&quot;&gt;1-2&lt;/span&gt;/(n+&lt;span class=&quot;kw&quot;&gt;log&lt;/span&gt;(n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)+&lt;span class=&quot;fl&quot;&gt;1.767&lt;/span&gt;) }&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;which we can compare the &lt;code&gt;score&lt;/code&gt;column of the above simulation results:&lt;/p&gt;
+&lt;center&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr class=&quot;header&quot;&gt;
+&lt;th style=&quot;text-align: right;&quot;&gt;10&lt;/th&gt;
+&lt;th style=&quot;text-align: right;&quot;&gt;100&lt;/th&gt;
+&lt;th style=&quot;text-align: right;&quot;&gt;1000&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&quot;odd&quot;&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;0.859&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;0.981&lt;/td&gt;
+&lt;td style=&quot;text-align: right;&quot;&gt;0.998&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/center&gt;
+&lt;p&gt;Altogether, this shows a pretty good agreement between the approximation and simulation results.&lt;/p&gt;
+&lt;h4 id=&quot;example-n01&quot;&gt;Example N(0,1)&lt;/h4&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;## Compare results for the normal distribution (with and without
+## analytic solution for 1st integral of the E[n+1] formula
+&lt;span class=&quot;kw&quot;&gt;strategy_fip&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;11&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;df=&lt;/span&gt;dnorm,&lt;span class=&quot;dt&quot;&gt;pf=&lt;/span&gt;pnorm)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##  [1] 1.324 1.276 1.223 1.162 1.092 1.011 0.913 0.790 0.630 0.399 0.000&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;(s_norm &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;strategy_fip&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;11&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;df=&lt;/span&gt;dnorm,&lt;span class=&quot;dt&quot;&gt;pf=&lt;/span&gt;pnorm,&lt;span class=&quot;dt&quot;&gt;intE_fun=&lt;/span&gt;function(En,...) {
+  &lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;/&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;*&lt;span class=&quot;kw&quot;&gt;sqrt&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;)*&lt;span class=&quot;kw&quot;&gt;exp&lt;/span&gt;(-&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;/&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;*En^&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;)/&lt;span class=&quot;kw&quot;&gt;sqrt&lt;/span&gt;(pi)
+}))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##  [1] 1.324 1.276 1.223 1.162 1.092 1.011 0.913 0.790 0.630 0.399 0.000&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Note that by transforming the observations by the CDF &lt;span class=&quot;math inline&quot;&gt;\(F\)&lt;/span&gt;, i.e. &lt;span class=&quot;math inline&quot;&gt;\(Y_i=F(X_i)\)&lt;/span&gt; we for any continuous distribution obtain &lt;span class=&quot;math inline&quot;&gt;\(Y_i \stackrel{\text{iid}}{\sim} U(0,1)\)&lt;/span&gt;. Hence, the result of comparing the &lt;span class=&quot;math inline&quot;&gt;\(X_i\)&lt;/span&gt; against &lt;code&gt;s_norm&lt;/code&gt; is the same as comparing &lt;span class=&quot;math inline&quot;&gt;\(F(X_i)\)&lt;/span&gt; against &lt;code&gt;s_unif&lt;/code&gt;.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;set.seed&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;)
+x &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rnorm&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;11&lt;/span&gt;) ; y &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;pnorm&lt;/span&gt;(x)
+&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;which.max&lt;/span&gt;(x &amp;gt;&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;s_norm), &lt;span class=&quot;kw&quot;&gt;which.max&lt;/span&gt;(y &amp;gt;&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;s_unif))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] 4 4&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;It is thus not necessary to derive the optimal strategy for each possible continuous distribution. Instead one can transform the score to the uniform score as illustrated above and then use the corresponding strategy for the uniform to determine the stopping time.&lt;/p&gt;
+&lt;h1 id=&quot;the-partial-information-game&quot;&gt;The Partial Information Game&lt;/h1&gt;
+&lt;p&gt;To summarise the previous section&#39;s findings: knowing the candidate&#39;s score distribution means that no training sample is needed to form a baseline. Hence, in the full information game, one immediately is &lt;em&gt;ready for action&lt;/em&gt;, if a candidate with an excellent score is met early you do not hesitate! However, in a real word applications the parameters of the parametric distribution are likely to be unknown. This is known as the &lt;strong&gt;partial information game&lt;/strong&gt; and here statistical inference actually for the first time plays a role, because one needs to learn about the parameters of the distribution while candidates arrive and while simultaneously deciding to select the current candidate or keep looking.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;citation&quot; data-cites=&quot;stewart1978&quot;&gt;Stewart (1978)&lt;/span&gt; discusses a Bayesian approach to sequential learning the upper and lower limits of the underlying but unknown &lt;span class=&quot;math inline&quot;&gt;\(U(\alpha,\beta)\)&lt;/span&gt; distribution. Inspired by &lt;span class=&quot;citation&quot; data-cites=&quot;degroot1970&quot;&gt;DeGroot (1970)&lt;/span&gt;, a conjugate bilateral bivariate Pareto distribution on &lt;span class=&quot;math inline&quot;&gt;\((\alpha,\beta)\)&lt;/span&gt; is used. In what follows we describe this approach and the resulting selection strategy.&lt;/p&gt;
+&lt;p&gt;We will assume a bilateral bivariate Pareto distribution as joint prior distribution for &lt;span class=&quot;math inline&quot;&gt;\(\alpha\)&lt;/span&gt; and &lt;span class=&quot;math inline&quot;&gt;\(\beta\)&lt;/span&gt;, i.e. the hierarchical Bayesian model is&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+\begin{align*}
+(\alpha,\beta)                                &amp;amp; \sim \text{bPar}(k,l,u) \\
+X_i \&amp;gt;|\&amp;gt; \alpha,\beta \stackrel{\text{iid}}{\sim} &amp;amp; \sim U(\alpha,\beta)
+&amp;amp; i=1,\ldots,n
+\end{align*}
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;where the density of the &lt;span class=&quot;math inline&quot;&gt;\(\text{bPar}(k,l,u)\)&lt;/span&gt; distribution is &lt;span class=&quot;math display&quot;&gt;\[
+f(\alpha,\beta) = \frac{k(k+1)(u-l)^k}{(\beta-\alpha)^{k+2}} \cdot
+I(\alpha&amp;lt;l \text{ and } \beta &amp;gt; u).
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;Here, &lt;span class=&quot;math inline&quot;&gt;\(k&amp;gt;0\)&lt;/span&gt; is a shape parameter and &lt;span class=&quot;math inline&quot;&gt;\(I()\)&lt;/span&gt; denotes the indicator function. In other words, the parameter &lt;span class=&quot;math inline&quot;&gt;\(l\)&lt;/span&gt; is an upper bound for the lower limit of the uniform, and the unknown parameter &lt;span class=&quot;math inline&quot;&gt;\(u\)&lt;/span&gt; is a lower limit for the upper limit of the uniform. We can think of &lt;span class=&quot;math inline&quot;&gt;\(l\)&lt;/span&gt; as our prior belief about what score arriving candidates would at least have in order to apply. For example: the princess thinks no prince with a score below a five would even dare woo her. Similarly, the lower limit on the upper bound means that the princess initially thinks that due to her stingy dad (the king) no prince above a seven would be interested in her.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;#################################################
+&lt;span class=&quot;co&quot;&gt;# Joint bilateral Pareto prior&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;# Parameters:&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#  theta - vector length two containing (alpha,beta)&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#  k     - parameter&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#  l     - upper bound for alpha (i.e. an upper bound for the true lower bound)&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#  u     - lower for beta (i.e. a lower bound for the true upper bound)&lt;/span&gt;
+################################################
+
+f_pareto &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(theta,k,l,u) {
+  if (&lt;span class=&quot;kw&quot;&gt;is.matrix&lt;/span&gt;(theta)) {
+    alpha &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;theta[,&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;] ; beta &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;theta[,&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;]
+  } else {
+    alpha &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;theta[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;]  ; beta &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;theta[&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;]
+  }
+
+  &lt;span class=&quot;co&quot;&gt;#Compute PDF&lt;/span&gt;
+ &lt;span class=&quot;kw&quot;&gt;ifelse&lt;/span&gt;(alpha &amp;lt;&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;l &amp;amp;&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;beta &amp;gt;&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;u,
+        k*(k&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)*(u -&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;l)^k /&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(beta-alpha)^(k&lt;span class=&quot;dv&quot;&gt;+2&lt;/span&gt;), &lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;)
+}&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We illustrate the prior setting consisting of &lt;span class=&quot;math inline&quot;&gt;\(l=5\)&lt;/span&gt; and &lt;span class=&quot;math inline&quot;&gt;\(u=7\)&lt;/span&gt; and two values of &lt;span class=&quot;math inline&quot;&gt;\(k\)&lt;/span&gt;:&lt;/p&gt;
+&lt;figure&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-06-19-princesAsUniforms/PARETO_PDF-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;An important feature of this bivariate Pareto prior is that it is the conjugate prior to uniform sampling &lt;span class=&quot;citation&quot; data-cites=&quot;degroot1970&quot;&gt;(DeGroot 1970, 170)&lt;/span&gt;. In other words, if &lt;span class=&quot;math inline&quot;&gt;\((\alpha,\beta) \sim \text{bPar}(k,l_0,u_0)\)&lt;/span&gt; and observations &lt;span class=&quot;math inline&quot;&gt;\(X_1,\ldots,X_i \stackrel{\text{iid}}{\sim} U(\alpha,\beta)\)&lt;/span&gt; become available then the posterior distribution of interest is&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+(\alpha,\beta)&amp;#39; \&amp;gt;|\&amp;gt; X_1,\ldots,X_i \sim \text{bPar}(k+i,l_i,u_i),
+\]&lt;/span&gt; where &lt;span class=&quot;math display&quot;&gt;\[
+\begin{align*}
+l_i &amp;amp;= \min(l_0,x_1,\ldots,x_i), \\
+u_i &amp;amp;= \max(u_0,x_1,\ldots,x_i).
+\end{align*}
+\]&lt;/span&gt; In other words, the posterior depends only on &lt;span class=&quot;math inline&quot;&gt;\(l_i\)&lt;/span&gt; and &lt;span class=&quot;math inline&quot;&gt;\(u_i\)&lt;/span&gt; and not the individual &lt;span class=&quot;math inline&quot;&gt;\(x_i\)&lt;/span&gt;&#39;s. Let &lt;span class=&quot;math inline&quot;&gt;\(\gamma_i\)&lt;/span&gt; be the obtained score, if we at stage &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt; select the &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt;&#39;th candidate. Furthermore, using the same expectation definition as in the previous section, let &lt;span class=&quot;math inline&quot;&gt;\(E_i\)&lt;/span&gt; be the expected score obtained by following a particular strategy from the &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt;&#39;th candidate to the &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt;&#39;th candidate.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+\begin{align*}
+\gamma_n &amp;amp;= x_n \\
+E_i      &amp;amp;= E(\gamma_i | x_1,\ldots, x_{i-1}), &amp;amp; i \leq n, \\
+\gamma_i &amp;amp;= \max(x_i, E_{i+1}),                  &amp;amp; i &amp;lt; n.
+\end{align*}
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;citation&quot; data-cites=&quot;stewart1978&quot;&gt;Stewart (1978)&lt;/span&gt; then shows that the optimal strategy is found by the following approach, which we here for simplicity shall program directly in R:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;## Small helper function to convert between index 0 and R&amp;#39;s index 1 storing
+idx &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(i) i&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;
+
+## Compute delta vector, which is a helper-vector in the solution of Stewart (1978)
+compute_delta &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(n, k) {
+  &lt;span class=&quot;co&quot;&gt;#Define delta&amp;#39;s&lt;/span&gt;
+  delta &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rep&lt;/span&gt;(&lt;span class=&quot;ot&quot;&gt;NA&lt;/span&gt;,n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)
+  delta[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(n&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)] =&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;/&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;
+
+  for (i in &lt;span class=&quot;kw&quot;&gt;rev&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;seq_len&lt;/span&gt;(n&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;))) {
+    if (delta[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i)]&amp;gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;) {
+      delta[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;delta[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i)]
+    } else {
+      delta[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;/&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;*(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;+(k+i&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)/(k+i&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)*delta[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i)]^&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;) +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(k+i&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)*delta[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i)]/(k+i&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)/(k+i&lt;span class=&quot;dv&quot;&gt;-2&lt;/span&gt;)
+    }
+  }
+
+  &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(delta)
+}
+
+###############################################################
+## Bayesian sequential learning for a sequence of scores using the
+## procedure described in Stewart (1978)
+##
+## Parameters:
+##  x - vector of candidate scores (scores are only revealed sequentially)
+##  prior - list containing prior values for k, l and u
+###############################################################
+
+strategy_pig &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(x, prior) {
+  &lt;span class=&quot;co&quot;&gt;#Extract and precompute&lt;/span&gt;
+  n &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;length&lt;/span&gt;(x)
+  delta &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;compute_delta&lt;/span&gt;(n,&lt;span class=&quot;dt&quot;&gt;k=&lt;/span&gt;prior$k)
+
+  &lt;span class=&quot;co&quot;&gt;#Generate data_frame to work on&lt;/span&gt;
+  seq &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;data_frame&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;i=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;,&lt;span class=&quot;kw&quot;&gt;seq_len&lt;/span&gt;(n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)),&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;ot&quot;&gt;NA&lt;/span&gt;,x,&lt;span class=&quot;ot&quot;&gt;NA&lt;/span&gt;), &lt;span class=&quot;dt&quot;&gt;delta=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(delta,&lt;span class=&quot;ot&quot;&gt;NA&lt;/span&gt;))
+
+  &lt;span class=&quot;co&quot;&gt;#Sequential updating of l and u from the data&lt;/span&gt;
+  l &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;cummin&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(prior$l,x))
+  u &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;cummax&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(prior$u,x))
+  seq &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;seq %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;mutate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;l=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(l,l[n]),&lt;span class=&quot;dt&quot;&gt;u=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(u,u[n]),&lt;span class=&quot;dt&quot;&gt;im1div2=&lt;/span&gt;i&lt;span class=&quot;fl&quot;&gt;-0.5&lt;/span&gt;)
+
+  ##Getting E
+  E &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rep&lt;/span&gt;(&lt;span class=&quot;ot&quot;&gt;NA&lt;/span&gt;,n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)
+  for (i in (&lt;span class=&quot;kw&quot;&gt;max&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;-prior$k)+&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;):n) {
+    E[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i)] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;as.numeric&lt;/span&gt;(delta[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)]*seq[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;),&lt;span class=&quot;st&quot;&gt;&amp;quot;u&amp;quot;&lt;/span&gt;] +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;-delta[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)])*seq[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;),&lt;span class=&quot;st&quot;&gt;&amp;quot;l&amp;quot;&lt;/span&gt;] )
+  }
+  ##Compute expectation
+  seq &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;seq %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;mutate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;E=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;lag&lt;/span&gt;(delta)*&lt;span class=&quot;kw&quot;&gt;lag&lt;/span&gt;(u) +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;-&lt;span class=&quot;kw&quot;&gt;lag&lt;/span&gt;(delta))*&lt;span class=&quot;kw&quot;&gt;lag&lt;/span&gt;(l))
+  ##Decision boundary
+  seq &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;seq %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;mutate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;threshold=&lt;/span&gt;delta*u +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;-delta)*l, &lt;span class=&quot;dt&quot;&gt;rank=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rank&lt;/span&gt;(x))
+
+  seq[n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;:&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;threshold&amp;quot;&lt;/span&gt;] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;min&lt;/span&gt;(x)
+
+  ##Find r_1
+  r1 &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;seq %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;filter&lt;/span&gt;(delta &amp;lt;=&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt; &amp;amp;&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;i &amp;lt;&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;n &amp;amp;&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;i &amp;gt;&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;max&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;-prior$k)) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;slice&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;select&lt;/span&gt;(i) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;as.numeric
+
+  select &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;seq %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;filter&lt;/span&gt;(i &amp;gt;=&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;r1) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;filter&lt;/span&gt;(x &amp;gt;=&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;threshold) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;slice&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;)
+  select &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;select %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;mutate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;isOverallBest=&lt;/span&gt;(select$rank ==&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;n))
+
+  &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;seq=&lt;/span&gt;seq,&lt;span class=&quot;dt&quot;&gt;select=&lt;/span&gt;select))
+}&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We now simulate a particular scenario consisting of 11 princes wooing a princess and apply the optimal selection strategy applying the princess&#39; prior:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;##Prior info
+prior &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;k=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.1&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;l=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;u=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;7&lt;/span&gt;)
+
+##Reverse engineering a happy end! :-)
+&lt;span class=&quot;co&quot;&gt;# which(sapply(1:100, function(i) {&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#   set.seed(i); x &amp;lt;- runif(n=11,0,10)&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#   s &amp;lt;- strategy_pig(x, prior=prior)&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#   as.numeric(s$select[,&amp;quot;isOverallBest&amp;quot;])&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;# })==1)&lt;/span&gt;
+
+##Sample princes from an uniform with unknown limits -- here X_i \sim U(0,10)
+&lt;span class=&quot;kw&quot;&gt;set.seed&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;8&lt;/span&gt;)
+x &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;runif&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;11&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;10&lt;/span&gt;)
+s &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;strategy_pig&lt;/span&gt;(x, &lt;span class=&quot;dt&quot;&gt;prior=&lt;/span&gt;prior)
+s$select&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## Source: local data frame [1 x 10]
+## 
+##       i     x delta     l     u im1div2     E threshold  rank isOverallBest
+##   (dbl) (dbl) (dbl) (dbl) (dbl)   (dbl) (dbl)     (dbl) (dbl)         (lgl)
+## 1     8  9.32 0.745  2.08  9.32     7.5  6.88      7.47    11          TRUE&lt;/code&gt;&lt;/pre&gt;
+&lt;figure&gt;
+&lt;img src=&quot;/hoehle/blog/figure/source/2016-06-19-princesAsUniforms/animation-pig.gif&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;The animation provides interesting insights: Firstly, the upper bound on the lower limit is updated along the way, because some seriously unfit candidates dare to woo. Secondly, the decision boundary initially is initially slightly above our lower bound on the upper limit. However, the first candidate (candidate no. 3) above this prior bound is not accepted, since it is still early in the sequence and thus little is known about the support of the uniform, i.e. the range of candidates applying. Hence, the princess hopes to get an even better candidate. However, as time passes by and no such candidate appears, the limit is slowly adjusted downwards. Luckily, the 8&#39;th candidate not only brings a score better than imagined (and is thus selected), he also (seen through the omnipotent eyes of somebody knowing all the candidates) actually is the best prince among &lt;strong&gt;all&lt;/strong&gt; the candidates, i.e. &lt;code&gt;isOverallBest=TRUE&lt;/code&gt;. In other words: our mathematical fairy tale even has a happy end!&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&quot;/hoehle/blog/figure/source/2016-06-19-princesAsUniforms/Fairytale-Fantasy-Castle-Landscape-300px.png&quot; title=&quot;Source: https://openclipart.org/detail/231006/fairytale-fantasy-castle-landscape&quot; /&gt;
+&lt;/center&gt;
+&lt;h1 id=&quot;discussion&quot;&gt;Discussion&lt;/h1&gt;
+&lt;p&gt;The full information game provides a good baseline to see the difference between having no information but the rank of candidates and knowing the distribution of the candidate&#39;s score. More references and variants of the secretary problem can be found in &lt;span class=&quot;citation&quot; data-cites=&quot;freeman1983&quot;&gt;Freeman (1983)&lt;/span&gt;.&lt;/p&gt;
+&lt;h1 id=&quot;references&quot; class=&quot;unnumbered&quot;&gt;References&lt;/h1&gt;
+&lt;div id=&quot;refs&quot; class=&quot;references&quot;&gt;
+&lt;div id=&quot;ref-degroot1970&quot;&gt;
+&lt;p&gt;DeGroot, Morris. 1970. &lt;em&gt;Optimal Statistical Decisions&lt;/em&gt;. McGraw-Hill. New York.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-freeman1983&quot;&gt;
+&lt;p&gt;Freeman, P. R. 1983. “The Secretary Problem and Its Extensions: A Review.” &lt;em&gt;International Statistical Review / Revue Internationale de Statistique&lt;/em&gt; 51 (2): 189–206. &lt;a href=&quot;http://www.jstor.org/stable/1402748&quot; class=&quot;uri&quot;&gt;http://www.jstor.org/stable/1402748&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-gilbert_mosteller1966&quot;&gt;
+&lt;p&gt;Gilbert, J. P., and F. Mosteller. 1966. “Recognizing the Maximum of a Sequence.” &lt;em&gt;Journal of the American Statistical Association&lt;/em&gt; 61 (313): 35–73. &lt;a href=&quot;http://www.jstor.org/stable/2283044&quot; class=&quot;uri&quot;&gt;http://www.jstor.org/stable/2283044&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-guttman1960&quot;&gt;
+&lt;p&gt;Guttman, I. 1960. “On a Problem of L. Moser.” &lt;em&gt;Canadian Mathematical Bulletin&lt;/em&gt; 3: 35–39.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-stewart1978&quot;&gt;
+&lt;p&gt;Stewart, T. J. 1978. “Optimal Selection from a Random Sequence with Learning of the Underlying Distribution.” &lt;em&gt;Journal of the American Statistical Association&lt;/em&gt; 73 (364): 775–80. &lt;a href=&quot;http://www.jstor.org/stable/2286279&quot; class=&quot;uri&quot;&gt;http://www.jstor.org/stable/2286279&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Sun, 19 Jun 2016 00:00:00 +0200</pubDate>
+        <link>http://staff.math.su.se/hoehle/blog/2016/06/19/princesAsUniforms.html</link>
+        <guid isPermaLink="true">http://staff.math.su.se/hoehle/blog/2016/06/19/princesAsUniforms.html</guid>
+        
+        <category>math</category>
+        
+        <category>rstats</category>
+        
+        <category>secretary problem</category>
+        
+        <category>stopping rule</category>
+        
+        
+      </item>
     
       <item>
         <title>Optimal Choice - Mathematical Advice for Real Life</title>
         <description>&lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
-href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
+href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
 &lt;p&gt;We discuss how to choose the optimal candidate from a rankable sequence of candidates arriving one by one. The candidates could for example be job applicants, princes, tinder profiles or flats. This &lt;strong&gt;choice problem&lt;/strong&gt; is casted into the context of sequential decision making and is solved using optimal stopping theory. Two R functions are provided to compute optimal selection strategies in two specific instances of the problem. Altogether, the mathematical inclined decision maker is given valuable open-source tools to support prudent real life decision making.&lt;/p&gt;
 &lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
@@ -250,13 +605,13 @@ res &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot
 &lt;p&gt;Ferguson, T. S. 1989. “Who Solved the Secretary Problem?” &lt;em&gt;Statist. Sci.&lt;/em&gt; 4 (3). The Institute of Mathematical Statistics: 282–89. doi:&lt;a href=&quot;https://doi.org/10.1214/ss/1177012493&quot;&gt;10.1214/ss/1177012493&lt;/a&gt;.&lt;/p&gt;
 &lt;/div&gt;
 &lt;div id=&quot;ref-freeman1983&quot;&gt;
-&lt;p&gt;Freeman, P. R. 1983. “The Secretary Problem and Its Extensions: A Review.” &lt;em&gt;International Statistical Review / Revue Internationale de Statistique&lt;/em&gt; 51 (2). International Statistical Institute (ISI): 189–206. &lt;a href=&quot;http://www.jstor.org/stable/1402748&quot; class=&quot;uri&quot;&gt;http://www.jstor.org/stable/1402748&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Freeman, P. R. 1983. “The Secretary Problem and Its Extensions: A Review.” &lt;em&gt;International Statistical Review / Revue Internationale de Statistique&lt;/em&gt; 51 (2): 189–206. &lt;a href=&quot;http://www.jstor.org/stable/1402748&quot; class=&quot;uri&quot;&gt;http://www.jstor.org/stable/1402748&lt;/a&gt;.&lt;/p&gt;
 &lt;/div&gt;
 &lt;div id=&quot;ref-frey_eichenberger1996&quot;&gt;
 &lt;p&gt;Frey, B. S., and R. Eichenberger. 1996. “Marriage Paradoxes.” &lt;em&gt;Rationality and Society&lt;/em&gt; 8 (2): 187–206.&lt;/p&gt;
 &lt;/div&gt;
 &lt;div id=&quot;ref-gilbert_mosteller1966&quot;&gt;
-&lt;p&gt;Gilbert, J. P., and F. Mosteller. 1966. “Recognizing the Maximum of a Sequence.” &lt;em&gt;Journal of the American Statistical Association&lt;/em&gt; 61 (313). [American Statistical Association, Taylor &amp;amp; Francis, Ltd.]: 35–73. &lt;a href=&quot;http://www.jstor.org/stable/2283044&quot; class=&quot;uri&quot;&gt;http://www.jstor.org/stable/2283044&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Gilbert, J. P., and F. Mosteller. 1966. “Recognizing the Maximum of a Sequence.” &lt;em&gt;Journal of the American Statistical Association&lt;/em&gt; 61 (313): 35–73. &lt;a href=&quot;http://www.jstor.org/stable/2283044&quot; class=&quot;uri&quot;&gt;http://www.jstor.org/stable/2283044&lt;/a&gt;.&lt;/p&gt;
 &lt;/div&gt;
 &lt;div id=&quot;ref-jensen_nielsen2007&quot;&gt;
 &lt;p&gt;Jensen, F. V., and T. D. Nielsen. 2007. &lt;em&gt;Bayesian Networks and Decision Graphs&lt;/em&gt;. 2nd ed. Springer Verlag.&lt;/p&gt;
@@ -279,7 +634,7 @@ res &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot
       <item>
         <title>Right or Wrong? - Validate Numbers Like a Boss</title>
         <description>&lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
-href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
+href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
 &lt;p&gt;How does a statistician ensure that an analysis that comprises of outputting &lt;span class=&quot;math inline&quot;&gt;\(N\)&lt;/span&gt; results is correct? Can this be done without manually checking each of the results? Some statistical approaches for this task of &lt;strong&gt;proof-calculation&lt;/strong&gt; are described - e.g. capture-recapture estimation and sequential decision making.&lt;/p&gt;
 &lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
@@ -447,7 +802,7 @@ df &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;
       <item>
         <title>When Should One Stop Testing Software?</title>
         <description>&lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
-href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
+href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
 &lt;h1 id=&quot;abstract&quot;&gt;Abstract&lt;/h1&gt;
 &lt;p&gt;This is a small note rediscovering a gem published by S. R. Dalal and C. L. Mallows on treating the test of software in a statistical context (Dalal and Mallows, 1988). In their paper they answer the question on how long to continue testing your software before shipping. The problem is translated into a sequential decision problem, where an optimal stopping rule has to be found minimizing expected loss. We sketch the main result of their paper and apply their stopping rule to an example using R code.&lt;/p&gt;
 &lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;

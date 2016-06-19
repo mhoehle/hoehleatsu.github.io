@@ -2,8 +2,10 @@
 layout: post
 title: "Optimal Choice - Mathematical Advice for Real Life"
 tags: [datascience, rstats, debugging]
+bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
 ---
+
 
 
 
