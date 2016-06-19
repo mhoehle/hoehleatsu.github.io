@@ -6,8 +6,8 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sun, 19 Jun 2016 15:30:47 +0200</pubDate>
-    <lastBuildDate>Sun, 19 Jun 2016 15:30:47 +0200</lastBuildDate>
+    <pubDate>Sun, 19 Jun 2016 17:33:56 +0200</pubDate>
+    <lastBuildDate>Sun, 19 Jun 2016 17:33:56 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
@@ -104,7 +104,7 @@ simulate &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(n,s) {
 res &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;replicate&lt;/span&gt;(&lt;span class=&quot;fl&quot;&gt;1e5&lt;/span&gt;,&lt;span class=&quot;kw&quot;&gt;simulate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;length&lt;/span&gt;(s_unif),&lt;span class=&quot;dt&quot;&gt;s=&lt;/span&gt;s_unif))
 &lt;span class=&quot;kw&quot;&gt;apply&lt;/span&gt;(res,&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,mean)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;pre&gt;&lt;code&gt;##         score    select_idx isOverallBest 
-##         0.871         4.964         0.532&lt;/code&gt;&lt;/pre&gt;
+##         0.871         4.959         0.530&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;tail&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;compute_E&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;11&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;Enp1_fun=&lt;/span&gt;function(n,En) {&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;/&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;*(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;+En^&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;)}),&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;pre&gt;&lt;code&gt;## [1] 0.871&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;As always, an animation says more than 1000 words and a few equations:&lt;/p&gt;
@@ -222,7 +222,7 @@ f_pareto &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(theta,
 &lt;figure&gt;
 &lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-06-19-princesAsUniforms/PARETO_PDF-1.png&quot; /&gt;
 &lt;/figure&gt;
-&lt;p&gt;An important feature of this bivariate Pareto prior is that it is the conjugate prior to uniform sampling &lt;span class=&quot;citation&quot; data-cites=&quot;degroot1970&quot;&gt;(DeGroot 1970, 170)&lt;/span&gt;. In other words, if &lt;span class=&quot;math inline&quot;&gt;\((\alpha,\beta) \sim \text{bPar}(k,l_0,u_0)\)&lt;/span&gt; and observations &lt;span class=&quot;math inline&quot;&gt;\(X_1,\ldots,X_i \stackrel{\text{iid}}{\sim} U(\alpha,\beta)\)&lt;/span&gt; become available then the posterior distribution of interest is&lt;/p&gt;
+&lt;p&gt;An important feature of this bivariate Pareto prior is that it is the conjugate prior to uniform sampling &lt;span class=&quot;citation&quot; data-cites=&quot;degroot1970&quot;&gt;(DeGroot 1970)&lt;/span&gt;. In other words, if &lt;span class=&quot;math inline&quot;&gt;\((\alpha,\beta) \sim \text{bPar}(k,l_0,u_0)\)&lt;/span&gt; and observations &lt;span class=&quot;math inline&quot;&gt;\(X_1,\ldots,X_i \stackrel{\text{iid}}{\sim} U(\alpha,\beta)\)&lt;/span&gt; become available then the posterior distribution of interest is&lt;/p&gt;
 &lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
 (\alpha,\beta)&amp;#39; \&amp;gt;|\&amp;gt; X_1,\ldots,X_i \sim \text{bPar}(k+i,l_i,u_i),
 \]&lt;/span&gt; where &lt;span class=&quot;math display&quot;&gt;\[
@@ -281,16 +281,12 @@ strategy_pig &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(x,
   u &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;cummax&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(prior$u,x))
   seq &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;seq %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;mutate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;l=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(l,l[n]),&lt;span class=&quot;dt&quot;&gt;u=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(u,u[n]),&lt;span class=&quot;dt&quot;&gt;im1div2=&lt;/span&gt;i&lt;span class=&quot;fl&quot;&gt;-0.5&lt;/span&gt;)
 
-  ##Getting E
-  E &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rep&lt;/span&gt;(&lt;span class=&quot;ot&quot;&gt;NA&lt;/span&gt;,n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)
-  for (i in (&lt;span class=&quot;kw&quot;&gt;max&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;-prior$k)+&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;):n) {
-    E[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i)] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;as.numeric&lt;/span&gt;(delta[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)]*seq[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;),&lt;span class=&quot;st&quot;&gt;&amp;quot;u&amp;quot;&lt;/span&gt;] +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;-delta[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)])*seq[&lt;span class=&quot;kw&quot;&gt;idx&lt;/span&gt;(i&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;),&lt;span class=&quot;st&quot;&gt;&amp;quot;l&amp;quot;&lt;/span&gt;] )
-  }
   ##Compute expectation
   seq &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;seq %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;mutate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;E=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;lag&lt;/span&gt;(delta)*&lt;span class=&quot;kw&quot;&gt;lag&lt;/span&gt;(u) +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;-&lt;span class=&quot;kw&quot;&gt;lag&lt;/span&gt;(delta))*&lt;span class=&quot;kw&quot;&gt;lag&lt;/span&gt;(l))
   ##Decision boundary
   seq &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;seq %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;mutate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;threshold=&lt;/span&gt;delta*u +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;-delta)*l, &lt;span class=&quot;dt&quot;&gt;rank=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rank&lt;/span&gt;(x))
 
+  &lt;span class=&quot;co&quot;&gt;#Ensure that last candidate is always taken&lt;/span&gt;
   seq[n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;:&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;threshold&amp;quot;&lt;/span&gt;] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;min&lt;/span&gt;(x)
 
   ##Find r_1

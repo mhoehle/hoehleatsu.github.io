@@ -186,7 +186,7 @@ apply(res,1,mean)
 
 ```
 ##         score    select_idx isOverallBest 
-##         0.871         4.964         0.532
+##         0.871         4.959         0.530
 ```
 
 ```r
@@ -348,7 +348,7 @@ We illustrate the prior setting consisting of $l=5$ and $u=7$ and two values of 
 
 ![](http://staff.math.su.se/hoehle/blog/figure/source/2016-06-19-princesAsUniforms/PARETO_PDF-1.png)
 
-An important feature of this bivariate Pareto prior is that it is the conjugate prior to uniform sampling [@degroot1970, page 170]. In other words, if $(\alpha,\beta) \sim \text{bPar}(k,l_0,u_0)$ and observations $X_1,\ldots,X_i \stackrel{\text{iid}}{\sim} U(\alpha,\beta)$ become available then the posterior distribution of interest is
+An important feature of this bivariate Pareto prior is that it is the conjugate prior to uniform sampling [@degroot1970]. In other words, if $(\alpha,\beta) \sim \text{bPar}(k,l_0,u_0)$ and observations $X_1,\ldots,X_i \stackrel{\text{iid}}{\sim} U(\alpha,\beta)$ become available then the posterior distribution of interest is
 
 $$
 (\alpha,\beta)' \>|\> X_1,\ldots,X_i \sim \text{bPar}(k+i,l_i,u_i),
@@ -415,16 +415,12 @@ strategy_pig <- function(x, prior) {
   u <- cummax(c(prior$u,x))
   seq <- seq %>% mutate(l=c(l,l[n]),u=c(u,u[n]),im1div2=i-0.5)
 
-  ##Getting E
-  E <- rep(NA,n+1)
-  for (i in (max(0,2-prior$k)+1):n) {
-    E[idx(i)] <- as.numeric(delta[idx(i-1)]*seq[idx(i-1),"u"] + (1-delta[idx(i-1)])*seq[idx(i-1),"l"] )
-  }
   ##Compute expectation
   seq <- seq %>% mutate(E=lag(delta)*lag(u) + (1-lag(delta))*lag(l))
   ##Decision boundary
   seq <- seq %>% mutate(threshold=delta*u + (1-delta)*l, rank=rank(x))
 
+  #Ensure that last candidate is always taken
   seq[n+1:2,"threshold"] <- min(x)
 
   ##Find r_1
