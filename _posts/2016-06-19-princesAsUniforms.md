@@ -11,7 +11,6 @@ html_document:
 
 
 
-
 {% include license.html %}
 
 ## Abstract
@@ -25,7 +24,7 @@ alongside? The later variant is called the **partial information game** and is n
 # Introduction
 
 In the last blog post
-[*Optimal Choice - Mathematical Advice for Real Life*](20160-06-12-optimalChoice.html)
+[*Optimal Choice - Mathematical Advice for Real Life*](../12/ optimalChoice.html)
 our interest was in determining a strategy to select the overall best
 candidate from a sequence of $n$ candidates (e.g. princes, job candidates, houses, bids or tinder profiles) arriving sequentially. It
 was shown that the optimal strategy is to screen a number of candidates
@@ -37,7 +36,7 @@ be selected no matter what. The intuitive phenomena of getting *desperate toward
 In this blog post we study the situation, where
 additional information about the absolute score of the candidates
 (instead of just their relative ranks) is available. In particular we assume that the candidate scores are known to originate
-from a known **underlying distribution**, e.g. the uniform or the standard normal. This mean that not only the underlying
+from a known **underlying distribution**, e.g. the uniform or the standard normal. This means that not only the underlying
 parametric family of the scores are known, but also the parameters of
 the distribution. In what follows we use the work of @guttman1960 to
 describe the problem in mathematical notation and discuss
@@ -50,7 +49,7 @@ $b$ are allowed to be $\pm \infty$, respectively. Let $F$ be the
 corresponding cumulative distribution of the score. Furthermore, let
 $\mu=E(X)=\int_{a}^b x \cdot f(x) dx$ be the expectation of $X$.
 In what follows we will assume that the distribution is such that the
-expectation exists. Assuming a total of $n$ candidates we assume that
+expectation exists. Assuming a total of $n$ candidates, we ascertain that
 their abilities/scores are independently and identically sampled from this distribution, i.e.
 
 $$
@@ -66,21 +65,18 @@ later.
 Now we denote by $E_{n}$ the expected score of the chosen candidate
 when one has to choose among $n$ candidates according to some pre-described strategy. It is immediately obvious that $E_1=\mu$.  If there are $n$
 candidates we would like to find the optimal stopping rule maximizing
-$E_n$.  The standard stopping rule implies that we would already stop
+$E_n$.  The standard stopping rule based on the expectation implies that we would already stop
 at the first candidate, if the observed value $x$ is such that $x >
 E_{n-1}$. As a consequence,
 
 $$
 \begin{align*}
 E_{n+1} &= P(X > E_n) \cdot E(X\>|\>X \geq E_n)  +
-P(X_{n+1} \leq E_n) \cdot E_n \\
+P(X \leq E_n) \cdot E_n \\
 %&= \int_{E_n}^b x \cdot f(x) dx + E_n \int_{a}^{E_n} f(x) dx \\
 &= \int_{E_n}^b x \cdot f(x) dx + E_n \cdot (1-F(E_n)).
 \end{align*}
 $$
-
-Example: In the case of $X\sim U(0,1)$ we have
-$E_{n+1}=\frac{1}{2}(1-E_n^2) + E_n^2 =\frac{1}{2}(1+E_n^2)$.  <br>
 
 A function to perform these computations in R handling
 either general densities using numeric integration or analytic
@@ -129,7 +125,7 @@ T_{\text{stop}} = \min_{1\leq i \leq n} \left\{x_i > E_{n-i}\right\}.
 $$
 
 The sequential comparisons can be given in the same strategy vector format as
-for the [secretary problem post](20160-06-12-optimalChoice.html), i.e. one selects the candidate $i$ if
+for the [secretary problem post](../12/optimalChoice.html), i.e. one selects the candidate $i$ if
 $x_i>s_i$.
 
 
@@ -151,9 +147,12 @@ strategy_fip <- function(n,df,pf,intE_fun=NULL,Enp1_fun=NULL,...) {
 
 #### Example: U(0,1)
 
-Given the above derivations, an R implementation of the strategy for
-the $X_i\stackrel{\text{iid}}{\sim} U(0,1)$ case and, say, $n=11$
-looks as follows.
+Example: In the case of $X\sim U(0,1)$ we can analytically compute
+$$
+E_{n+1}=\frac{1}{2}(1-E_n^2) + E_n^2 =\frac{1}{2}(1+E_n^2).
+$$
+
+Given this setup, an R implementation of the strategy with, say, $n=11$ looks as follows.
 
 
 
@@ -186,7 +185,7 @@ apply(res,1,mean)
 
 ```
 ##         score    select_idx isOverallBest 
-##         0.871         4.959         0.530
+##         0.871         4.966         0.532
 ```
 
 ```r
@@ -278,7 +277,7 @@ It is thus not necessary to derive the optimal strategy for each possible contin
 To summarise the previous section's findings: knowing the candidate's
 score distribution means that no training sample is needed to form a
 baseline.  Hence, in the full information game, one immediately is
-*ready for action*, if a candidate with an excellent score is met
+*ready for action*: if a candidate with an excellent score is met
 early you do not hesitate! However, in a real word applications the parameters of the
 parametric distribution are likely to be unknown. This is known as the
 **partial information game** and here statistical inference actually
@@ -300,8 +299,7 @@ Bayesian model is
 $$
 \begin{align*}
 (\alpha,\beta)                                & \sim \text{bPar}(k,l,u) \\
-X_i \>|\> \alpha,\beta \stackrel{\text{iid}}{\sim} & \sim U(\alpha,\beta)
-& i=1,\ldots,n
+X_i \>|\> \alpha,\beta & \stackrel{\text{iid}}{\sim}   U(\alpha,\beta), & i=1,\ldots,n,
 \end{align*}
 $$
 
@@ -312,10 +310,13 @@ I(\alpha<l \text{ and } \beta > u).
 $$
 
 Here, $k>0$ is a shape parameter
-and $I()$ denotes the indicator function. In other words, the parameter
-$l$ is an upper bound for the lower limit of the uniform, and the
-unknown parameter $u$ is a lower limit for the upper limit of the
-uniform. We can think of $l$ as our prior belief about what score arriving candidates would at least have in order to apply. For example: the princess thinks no prince with a score below a five would even dare woo her. Similarly, the lower limit on the upper bound means that the princess initially thinks that due to her stingy dad (the king) no prince above a seven would be interested in her.
+and $I(\>)$ denotes the indicator function. In other words, the parameter
+$l$ is an upper bound for the lower limit of the uniform (i.e. $\alpha$), and the
+parameter $u$ is a lower limit for the upper limit of the
+uniform (i.e. $\beta$). We can think of $(-\infty,l)$ as our prior interval for the worst possible candidate applying and $(u,\infty)$ as our prior interval for the best possible candidate. The shape parameter $k$ denotes how concentrated the prior density is near the limits $l$ and $u$, respectively.
+
+In the example: the princess may think entitlements and the cool title (king) ensures that the worst possible prince up for wooing her would at least be a five. Similarly, the lower bound on the upper limit means that the princess initially thinks that due to her stingy dad (the current king) the best overall applicant might, in worst case, just be about a seven. Finally, the parameter $k$ quantifies the strength in her prior belief - the higher $k$ the closer the true limits are to the values of $l$ and $u$. Since the princess is unsure how well her prior is suited, she assumes a low value of $k=0.1$.
+
 
 
 ```r
@@ -348,7 +349,11 @@ We illustrate the prior setting consisting of $l=5$ and $u=7$ and two values of 
 
 ![](http://staff.math.su.se/hoehle/blog/figure/source/2016-06-19-princesAsUniforms/PARETO_PDF-1.png)
 
-An important feature of this bivariate Pareto prior is that it is the conjugate prior to uniform sampling [@degroot1970]. In other words, if $(\alpha,\beta) \sim \text{bPar}(k,l_0,u_0)$ and observations $X_1,\ldots,X_i \stackrel{\text{iid}}{\sim} U(\alpha,\beta)$ become available then the posterior distribution of interest is
+And the marginal density for two slices of the above joint density is:
+
+![](http://staff.math.su.se/hoehle/blog/figure/source/2016-06-19-princesAsUniforms/PDF_PARETO_MARGINAL-1.png)
+
+An important feature of this bivariate Pareto prior is that it is the conjugate prior to uniform sampling [@degroot1970]. In other words, if $(\alpha,\beta) \sim \text{bPar}(k,l_0,u_0)$ and observations $X_1,\ldots,X_i \stackrel{\text{iid}}{\sim} U(\alpha,\beta)$ become available, then the posterior distribution of interest is
 
 $$
 (\alpha,\beta)' \>|\> X_1,\ldots,X_i \sim \text{bPar}(k+i,l_i,u_i),
@@ -418,17 +423,15 @@ strategy_pig <- function(x, prior) {
   ##Compute expectation
   seq <- seq %>% mutate(E=lag(delta)*lag(u) + (1-lag(delta))*lag(l))
   ##Decision boundary
-  seq <- seq %>% mutate(threshold=delta*u + (1-delta)*l, rank=rank(x))
+  seq <- seq %>% mutate(threshold=delta*u + (1-delta)*l, rank=rank(x),isOverallBest=(rank == n))
 
   #Ensure that last candidate is always taken
   seq[n+1:2,"threshold"] <- min(x)
 
-  ##Find r_1
+  ##Find r_1 and return there characteristics
   r1 <- seq %>% filter(delta <= 1 & i < n & i > max(0,2-prior$k)) %>% slice(1) %>% select(i) %>% as.numeric
-
   select <- seq %>% filter(i >= r1) %>% filter(x >= threshold) %>% slice(1)
-  select <- select %>% mutate(isOverallBest=(select$rank == n))
-
+  
   return(list(seq=seq,select=select))
 }
 ```
@@ -467,7 +470,7 @@ s$select
 
 ![]({{ site.baseurl }}/figure/source/2016-06-19-princesAsUniforms/animation-pig.gif)
 
-The animation provides interesting insights: Firstly, the upper bound on the lower limit is updated along the way, because some seriously unfit candidates dare to woo. Secondly, the decision boundary initially is initially slightly above our lower bound on the upper limit. However, the first candidate (candidate no. 3) above this prior bound is not accepted, since it is still early in the sequence and thus little is known about the support of the uniform, i.e. the range of candidates applying. Hence, the princess hopes to get an even better candidate. However, as time passes by and no such candidate appears, the limit is slowly adjusted downwards. Luckily, the 8'th candidate not only brings a score better than imagined (and is thus selected), he also (seen through the  omnipotent eyes of somebody knowing all the candidates) actually is the best prince among **all** the candidates, i.e. `isOverallBest=TRUE`. In other words: our mathematical fairy tale even has a happy end!
+The animation provides interesting insights: Firstly, the upper bound on the lower limit is updated along the way, because some seriously unfit candidates dare to woo. Secondly, the decision boundary is initially slightly above our lower bound on the upper limit. However, the first candidate (candidate no. 3) above this prior bound is not accepted, since it is still early in the sequence and thus little is known about the support of the uniform, i.e. the range of candidates applying. Hence, the princess hopes to get an even better candidate. However, as time passes by and no such candidate appears, the limit is slowly adjusted downwards. Luckily, the 8'th candidate not only brings a score better than imagined (and is thus selected), he also (seen through the  omnipotent eyes of somebody knowing all the candidates) actually is the best prince among **all** the candidates, i.e. `isOverallBest=TRUE`. In other words: our mathematical fairy tale even has a happy end!
 
 <center>
 ![]({{ site.baseurl }}/figure/source/2016-06-19-princesAsUniforms/Fairytale-Fantasy-Castle-Landscape-300px.png "Source: https://openclipart.org/detail/231006/fairytale-fantasy-castle-landscape")
