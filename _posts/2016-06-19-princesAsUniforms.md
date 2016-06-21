@@ -3,7 +3,7 @@ layout: post
 title: "Princes Disguised in Uniforms"
 tags: [math, rstats, secretary problem, stopping rule]
 bibliography: ~/Literature/Bibtex/jabref.bib
-comments: false
+comments: true
 html_document:
     mathjax: local
     self_contained: true
@@ -185,7 +185,7 @@ apply(res,1,mean)
 
 ```
 ##         score    select_idx isOverallBest 
-##         0.871         4.956         0.528
+##         0.871         4.960         0.530
 ```
 
 ```r
