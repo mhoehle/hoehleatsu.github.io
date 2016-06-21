@@ -15,7 +15,7 @@ html_document:
 
 ## Abstract
 
-We revisit the **secretary problem** as a mathematical fairy tale: Princes wooing a princess sequentially arrive each having a qualification score score originating from a known parametric distribution with all parameters known, e.g., the standard uniform distribution or the normal distribution with known mean and variance.
+We revisit the **secretary problem** as a mathematical fairy tale: Princes wooing a princess sequentially arrive each having a qualification score originating from a known parametric distribution with all parameters known, e.g., the standard uniform distribution or the normal distribution with known mean and variance.
 For this so called **full information game** the question of interest is: How does the optimal strategy look, which
 maximizes the expected score of the selected candidate? As a further twist: How does the
 strategy change, if we sequentially have to estimate the parameters of the distribution
@@ -31,7 +31,7 @@ was shown that the optimal strategy is to screen a number of candidates
 $r-1$ in order to form a baseline and then, starting from the $r$'th
 candidate, select the first candidate better than the baseline. If no
 candidate was chosen before the $n$'th candidate this last candidate has to
-be selected no matter what. The intuitive phenomena of getting *desperate towards the end* was observed, if the objective of finding *the* best is changed to maximizing the expected rank of the selected candidate.
+be selected no matter what. The natural phenomena of getting *desperate towards the end* was observed, if the objective of finding *the* best is changed to maximizing the expected rank of the selected candidate.
 
 In this blog post we study the situation, where
 additional information about the absolute score of the candidates
@@ -185,7 +185,7 @@ apply(res,1,mean)
 
 ```
 ##         score    select_idx isOverallBest 
-##         0.871         4.966         0.532
+##         0.871         4.956         0.528
 ```
 
 ```r
@@ -315,7 +315,7 @@ $l$ is an upper bound for the lower limit of the uniform (i.e. $\alpha$), and th
 parameter $u$ is a lower limit for the upper limit of the
 uniform (i.e. $\beta$). We can think of $(-\infty,l)$ as our prior interval for the worst possible candidate applying and $(u,\infty)$ as our prior interval for the best possible candidate. The shape parameter $k$ denotes how concentrated the prior density is near the limits $l$ and $u$, respectively.
 
-In the example: the princess may think entitlements and the cool title (king) ensures that the worst possible prince up for wooing her would at least be a five. Similarly, the lower bound on the upper limit means that the princess initially thinks that due to her stingy dad (the current king) the best overall applicant might, in worst case, just be about a seven. Finally, the parameter $k$ quantifies the strength in her prior belief - the higher $k$ the closer the true limits are to the values of $l$ and $u$. Since the princess is unsure how well her prior is suited, she assumes a low value of $k=0.1$.
+In the example: the princess may think entitlements and the cool future title (king) ensures that the worst possible prince up for wooing her would at least be a five. Similarly, the lower bound on the upper limit means that the princess initially thinks that due to her stingy dad (the current king) the best overall applicant might, in worst case, just be about a seven. Finally, the parameter $k$ quantifies the strength in her prior belief - the higher $k$ the closer the true limits are to the values of $l$ and $u$. Since the princess is unsure how well her prior is suited, she assumes a low value of $k$, say, $k=0.1$.
 
 
 
@@ -345,7 +345,7 @@ f_pareto <- function(theta,k,l,u) {
 
 
 
-We illustrate the prior setting consisting of $l=5$ and $u=7$ and two values of $k$:
+We illustrate the prior setting consisting of $l=5$ and $u=7$ and the two values $k=0.1$ and $k=1$:
 
 ![](http://staff.math.su.se/hoehle/blog/figure/source/2016-06-19-princesAsUniforms/PARETO_PDF-1.png)
 
