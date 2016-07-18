@@ -125,7 +125,7 @@ ggplot( linelist, aes(x=as.integer(delay),y=..prop..)) +
  stat_count() + scale_y_continuous(labels = scales::percent) + xlab("Delay (days)") + ylab("")
 ```
 
-Instead of using `ggplot` to show the epidemic curve, this can also be done directly from the surveillance package using the function `linelist2sts`. This function takes a `data.frame` representing a linelist and converts this into an object of class `sts` (surveillance time series) used by package. This then allows the use of all the plotting functionality of such objects as described in @salmon_etal2016a.
+Instead of using `ggplot` to show the epidemic curve, this can also be done directly from the surveillance package using the function `linelist2sts`. This function takes a `data.frame` representing a linelist and converts this into an object of class `sts` (surveillance time series) used by the package. This then allows the use of all the plotting functionality of such objects as described in @salmon_etal2016a.
 Note: For the nowcasting code of this blog entry to work, the newest development version of the package, i.e. version 1.12.2 available from Rforge using 
 
 <p><center>`install.packages("surveillance",repos="http://r-forge.r-project.org")`</center><p>
@@ -181,7 +181,7 @@ Dirichlet distribution. An important choice is here the prior for the expected n
 of cases per day, i.e. $\lambda_t$ in the notation of @hoehle_anderheiden2014. In the conjugate case this is specified by assuming an iid. Gamma-distribution for $\lambda_t$, which is specified through prior mean and prior variance of the Gamma distribution. We here select here
 an empirical Bayes inspired approach and estimate these parameters from the currently available data.
 However, note: These data are by definition of the problem incomplete.
-As a dirty fix we therefore just inflate the prior variance by a factor -- as future work this needs to be improved upon by following a proper marginal likelihood approach.
+As a dirty fix we therefore just inflate the prior variance by a factor - as future work this needs to be improved upon by following a proper marginal likelihood approach.
 
 ```{r,results='hide',warning=FALSE}
 nc.control <- list(
@@ -220,7 +220,7 @@ Finally, we can for `stsNC` objects show a simple non-parametric estimate of the
 plot(nc, type="delay", dates=seq(so_range[1],now,by="1 day"),w=1)
 ```
 
-The figure shows for each time point $t$ the median as well as the 10% and 90% quantile of the empirical distribution of delays within the window of $t-w,\ldots,t+w$. Note: This simple estimate ignores the right- truncation, hence, within the period of `(now-D):now` there will be a bias of these estimates towards shorter delays. This period is illustrated in the figure by the light-gray shaded area. Furthermore, the median of the model based estimate for the delay distribution is shown for the period of `(now-m:now)`. From the figure one has the suspicion that the delay decreased a bit over time, but the decrease totally at the end could also be due to right-truncation. However,  assuming a **time-invariant delay distribution** for the entire outbreak appears as if it would result in unsatisfactory results. Hence, we shall for each time point use only a moving window consisting of all observations occuring within the period `(now-m):now`. We select $m=14$ for estimating the delay distribution.
+The figure shows for each time point $t$ the median as well as the 10% and 90% quantile of the empirical distribution of delays within the window of $t-w,\ldots,t+w$. Note: This simple estimate ignores the right- truncation, hence, within the period of `(now-D):now` there will be a bias of these estimates towards shorter delays. This biased period is illustrated in the figure by the light-gray shaded area. Furthermore, the median of the model based estimate for the delay distribution is shown for the period of `(now-m:now)`. From the figure one has the suspicion that the delay decreased a bit over time, but the decrease totally at the end could also be due to right-truncation. However, assuming a **time-invariant delay distribution** for the entire outbreak would probably give unsatisfactory results. Hence, we shall for each time point use only a moving window consisting of all observations occuring within the period `(now-m):now`. We select $m=14$ for estimating the delay distribution.
 
 ## Showing a sequence of nowcasts
 
@@ -251,7 +251,7 @@ for (i in seq_len(length(animRange))) {
 }
 ```
 
-We will use the `animation` package to wrap the call to `animate_nowcasts` in order to generate an animated GIF. Better control over the obtained animation can be obtained using the `animation::saveHTML`. If one wants to include such an animation into a power-point presentation the use of Flash animations (`animation::saveSWF`) is recommended. Note that the animation package requires [ImageMagick](http://www.imagemagick.org/script/index.php) to be installed on your system.
+We will use the `animation` package to wrap the call to `animate_nowcasts` in order to generate an animated GIF. Better control over the obtained animation can be obtained using the `animation::saveHTML` function. If one wants to include the animation into a Power-Point presentation, I recommend the use of Flash animations (`animation::saveSWF`). Note that the animation package requires [ImageMagick](http://www.imagemagick.org/script/index.php) to be installed on your system.
 
 ```{r,ANIMNOWCASTS,warning=FALSE,fig.width=8,fig.height=5,message=FALSE,results='hide'}
 animation::saveGIF( {
@@ -268,7 +268,7 @@ invisible(file.rename("animate-nowcasts.gif",file.path(fullFigPath,"animate-nowc
 cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"animate-nowcasts.gif",")"))
 ```
 
-As a final comparison we can also obtain an animation of how the delay distribution changes with time. From the animation we notice that the delay appear to steadily decrease, which is a typical behavior for high-profiled outbreaks. However, this also seriously questions the assumption of a **time-invariant delay distribution**. Instead, one could use a window-limited estimation approach or one could try to model the delay distribution using a discrete time survival model as done in @hoehle_anderheiden2014.
+As a final comparison we can also obtain an animation of how the delay distribution changes with time. From the animation we notice that the delay appears to steadily decrease, which is a typical behavior for high-profiled outbreaks. However, this also seriously questions the assumption of a **time-invariant delay distribution**. Instead, one could use a window-limited estimation approach or one could try to model the delay distribution using a discrete time survival model as done in @hoehle_anderheiden2014.
 
 ```{r,ANIMDELAYS,results='hide',message=FALSE}
 animation::saveGIF(
@@ -285,6 +285,6 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"animate-
 
 # Discussion
 
-The adjustment of occurred-but-not-yet-reported-events applies to many other application areas besides **real-time public health monitoring**. For example, direct links to claims reserve modelling in actuarial sciences exist, but many other areas of application, where delays play a role, appear of interest. For the methodological details of the nowcasting  procedures see @hoehle_anderheiden2014, which is available as open access document.
+The adjustment of occurred-but-not-yet-reported-events applies to many other application areas besides **real-time public health monitoring**. For example, direct links to claims reserve modelling in actuarial sciences exist, but many other areas of application, where delays play a role, appear of interest. For the methodological details of the nowcasting  procedures see @hoehle_anderheiden2014, which is available as open access document. The present blog entry focused on getting methods operational using R.
 
 # References
