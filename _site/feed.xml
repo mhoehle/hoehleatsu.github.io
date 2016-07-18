@@ -6,9 +6,213 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 21 Jun 2016 23:29:02 +0200</pubDate>
-    <lastBuildDate>Tue, 21 Jun 2016 23:29:02 +0200</lastBuildDate>
+    <pubDate>Tue, 19 Jul 2016 00:37:33 +0200</pubDate>
+    <lastBuildDate>Tue, 19 Jul 2016 00:37:33 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
+    
+      <item>
+        <title>Casting Call for MERS-CoV in Korea, 2015</title>
+        <description>&lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
+href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
+&lt;p&gt;We perform an adjustment for observed-but-not-yet-reported cases (aka. nowcasting) for the epidemic curve of the Middle East respiratory syndrome coronavirus (MERS-CoV) outbreak in Korea, 2015. The analysis is based on the publically available WHO data and aims at illustrating how one could do real-time public health surveillance during critical outbreaks.&lt;/p&gt;
+&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
+&lt;p&gt;Short-range (0-6h) forecasts in the world of meteorology are also called &lt;strong&gt;nowcasts&lt;/strong&gt;. The term has also found its way into real-time infectious disease monitoring where one of its uses has been to adjust the currently available epidemic curve during an outbreak for structural and reporting delays.&lt;/p&gt;
+&lt;p&gt;Whereas the original work in &lt;span class=&quot;citation&quot; data-cites=&quot;hoehle_anderheiden2014&quot;&gt;Höhle and an der Heiden (2014)&lt;/span&gt; was motivated by the large STEC O104:H4 outbreak in Germany 2011, one of our secondary motivations was to develop a tool the quantitative epidemiologist could use during similar high-profiled outbreaks (instead of having to re-invent the wheel during times of maximal stress). After my talk at the &lt;a href=&quot;https://biometricconference.org/showcases/biometrics-showcase/&quot;&gt;IBC2016 conference&lt;/a&gt; (&lt;a href=&quot;http://staff.math.su.se/hoehle/talks/IBC2016-Hoehle.pdf&quot;&gt;slides of the talk&lt;/a&gt;) one of the questions from the audience was how much impact the work had in terms of being useful for other outbreaks. Besides an analysis of an Adenovirus outbreak and a recent analysis of an O157 outbreak, I was a little short on a convincing answer. In addition, when trying to make a quick analysis for the O157 outbreak with the currently available code in the &lt;code&gt;surveillance&lt;/code&gt; package it became obvious that the nowcasting functionality in the package currently is a little rough and certainly in need of a user-friendliness polishing.&lt;/p&gt;
+&lt;p&gt;So this little blog-note serves three purposes:&lt;/p&gt;
+&lt;ol type=&quot;1&quot;&gt;
+&lt;li&gt;Illustrate how you can nowcasts with R, if you ever have to.&lt;/li&gt;
+&lt;li&gt;Act as literate programming document for facilitating some code improvements of the &lt;code&gt;nowcast&lt;/code&gt; function while providing a vignette supported story.&lt;/li&gt;
+&lt;li&gt;Perform an analysis of the WHO open-data on the MERS-CoV outbreak in Korea in 2015.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The structure of this blog entry is as follows. We first discuss and visualize the WHO data on the MERS-CoV outbreak. The findings from the descriptive data analysis are then used to set up nowcasts adjusting the observed epidemic curve during the outbreak for reporting delays between onset of symptoms in cases and the date the case report arrived at the WHO. Finally, we illustrate how to visualize a sequence of nowcasts during an outbreak using an animation.&lt;/p&gt;
+&lt;h1 id=&quot;data&quot;&gt;Data&lt;/h1&gt;
+&lt;p&gt;The data basis for our analysis is the WHO data on the &lt;a href=&quot;http://www.who.int/csr/don/21-july-2015-mers-korea/en/&quot;&gt;MERS-Cov outbreak in Korea&lt;/a&gt;, which occured during May-July 2015. Of interest will be the delay between the time point (here measured in days) on which a case has the onset of its MERS symptoms and the day the WHO learns about this case. In other words we put ourself in the role of an epidemiologist working at the WHO and who during the outbreak has to report on how the outbreak is evolving in Korea.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;##Library to read excel files
+&lt;span class=&quot;kw&quot;&gt;library&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;openxlsx&amp;quot;&lt;/span&gt;)
+
+##Obtain file from link found at (if it doesn&amp;#39;t already exist)
+##http://www.who.int/csr/don/21-july-2015-mers-korea/en/
+if (!&lt;span class=&quot;kw&quot;&gt;file.exists&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;../downloads/MERS-CoV-cases-rok-21Jul15.xlsx&amp;quot;&lt;/span&gt;)) {
+  &lt;span class=&quot;kw&quot;&gt;download.file&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;url=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;http://www.who.int/entity/csr/disease/coronavirus_infections/MERS-CoV-cases-rok-21Jul15.xlsx?ua=1&amp;quot;&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;destfile=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;../downloads/MERS-CoV-cases-rok-21Jul15.xlsx&amp;quot;&lt;/span&gt;)
+}
+
+##Read data
+linelist &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;read.xlsx&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;../downloads/MERS-CoV-cases-rok-21Jul15.xlsx&amp;quot;&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;startRow=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;4&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;detectDates=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;TRUE&lt;/span&gt;)
+
+##Base R style - IMHO easier to understand
+for (dateCol in &lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;Date.of.notification.to.WHO&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;Date.of.symptoms.onset&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;Date.of.first.hospitalization&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;Date.of.laboratory.confirmation&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;Date.of.outcome&amp;quot;&lt;/span&gt;)) {
+  linelist[,dateCol] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;as.Date&lt;/span&gt;(linelist[,dateCol],&lt;span class=&quot;dt&quot;&gt;format=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;%d/%m/%Y&amp;quot;&lt;/span&gt;)
+}
+
+##Make a delay column
+linelist$delay &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;with&lt;/span&gt;(linelist,Date.of.notification.to.WHO -&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;Date.of.symptoms.onset)
+
+&lt;span class=&quot;kw&quot;&gt;head&lt;/span&gt;(linelist,&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##   Case.no. Date.of.notification.to.WHO Age Sex Health.care.worker Comorbidities
+## 1        1                  2015-05-20  68   M                 No          &amp;lt;NA&amp;gt;
+## 2        2                  2015-05-22  63   F                 No          &amp;lt;NA&amp;gt;
+## 3        3                  2015-05-22  76   M                 No          &amp;lt;NA&amp;gt;
+##   Date.of.symptoms.onset Date.of.first.hospitalization Date.of.laboratory.confirmation
+## 1             2015-05-11                    2015-05-15                      2015-05-20
+## 2             2015-05-19                          &amp;lt;NA&amp;gt;                      2015-05-20
+## 3             2015-05-20                          &amp;lt;NA&amp;gt;                      2015-05-20
+##     Status Date.of.outcome  delay
+## 1    Alive            &amp;lt;NA&amp;gt; 9 days
+## 2    Alive            &amp;lt;NA&amp;gt; 3 days
+## 3 Deceased      2015-06-04 2 days&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;As the outbreak is already over, it is easy to visualize the epidemic curve in retrospect. We do so for the date of symptom onset.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;##Show the epidemic curve as it occurs at the end of the outbreak
+##using simple call to ggplot
+ggplot2::&lt;span class=&quot;kw&quot;&gt;ggplot&lt;/span&gt;( linelist, &lt;span class=&quot;kw&quot;&gt;aes&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;Date.of.symptoms.onset)) +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;geom_histogram&lt;/span&gt;() +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;xlab&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;Date of onset of symptoms&amp;quot;&lt;/span&gt;) +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;ylab&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;Number of cases&amp;quot;&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;figure&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-07-19-nowCast/EPICURVE-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;Furthermore, we can look at the delay distribution as it looks at the end of the outbreak. We shall later look in more detail at this distribution, but for now the plot gives an idea about the range of the delay: in most cases the delay is between 1-14 days, actually 97.1% of the observations have a lag smaller or equal to &lt;span class=&quot;math inline&quot;&gt;\(D=14\)&lt;/span&gt;. As a consequence, we shall use &lt;span class=&quot;math inline&quot;&gt;\(D=14\)&lt;/span&gt; as the maximum relevant lag to adjust for.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;ggplot&lt;/span&gt;( linelist, &lt;span class=&quot;kw&quot;&gt;aes&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;as.integer&lt;/span&gt;(delay),&lt;span class=&quot;dt&quot;&gt;y=&lt;/span&gt;..prop..)) +
+&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;stat_count&lt;/span&gt;() +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;scale_y_continuous&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;labels =&lt;/span&gt; scales::percent) +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;xlab&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;Delay (days)&amp;quot;&lt;/span&gt;) +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;ylab&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;figure&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-07-19-nowCast/unnamed-chunk-3-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;Instead of using &lt;code&gt;ggplot&lt;/code&gt; to show the epidemic curve, this can also be done directly from the surveillance package using the function &lt;code&gt;linelist2sts&lt;/code&gt;. This function takes a &lt;code&gt;data.frame&lt;/code&gt; representing a linelist and converts this into an object of class &lt;code&gt;sts&lt;/code&gt; (surveillance time series) used by package. This then allows the use of all the plotting functionality of such objects as described in &lt;span class=&quot;citation&quot; data-cites=&quot;salmon_etal2016a&quot;&gt;Salmon, Schumacher, and Höhle (2016)&lt;/span&gt;. Note: For the nowcasting code of this blog entry to work, the newest development version of the package, i.e. version 1.12.2 available from Rforge using&lt;/p&gt;
+&lt;p&gt;
+&lt;center&gt;
+&lt;code&gt;install.packages(&amp;quot;surveillance&amp;quot;,repos=&amp;quot;http://r-forge.r-project.org&amp;quot;)&lt;/code&gt;
+&lt;/center&gt;
+&lt;p&gt;
+&lt;p&gt;is needed. The code then looks as follows:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;##Load surveillance pkg. 
+&lt;span class=&quot;kw&quot;&gt;library&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;surveillance&amp;quot;&lt;/span&gt;)
+
+##Range of the symptom onset date variable
+so_range &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;range&lt;/span&gt;(linelist$Date.of.symptoms.onset,&lt;span class=&quot;dt&quot;&gt;na.rm=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;TRUE&lt;/span&gt;)
+
+##Create an sts time series from the linelist, which contains daily counts.
+sts &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;linelist2sts&lt;/span&gt;(linelist, &lt;span class=&quot;dt&quot;&gt;dateCol=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;Date.of.symptoms.onset&amp;quot;&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;aggregate.by=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;1 day&amp;quot;&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;dRange=&lt;/span&gt;so_range)
+
+##Show the resulting time series using the plot functionality for sts objects.
+&lt;span class=&quot;kw&quot;&gt;plot&lt;/span&gt;(sts,&lt;span class=&quot;dt&quot;&gt;legend.opts=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;NULL&lt;/span&gt;,
+     &lt;span class=&quot;dt&quot;&gt;xaxis.tickFreq=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;%d&amp;quot;&lt;/span&gt;=atChange,&lt;span class=&quot;st&quot;&gt;&amp;quot;%m&amp;quot;&lt;/span&gt;=atChange),
+     &lt;span class=&quot;dt&quot;&gt;xaxis.labelFreq=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;%d&amp;quot;&lt;/span&gt;=at2ndChange),&lt;span class=&quot;dt&quot;&gt;xaxis.labelFormat=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;%d-%b&amp;quot;&lt;/span&gt;,
+     &lt;span class=&quot;dt&quot;&gt;xlab=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;Time (days)&amp;quot;&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;lty=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;),&lt;span class=&quot;dt&quot;&gt;lwd=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;),
+     &lt;span class=&quot;dt&quot;&gt;ylab=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;No. symptom onsets&amp;quot;&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;figure&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-07-19-nowCast/EPICURVE-SURVEILLANCE-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;h2 id=&quot;nowcasting&quot;&gt;Nowcasting&lt;/h2&gt;
+&lt;p&gt;We now move on to the nowcasts.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;##State which date to nowcast
+now &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;as.Date&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;2015-06-12&amp;quot;&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Say (in a mathematical sense) we move back time to 2015-06-12. In the notation of &lt;span class=&quot;citation&quot; data-cites=&quot;hoehle_anderheiden2014&quot;&gt;Höhle and an der Heiden (2014)&lt;/span&gt; this means &lt;span class=&quot;math inline&quot;&gt;\(T=2015-06-12\)&lt;/span&gt;. We want to illustrate what the WHO could see at this point and, on the basis on how the available reports, estimate the delay distribution and adjust the observed cases accordingly. We shall here only use the right-truncation delay adjusted procedure operating on the generalized Dirichlet distribution. Since the nowcasts for the time points very close to now are very volatile (i.e. have very large credibility regions), it&#39;s opportune to not display these casts as they can be very hard to communicate. Also note that the selected date for &lt;code&gt;now&lt;/code&gt; is selected such that enough cases are available to give a sufficiently reliable estimate for the delay distribution.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;##Nowcasts are displayed up to time (now - safePredictLag)
+safePredictLag &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;
+nowcastDates &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;seq&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;from =&lt;/span&gt; so_range[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;], &lt;span class=&quot;dt&quot;&gt;to =&lt;/span&gt; now -&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;safePredictLag, &lt;span class=&quot;dt&quot;&gt;by =&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We now perform right-truncation adjusted Bayesian nowcasting using the generalized Dirichlet distribution. An important choice is here the prior for the expected number of cases per day, i.e. &lt;span class=&quot;math inline&quot;&gt;\(\lambda_t\)&lt;/span&gt; in the notation of &lt;span class=&quot;citation&quot; data-cites=&quot;hoehle_anderheiden2014&quot;&gt;Höhle and an der Heiden (2014)&lt;/span&gt;. In the conjugate case this is specified by assuming an iid. Gamma-distribution for &lt;span class=&quot;math inline&quot;&gt;\(\lambda_t\)&lt;/span&gt;, which is specified through prior mean and prior variance of the Gamma distribution. We here select here an empirical Bayes inspired approach and estimate these parameters from the currently available data. However, note: These data are by definition of the problem incomplete. As a dirty fix we therefore just inflate the prior variance by a factor -- as future work this needs to be improved upon by following a proper marginal likelihood approach.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;nc.control &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(
+  &lt;span class=&quot;dt&quot;&gt;N.tInf.prior =&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;structure&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;poisgamma&amp;quot;&lt;/span&gt;,
+                           &lt;span class=&quot;dt&quot;&gt;mean.lambda =&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;mean&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;observed&lt;/span&gt;(sts)),
+                           &lt;span class=&quot;dt&quot;&gt;var.lambda =&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt;*&lt;span class=&quot;kw&quot;&gt;var&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;observed&lt;/span&gt;(sts))
+                           ),
+  ##compute predictive distribution as wel, which is needed for some of the
+  ##animations.
+  &lt;span class=&quot;dt&quot;&gt;predPMF =&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;TRUE&lt;/span&gt;,
+  &lt;span class=&quot;dt&quot;&gt;dRange =&lt;/span&gt; so_range)
+
+## Now run the nowcast (NA dates are removed from the dataset).
+nc &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;nowcast&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;now =&lt;/span&gt; now, &lt;span class=&quot;dt&quot;&gt;when =&lt;/span&gt; nowcastDates, &lt;span class=&quot;dt&quot;&gt;data =&lt;/span&gt; linelist,
+              &lt;span class=&quot;dt&quot;&gt;dEventCol =&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;Date.of.symptoms.onset&amp;quot;&lt;/span&gt;,
+              &lt;span class=&quot;dt&quot;&gt;dReportCol =&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;Date.of.notification.to.WHO&amp;quot;&lt;/span&gt;,
+              &lt;span class=&quot;dt&quot;&gt;method =&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;bayes.trunc&amp;quot;&lt;/span&gt;, &lt;span class=&quot;co&quot;&gt;#use the conjugate generalized dirichlet&lt;/span&gt;
+              &lt;span class=&quot;dt&quot;&gt;aggregate.by =&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;1 day&amp;quot;&lt;/span&gt;,
+              &lt;span class=&quot;dt&quot;&gt;D =&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;14&lt;/span&gt;, &lt;span class=&quot;co&quot;&gt;#adjust cases up to 2 weeks back.&lt;/span&gt;
+              &lt;span class=&quot;dt&quot;&gt;control =&lt;/span&gt; nc.control)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## Removed 13 records due to NA dates.&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The resulting object is of class &lt;code&gt;stsNC&lt;/code&gt;, which is just a class inheriting from the &lt;code&gt;sts&lt;/code&gt; class. Hence, all the usual plotting functions apply to it. In addition, a plot of an &lt;code&gt;stsNC&lt;/code&gt; object as shown below, contains the median of the pointwise predictive distribution (thick blue line) as well as equi-tailed 95% credibility regions (dashed orange lines).&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;plot&lt;/span&gt;(nc, &lt;span class=&quot;dt&quot;&gt;legend.opts=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;NULL&lt;/span&gt;,
+     &lt;span class=&quot;dt&quot;&gt;xaxis.tickFreq=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;%d&amp;quot;&lt;/span&gt;=atChange,&lt;span class=&quot;st&quot;&gt;&amp;quot;%m&amp;quot;&lt;/span&gt;=atChange),
+     &lt;span class=&quot;dt&quot;&gt;xaxis.labelFreq=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;%d&amp;quot;&lt;/span&gt;=at2ndChange),&lt;span class=&quot;dt&quot;&gt;xaxis.labelFormat=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;%d-%b&amp;quot;&lt;/span&gt;,
+     &lt;span class=&quot;dt&quot;&gt;xlab=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;Time (days)&amp;quot;&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;lty=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;),&lt;span class=&quot;dt&quot;&gt;lwd=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;),
+     &lt;span class=&quot;dt&quot;&gt;ylab=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;No. symptom onsets&amp;quot;&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;ylim=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;,&lt;span class=&quot;kw&quot;&gt;max&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;observed&lt;/span&gt;(nc),&lt;span class=&quot;kw&quot;&gt;upperbound&lt;/span&gt;(nc),&lt;span class=&quot;kw&quot;&gt;predint&lt;/span&gt;(nc),&lt;span class=&quot;dt&quot;&gt;na.rm=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;TRUE&lt;/span&gt;)))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;figure&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-07-19-nowCast/NOWCASTPLOT-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;Finally, we can for &lt;code&gt;stsNC&lt;/code&gt; objects show a simple non-parametric estimate of the delay distribution as a function of time using a window-smoothed approach with window width &lt;span class=&quot;math inline&quot;&gt;\(2w+1\)&lt;/span&gt;, see &lt;span class=&quot;citation&quot; data-cites=&quot;hoehle_anderheiden2014&quot;&gt;Höhle and an der Heiden (2014)&lt;/span&gt; for details.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;plot&lt;/span&gt;(nc, &lt;span class=&quot;dt&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;delay&amp;quot;&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;dates=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;seq&lt;/span&gt;(so_range[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;],now,&lt;span class=&quot;dt&quot;&gt;by=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;1 day&amp;quot;&lt;/span&gt;),&lt;span class=&quot;dt&quot;&gt;w=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;figure&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-07-19-nowCast/NOWCASTDELAY-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;The figure shows for each time point &lt;span class=&quot;math inline&quot;&gt;\(t\)&lt;/span&gt; the median as well as the 10% and 90% quantile of the empirical distribution of delays within the window of &lt;span class=&quot;math inline&quot;&gt;\(t-w,\ldots,t+w\)&lt;/span&gt;. Note: This simple estimate ignores the right- truncation, hence, within the period of &lt;code&gt;(now-D):now&lt;/code&gt; there will be a bias of these estimates towards shorter delays. This period is illustrated in the figure by the light-gray shaded area. Furthermore, the median of the model based estimate for the delay distribution is shown for the period of &lt;code&gt;(now-m:now)&lt;/code&gt;. From the figure one has the suspicion that the delay decreased a bit over time, but the decrease totally at the end could also be due to right-truncation. However, assuming a &lt;strong&gt;time-invariant delay distribution&lt;/strong&gt; for the entire outbreak appears as if it would result in unsatisfactory results. Hence, we shall for each time point use only a moving window consisting of all observations occuring within the period &lt;code&gt;(now-m):now&lt;/code&gt;. We select &lt;span class=&quot;math inline&quot;&gt;\(m=14\)&lt;/span&gt; for estimating the delay distribution.&lt;/p&gt;
+&lt;h2 id=&quot;showing-a-sequence-of-nowcasts&quot;&gt;Showing a sequence of nowcasts&lt;/h2&gt;
+&lt;p&gt;Once a couple of nowcasts have been performed it can also be helpful to visualize the sequence of nowcasts using an animation. This is easily done by first generating a list of nowcast results followed by a call to &lt;code&gt;surveillance::animate_nowcasts&lt;/code&gt;.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;##Nowcast all time points (except for the first three weeks). This might take a while.
+nowcasts &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;()
+animRange &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;seq&lt;/span&gt;(so_range[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;]+&lt;span class=&quot;dv&quot;&gt;21&lt;/span&gt;,so_range[&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;],&lt;span class=&quot;dt&quot;&gt;by=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;1 day&amp;quot;&lt;/span&gt;)
+
+##Do nowcasts for the rage of dates
+for (i in &lt;span class=&quot;kw&quot;&gt;seq_len&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;length&lt;/span&gt;(animRange))) {
+  today &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;animRange[i]
+  &lt;span class=&quot;kw&quot;&gt;print&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;as.character&lt;/span&gt;(today))
+
+  nowcastDates &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;seq&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;from =&lt;/span&gt; so_range[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;], &lt;span class=&quot;dt&quot;&gt;to =&lt;/span&gt; today -&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;safePredictLag, &lt;span class=&quot;dt&quot;&gt;by =&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;)
+
+  nowcasts[[&lt;span class=&quot;kw&quot;&gt;as.character&lt;/span&gt;(today)]] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;nowcast&lt;/span&gt;(
+    &lt;span class=&quot;dt&quot;&gt;now =&lt;/span&gt; today, &lt;span class=&quot;dt&quot;&gt;when =&lt;/span&gt; nowcastDates, &lt;span class=&quot;dt&quot;&gt;data =&lt;/span&gt; linelist,
+    &lt;span class=&quot;dt&quot;&gt;dEventCol =&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;Date.of.symptoms.onset&amp;quot;&lt;/span&gt;,
+    &lt;span class=&quot;dt&quot;&gt;dReportCol =&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;Date.of.notification.to.WHO&amp;quot;&lt;/span&gt;,
+    &lt;span class=&quot;dt&quot;&gt;method =&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;bayes.trunc&amp;quot;&lt;/span&gt;,
+    &lt;span class=&quot;dt&quot;&gt;aggregate.by =&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;1 day&amp;quot;&lt;/span&gt;,
+    &lt;span class=&quot;dt&quot;&gt;D =&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;14&lt;/span&gt;,
+    &lt;span class=&quot;dt&quot;&gt;m =&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;14&lt;/span&gt;, ##moving window of 14+1 days for estimation
+    &lt;span class=&quot;dt&quot;&gt;control =&lt;/span&gt; nc.control)
+}&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We will use the &lt;code&gt;animation&lt;/code&gt; package to wrap the call to &lt;code&gt;animate_nowcasts&lt;/code&gt; in order to generate an animated GIF. Better control over the obtained animation can be obtained using the &lt;code&gt;animation::saveHTML&lt;/code&gt;. If one wants to include such an animation into a power-point presentation the use of Flash animations (&lt;code&gt;animation::saveSWF&lt;/code&gt;) is recommended. Note that the animation package requires &lt;a href=&quot;http://www.imagemagick.org/script/index.php&quot;&gt;ImageMagick&lt;/a&gt; to be installed on your system.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;animation::&lt;span class=&quot;kw&quot;&gt;saveGIF&lt;/span&gt;( {
+  &lt;span class=&quot;kw&quot;&gt;par&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;mar=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;fl&quot;&gt;5.5&lt;/span&gt;, &lt;span class=&quot;dv&quot;&gt;4&lt;/span&gt;, &lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;, &lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;) +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.1&lt;/span&gt;) ; ##add extra space at the bottom and remove at top
+  &lt;span class=&quot;kw&quot;&gt;animate_nowcasts&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;nowcasts =&lt;/span&gt; nowcasts,
+                   &lt;span class=&quot;dt&quot;&gt;linelist_truth =&lt;/span&gt; linelist,
+                   &lt;span class=&quot;dt&quot;&gt;method =&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;bayes.trunc&amp;quot;&lt;/span&gt;, &lt;span class=&quot;co&quot;&gt;#nowcast method to use (has to be in the casts)&lt;/span&gt;
+                   &lt;span class=&quot;dt&quot;&gt;control =&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;sys.sleep=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;dRange=&lt;/span&gt;nc.control$dRange,&lt;span class=&quot;dt&quot;&gt;anim.dRange=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;range&lt;/span&gt;(animRange),&lt;span class=&quot;dt&quot;&gt;ylim=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;40&lt;/span&gt;))) },
+  &lt;span class=&quot;dt&quot;&gt;movie.name=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;animate-nowcasts.gif&amp;quot;&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;ani.width=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;800&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;ani.height=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;500&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;figure&gt;
+&lt;img src=&quot;/hoehle/blog/figure/source/2016-07-19-nowCast/animate-nowcasts.gif&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;As a final comparison we can also obtain an animation of how the delay distribution changes with time. From the animation we notice that the delay appear to steadily decrease, which is a typical behavior for high-profiled outbreaks. However, this also seriously questions the assumption of a &lt;strong&gt;time-invariant delay distribution&lt;/strong&gt;. Instead, one could use a window-limited estimation approach or one could try to model the delay distribution using a discrete time survival model as done in &lt;span class=&quot;citation&quot; data-cites=&quot;hoehle_anderheiden2014&quot;&gt;Höhle and an der Heiden (2014)&lt;/span&gt;.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;animation::&lt;span class=&quot;kw&quot;&gt;saveGIF&lt;/span&gt;(
+  for (i in &lt;span class=&quot;kw&quot;&gt;seq_len&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;length&lt;/span&gt;(nowcasts))) {
+    &lt;span class=&quot;kw&quot;&gt;plot&lt;/span&gt;(nowcasts[[i]], &lt;span class=&quot;dt&quot;&gt;w=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;delay&amp;quot;&lt;/span&gt;)
+  },
+  &lt;span class=&quot;dt&quot;&gt;movie.name=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;animate-delays.gif&amp;quot;&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;ani.width=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;800&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;ani.height=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;500&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;figure&gt;
+&lt;img src=&quot;/hoehle/blog/figure/source/2016-07-19-nowCast/animate-delays.gif&quot; /&gt;
+&lt;/figure&gt;
+&lt;h1 id=&quot;discussion&quot;&gt;Discussion&lt;/h1&gt;
+&lt;p&gt;The adjustment of occurred-but-not-yet-reported-events applies to many other application areas besides &lt;strong&gt;real-time public health monitoring&lt;/strong&gt;. For example, direct links to claims reserve modelling in actuarial sciences exist, but many other areas of application, where delays play a role, appear of interest. For the methodological details of the nowcasting procedures see &lt;span class=&quot;citation&quot; data-cites=&quot;hoehle_anderheiden2014&quot;&gt;Höhle and an der Heiden (2014)&lt;/span&gt;, which is available as open access document.&lt;/p&gt;
+&lt;h1 id=&quot;references&quot; class=&quot;unnumbered&quot;&gt;References&lt;/h1&gt;
+&lt;div id=&quot;refs&quot; class=&quot;references&quot;&gt;
+&lt;div id=&quot;ref-hoehle_anderheiden2014&quot;&gt;
+&lt;p&gt;Höhle, M., and M. an der Heiden. 2014. “Bayesian Nowcasting During the STEC O104:H4 Outbreak in Germany, 2011.” &lt;em&gt;Biometrics&lt;/em&gt; 70 (4): 993–1002. doi:&lt;a href=&quot;https://doi.org/10.1111/biom.12194&quot;&gt;10.1111/biom.12194&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-salmon_etal2016a&quot;&gt;
+&lt;p&gt;Salmon, M., D. Schumacher, and M. Höhle. 2016. “Monitoring Count Time Series in R: Aberration Detection in Public Health Surveillance.” &lt;em&gt;Journal of Statistical Software&lt;/em&gt; 70 (10). doi:&lt;a href=&quot;https://doi.org/10.18637/jss.v070.i10&quot;&gt;10.18637/jss.v070.i10&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Tue, 19 Jul 2016 00:00:00 +0200</pubDate>
+        <link>http://staff.math.su.se/hoehle/blog/2016/07/19/nowCast.html</link>
+        <guid isPermaLink="true">http://staff.math.su.se/hoehle/blog/2016/07/19/nowCast.html</guid>
+        
+        <category>math</category>
+        
+        <category>rstats</category>
+        
+        <category>surveillance</category>
+        
+        <category>open data</category>
+        
+        <category>MERS</category>
+        
+        
+      </item>
     
       <item>
         <title>Princes Disguised in Uniforms</title>
