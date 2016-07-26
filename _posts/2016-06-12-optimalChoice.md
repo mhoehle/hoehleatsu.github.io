@@ -50,7 +50,7 @@ Furthermore, the decision you have to make at each decision time is to either se
 
 Following @chow_etal1964 we introduce the following mathematical notation: Let $x_1,\ldots, x_n$ be a permutation of the integers between 1 and $n$.
 At the time we are considering the $i$'th candidate in our ordered sequence we have seen the candidates $1,\ldots,i$. Let $y_i$, $y_i \in \{1,\ldots,i\}$,
-denote the rank of the $i$'th candidate among these $i$ candidates We call this the **relative rank** at time $i$ of the $i$'th candidate. Note that the relative rank can be 1 even though a
+denote the rank of the $i$'th candidate among these $i$ candidates. We call this the **relative rank** at time $i$ of the $i$'th candidate. Note that the relative rank can be 1 even though a
 candidates' **overall rank** is not 1. This is a consequence of the overall rank being only partially revealed by knowing more of the candidates.
 
 A code example illustrates the concept:
