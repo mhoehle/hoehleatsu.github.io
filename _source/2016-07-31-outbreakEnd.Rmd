@@ -1,0 +1,380 @@
+---
+layout: post
+title: "The Repro-Session: Declaring The End of an Outbreak"
+tags: [rstats, infectious disease epidemiology, open data, MERS]
+bibliography: ~/Literature/Bibtex/jabref.bib
+comments: true
+html_document:
+    mathjax: local
+    self_contained: true
+---
+
+```{r,CONFIG,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2016-07-31-outbreakEnd/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='')
+options(width=90)
+library("dplyr")
+library("ggplot2")
+library("tidyr")
+library("pbapply")
+options(digits=3)
+```
+
+
+{% include license.html %}
+
+## Abstract
+
+We provide R code for implementing a statistical method by @nishiura_etal2016 to assess when to declare the end of an outbreak of a communicable disease. The motivating example is the MERS-Cov outbreak in Korea, 2016. In a greater perspective, the blog entry is an attempt to advocate for spicing up statistical conferences by a 'reproducibility session'.
+
+# Introduction
+
+A few weeks ago I went to the [International Biometric Conference (IBC)](https://biometricconference.org/) in Victoria. Conferences are good for meeting people, but with respect to scientific content, there is typically no more than 2-3 talks in a week, which you really remember. Unfortunately, this is also a consequence of the format of statistics conferences not developing much in recent years: it's plenary talks, invited sessions, contributed sessions, showcase sessions and poster sessions all over. Tutorials are one way to learn something new. The [R User Conference](http://user2016.org/) has some additional ideas & formats, e.g. lightning talks, to make the conferences more interesting. Thomas Leeper has written an inspiring [blog post](http://thomasleeper.com/2015/07/user2015-lessons/) about this issue.
+
+So here is an additional thought in the spirit of **reproducible science**: Take the contents of a talk, find the corresponding paper/technical report/slides, download the data (of course these will be available) and start implementing. After all, hacking a statistical method is the best way to understand it and reproducing the results is a form of peer-review we should do much more as statisticians.
+
+So this blog entry is my attempt of a **repro-session** in connection with the IBC: The talk by [Hiroshi Nishiura](http://plaza.umin.ac.jp/~infepi/hnishiura.htm) was both interesting, from my field (infectious disease epidemiology) and the method he presented looked like it could be re-implemented in finite time. The methodological proposal is about when you can declare an outbreak of a communicable disease as having ended. Typically, the WHO currently requires that a period of two times the longest possible incubation time needs to have passed since the last cases before an outbreak can be declared as being over. However, as stated by @nishiura_etal2016, the criterion lacks statistical motivation. Instead the authors formulate a statistical criterion using the serial interval distribution and the offspring distribution.
+
+# Method
+
+Given the currently available outbreak data about the symptom onset $D=\{t_i; i=1,\ldots,n\}$ in the $n$ cases, let $Y_t$ be count variable representing the number of cases we will observe on any given day $t, t\geq \max_{i=1,\ldots,n}(t_i)$. In particular we will be interested in whether we will observe zero or more cases, that is we let $Z_t = I(Y_t>0)$. Furthermore, let $F_{\text{serial}}$ be the CDF of the serial interval distribution, i.e. the time between the onset of symptoms in the primary and onset of symptoms in the secondary case @svensson2000. 
+Altogether, it is shown in @nishiura2016 that the probability that $\pi_t = P(Z_t=1\>|\>D)$ can be computed as follows:
+$$
+\begin{align*}
+\pi_t = 1 - \prod_{i=1}^n \sum_{o=0}^{\infty} f_{\text{offspring}}(o; R_0, k) \cdot \left[ F_{\text{serial}}(t-t_i) \right]^{o},
+\end{align*}
+$$
+where $f_{\text{offspring}}$ denotes the PMF for the number of secondary cases one primary case induces. It is assumed that this distribution is negative binomial with expectation $R_0>0$ and clumping parameter $k>0$. In other words, $\operatorname{E}(O)=R_0$ and $\operatorname{Var}(O)=R_0 + R_0^2/k$. Once $\pi_t$ is below some pre-defined value $\alpha$, say $\alpha=0.05$, one would declare the outbreak to be over, if no new cases have been observed by time $t$.
+
+Note that the formulated approach is conservative in as, that every observed cases is treated as having the potential to generate new secondary cases according to the full offspring distribution. In practice, observed cases towards the end will be observed secondary cases, hence these primary cases will be attributed as having the ability to generate more secondary cases than possible in practice. Another important assumption of the method is that all cases are observed: no asymptomatic nor under-reporting is allowed.
+
+# Data
+
+```{r,DATA,echo=FALSE}
+##Library to read excel files
+library("openxlsx")
+
+##Obtain file from link found at (if it doesn't already exist)
+##http://www.who.int/csr/don/21-july-2015-mers-korea/en/
+if (!file.exists("../downloads/MERS-CoV-cases-rok-21Jul15.xlsx")) {
+  download.file(url="http://www.who.int/entity/csr/disease/coronavirus_infections/MERS-CoV-cases-rok-21Jul15.xlsx?ua=1",destfile="../downloads/MERS-CoV-cases-rok-21Jul15.xlsx")
+}
+
+##Read data
+linelist <- read.xlsx("../downloads/MERS-CoV-cases-rok-21Jul15.xlsx",startRow=4,detectDates=TRUE)
+
+##Base R style - IMHO easier to understand
+for (dateCol in c("Date.of.notification.to.WHO","Date.of.symptoms.onset","Date.of.first.hospitalization","Date.of.laboratory.confirmation","Date.of.outcome")) {
+  linelist[,dateCol] <- as.Date(linelist[,dateCol],format="%d/%m/%Y")
+}
+## As written in the paper, the missing onset times are handled as follows:
+## Whenever the date of illness onset was missing, we substituted it with
+## the date of laboratory confirmation.
+
+onsetMissing <- is.na(linelist$Date.of.symptoms.onset)
+linelist[onsetMissing, "Date.of.symptoms.onset"] <- linelist[onsetMissing, "Date.of.laboratory.confirmation"]
+
+t_star <- max(linelist$Date.of.symptoms.onset)
+``` 
+
+The data basis for our analysis is the WHO data set on the
+[MERS-Cov outbreak in Korea](http://www.who.int/csr/don/21-july-2015-mers-korea/en/),
+which occured during May-July 2015. It contains the information about the `r nrow(linelist)` cases of the MERS-CoV outbreak in Korea, 2015. These were already analysed in a previous [blog entry](./2016-07-19-nowCast.Rmd) for the purpose of nowcasting. However, we shall now be interested in answering the following question: Given the observations of symptoms on the last (known) case on `r t_star`. How many days without new infections would have to pass, before we would declare the outbreak as having ended?
+
+## Estimation
+
+```{r,echo=FALSE,results='hide'}
+######################################################################
+## Compute PMF for the final size of outbreak equal to y in a model
+## with R_0  and clumping parameter k from Nishiura et al. (2012)
+##
+## Parameters:
+##  y   - vector of final sizes to evaluate the PMF for
+##  k   - numeric, the clumping parameter
+##  R_0 - Reproduction number
+##  log - Boolean, if TRUE log(PMF) is computed.
+##
+## Returns:
+##  A numeric vector containing \equn{f(y;k,R_j)}{f(y;k,R_j)} or
+##  the logarithm.
+######################################################################
+
+dfinalSize_n2012 <- Vectorize(function(y, k, R_0, log=FALSE) {
+  if (y==1) {
+    res <- -k*log(1+(R_0/k))
+  }
+  if (y>=2) {
+    j <- 0L:(y-2)
+    res <- sum(log( (j/k) + y)) - lfactorial(y) + (k*y)*log(k/(R_0+k)) + (y-1)*log(R_0*k/(R_0+k))
+  }
+  if (log) return(res) else return(exp(res))
+})
+
+######################################################################
+## Compute PMF for the final size of outbreak equal to y in a model
+## with R_0  and clumping parameter k, but now with the more efficient
+## formula from Blumenberg and Lloyd-Smith (2013).
+######################################################################
+
+dfinalSize <- function(y, k, R_0, log=FALSE) {
+  res <- lgamma(k*y+y-1) - lgamma(k*y) - lgamma(y+1) + (y-1) * log(R_0/k) - (k*y+y-1) * log(1+R_0/k)
+  if (log) return(res) else return(exp(res))
+}
+
+## Test
+dfinalSize_n2012(y=1,k=1/3, R_0=1.22)
+sum(dfinalSize_n2012(y=1:10000,k=1/3, R_0=1.22))
+
+##Verify for setting of the Nishiura paper
+dfinalSize_n2012(y=1,k=0.14, R_0=0.75)
+sum(dfinalSize_n2012(y=1:10000,k=0.14, R_0=0.75))
+
+dfinalSize(y=1,k=0.14, R_0=0.75)
+sum(dfinalSize(y=1:10000,k=0.14, R_0=0.75))
+
+pnGenerations <- Vectorize(function(h, R_0, k) {
+  res <- 0
+  if (h==1) res <- exp(-k*log(1+R_0/k))
+  if (h==2) res <- exp(-k*log(1+R_0/k-R_0/(k*(1+R_0/k)^k)))
+  if (h>=3) res <- exp(-k*log(1 + R_0/k*(1-pnGenerations(h=h-1, R_0=R_0,k=k))))
+  return(res)
+})
+
+##PMF conditioned on at least one generation.
+dnGenerations <- function(h, R_0, k) {
+  pnGenerations(h, R_0=R_0,k=k) -  pnGenerations(h-1, R_0=R_0,k=k)
+}
+
+##Test the functions
+pnGenerations(1:100, R_0=1,k=0.14)
+dnGenerations(1:10, R_0=1,k=0.14)
+
+```
+
+```{r,echo=FALSE,results='hide'}
+outbreaks_notME <- read.table(file="../downloads/nishiuara_etal2015-MERS-imports.txt",header=TRUE,stringsAsFactors = FALSE)
+head(outbreaks_notME)
+
+## August: http://ecdc.europa.eu/en/publications/Publications/30-07-2015-RRA-MERS.pdf
+## July report: http://ecdc.europa.eu/en/publications/Publications/RRA-Middle-East-respiratory-syndrome-coronavirus-Korea.pdf
+## The missing number is probably Jordan with a cluster size of 19 (?)
+outbreaks <- rbind(outbreaks_notME, data.frame(Country="Middle East",Generation=c(rep(0,8),rep(1,5)),Total.number.of.cases=c(rep(1,8),rep(2,3),3,19)))
+outbreaks <- outbreaks %>% mutate(isMiddleEastCountry=Country == "Middle East")
+with(outbreaks, table(Total.number.of.cases,isMiddleEastCountry))
+with(outbreaks, table(Generation, isMiddleEastCountry))
+
+##Compare with Fig. X of the Eurosurveillance article
+nrow(outbreaks)
+outbreaks <- within(outbreaks,
+                           Total.number.of.cases.trunc <- factor(ifelse(Total.number.of.cases<7,Total.number.of.cases,">=8"),levels=as.character(c(1:7,">=8"))))
+(tab <- table(outbreaks$Total.number.of.cases.trunc))
+sum(tab)
+```
+
+```{r,LIKFIT,echo=FALSE,results='hide'}
+##Likelihood for the final size of the importation events
+ll_1 <- function(theta, outbreaks) {
+  R_0 <- exp(theta[1])
+  k   <- exp(theta[2])
+  sum(dfinalSize(y=outbreaks$Total.number.of.cases,R_0=R_0, k=k,log=TRUE))
+}
+
+ll_2 <- function(theta, outbreaks) {
+  R_0 <- exp(theta[1])
+  k   <- exp(theta[2])
+  pmf <- dnGenerations(h=outbreaks$Generation, R_0=R_0, k=k)
+  sum(log(pmf[outbreaks$Generation>0]))
+}
+
+ll_combine <- function(theta, outbreaks) {
+    ll_1(theta,outbreaks) + ll_2(theta,outbreaks)
+}
+
+#Test likelihood functions
+ll_1(c(0.75,0.14), outbreaks=outbreaks)
+ll_2(c(0.75,0.14), outbreaks=outbreaks)
+ll_combine(c(0.8,0.14), outbreaks=outbreaks)
+
+#Optim part 1
+theta_mle <- optim(c(log(1),log(1)),ll_1, outbreaks=outbreaks, control=list(fnscale=-1))
+exp(theta_mle$par)
+
+theta_mle <- optim(c(log(0.75),log(0.14)),ll_2, outbreaks=outbreaks, control=list(fnscale=-1))
+exp(theta_mle$par)
+
+theta_mle <- optim(c(log(1),log(1)),ll_combine, outbreaks=outbreaks, control=list(fnscale=-1),hessian=TRUE)
+exp(theta_mle$par)
+```
+
+
+Estimate parameters of a gamma distributed serial interval distribution as stated in
+@nishiura_etal2015 by solving for given mean and standard deviation. The solution can be found analytically.
+```{r}
+E <- 12.6
+SD <- 2.8
+(theta_serial <- c(E^2/SD^2,E/SD^2))
+```
+```{r,CHECKRESULT,echo=FALSE,results='hide'}
+mean(rgamma(1e6,theta_serial[1],theta_serial[2]))
+sd(rgamma(1e6,theta_serial[1],theta_serial[2]))
+```
+
+Function implementing the above $\pi_t$ equations given a predefined offspring distribution as implemented in `doffspring`.
+
+```{r}
+##Offspring distribution, this is just the negative binomial PMF.
+doffspring <- function(y, R_0, k, log=FALSE) {
+  dnbinom(y, mu=R_0, size=k, log=log)
+}
+
+##Probability for one or more cases at time t.
+p_oneormore <- Vectorize(function(t,R_0,k,theta_serial,yMax=1e4,verbose=FALSE) {
+  if (verbose) cat(paste0(t,"\n"))
+  res <- 1
+
+  ##Loop over all cases as in eqn (1) of the suppl. of Nishiura (2016).
+  ##Setup process bar for this action.
+  pb <- startpb(1, nrow(linelist))
+  on.exit(closepb(pb))
+
+  for (i in seq_len(nrow(linelist))) {
+    setpb(pb, i)
+    serial_time <- as.numeric(t - linelist$Date.of.symptoms.onset[i])
+    cdf <- pgamma(serial_time, theta_serial[1], theta_serial[2])
+    y <- 0L:yMax
+    ysum <- sum( doffspring(y=y,R_0=R_0,k=k)*cdf^y)
+    res <- res * ysum
+  }
+  return(1-res)
+},vectorize.args=c("t","R_0","k"))
+```
+
+
+```{r,results='hide',cache=TRUE}
+## Parameters used in Nashiuara et al. (2016)
+R_0 <- 0.75
+k <- 0.14
+## Compute prob for one or more cases on a grid of dates
+df <- data_frame(t=seq(as.Date("2015-07-15"),as.Date("2015-08-05"),by="1 day"))
+df <- df %>% mutate(p =  p_oneormore(t,R_0=R_0, k=k, theta_serial=theta_serial, yMax=250,verbose=TRUE))
+```
+
+```{r}
+ggplot(df, aes(x=t,y=p)) + geom_line() + geom_hline(yintercept=0.05,lty=2,col="gray") + xlab("Time (days)") + ylab("Probability of additional cases")
+df %>% filter(p < 0.05) %>% head(n=1)
+```
+
+
+## Hierarchical model
+As a Bayesian, it appears more natural to formulate the model directly in hierarchical terms. 
+
+$$
+\begin{align*}
+N_i                  &\sim \operatorname{NegBin}(R_0,k),                    & i&=1,\ldots,n,\\
+\mathbf{O}_i\>|\>N_i &\sim \operatorname{M}(N_i,\mathbf{p}_{\text{serial}}),& i&=1,\ldots,n,\\
+Y_t\>|\> \mathbf{O}  &= \sum_{i=1}^n O_{i,t_i-t}, & t&=t^*+1,t^*+2,\ldots,\\
+Z_t\>|\> Y_t  &= I(Y_t>0), &t&=t^*+1,t^*+2,\ldots\,\
+\end{align*}
+$$
+where $t^* = \max_{i=1,\ldots,n} t_i$ and $\mathbf{p}_{\text{serial}}$ is the PMF of the discretized serial interval distribution for exampling obtained by computing $p_{y} = F_{\text{serial}}(y) - F_{\text{serial}}(y-1)$ for $0<y\leq S$, where $S$ is the largest possible/relevant serial interval to consider, and by defining $p_{0} = 0$. Furthermore, $O_{i,t_i-t}=0$ if $t_i-t<0$ or $t_i-t>S$.
+
+Given $R_0$ and $k$ it is easy to use Monte Carlo simulation
+to obtain instances of, e.g., $Y_t$ for a selected range of values for $t$ from the above model. The code for this function `simulation` is available as part of this R-markdown document, see the underlying source on the github repository for details. 
+
+```{r,echo=FALSE,cache=TRUE,results='hide'}
+##Simulation model
+S <- ceiling(qgamma(0.9999,theta_serial[1],theta_serial[2]))
+pmf_serial_vec <- c(0,pgamma(1:S,theta_serial[1],theta_serial[2]) - pgamma(0:(S-1),theta_serial[1],theta_serial[2]))
+pmf_serial_vec <- pmf_serial_vec / sum(pmf_serial_vec)
+
+pmf_serial <- Vectorize(function(y) {
+  if (y<0) return(0)
+  if (y>S) return(0)
+  return(pmf_serial_vec[y+1])
+})
+
+sum(pmf_serial(0:30))
+
+############################################################################
+## Simulate one instances of the model based on a multinomial serial 
+## interval distribution.
+############################################################################
+
+simulate <- function(t_grid=NULL, R_0, k) {
+  n <- nrow(linelist)
+  ##Number of offspring
+  N <- rnbinom(n,mu=R_0,size=k)
+  O <- sapply(seq_len(n), function(i) rmultinom(1,size=N[i],prob=pmf_serial_vec))
+  
+  stopifnot(all(colSums(O) == N))
+  
+  if (is.null(t_grid)) {
+    t_star <- max(linelist$Date.of.symptoms.onset)
+    t_grid <- seq(t_star+1,length.out=25,by="1 day")
+  }
+  
+  ##Extract onset date for all cases
+  t_i <- linelist$Date.of.symptoms.onset
+  ##Number of new cases for time points in t_grid
+  Y <- rep(0,length(t_grid))
+  
+  ## Intuitive way to simulate usinf double for-loop
+  # for (j in seq_len(length(Y))) {
+  #   t   <- t_grid[j]
+  #   for (i in 1:nrow(linelist)) {
+  #     s_serial <- as.numeric(t-t_i[i])
+  #     if ((s_serial >= 0) & (s_serial <= S)) {
+  #       Y[j] <- Y[j] + O[s_serial + 1, i]
+  #     }
+  #   }
+  # }
+  
+  ##Faster way to perform the summation
+  Y2 <- rep(0,length(t_grid))
+  for (i in 1:nrow(linelist)) {
+    datesOfSecCases <- seq(t_i[i],length.out=S+1,by="1 day")
+    idx_O    <- datesOfSecCases %in% t_grid
+    idx_t_grid <- t_grid %in% datesOfSecCases
+    Y2[idx_t_grid] <- Y2[idx_t_grid] + O[idx_O,i]
+  }
+  
+  #all(Y2 == Y)
+  names(Y2) <- t_grid
+  return(Y2)
+}
+
+simulate(R_0=R_0,k=k)
+nSims <- 1e4
+Y <- pbreplicate(nSims, simulate(R_0=R_0,k=k))
+```
+
+Since we for this model will be using simulations it is easy to modify the criterion for fade-out slightly to the more natural probability $\pi_t^*$ that no case at $t$ *nor beyond $t$* will occur, i.e.
+$$
+\pi_t^* = P\left( \bigwedge_{i=t}^\infty \{Y_t = 0\} \right).
+$$
+
+Based on a simulation with `r ncol(Y)` replicates on a grid from `r min(rownames(Y))` to `r max(rownames(Y))` stored in the $`r nrow(Y)` \times `r ncol(Y)`$ variable `Y`  we compute:
+
+```{r}
+pi <- apply(Y,1,mean)
+pi[pi < 0.05]
+
+##Better way to calc extinction prob.
+pi_star <- rev(apply(apply(Y,2,function(x) cumsum(rev(x))>0),1,mean))
+pi_star[pi_star < 0.05]
+
+```
+
+
+
+# Discussion
+
+
+### Acknowledgements
+
+# References
