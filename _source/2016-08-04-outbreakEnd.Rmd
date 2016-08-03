@@ -13,7 +13,7 @@ html_document:
 ##If default fig.path, then set it.
 if (knitr::opts_chunk$get("fig.path") == "figure/") {
   knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
-  knitr::opts_chunk$set(fig.path="figure/source/2016-07-31-outbreakEnd/")
+  knitr::opts_chunk$set(fig.path="figure/source/2016-08-04-outbreakEnd/")
 }
 fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
 knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='')
@@ -30,7 +30,7 @@ options(digits=3)
 
 ## Abstract
 
-R code is provided for implementing a statistical method by @nishiura_etal2016 to assess when to declare the end of an outbreak of a communicable disease. The motivating example is the MERS-CoV outbreak in Korea, 2016. In a greater perspective, the blog entry is an attempt to advocate for spicing up statistical conferences by a **reproducibility session**.
+R code is provided for implementing a statistical method by @nishiura_etal2016 to assess when to declare the end of an outbreak of a person-to-person transmitted disease. The motivating example is the MERS-CoV outbreak in Korea, 2016. In a greater perspective, the blog entry is an attempt to advocate for spicing up statistical conferences by a **reproducibility session**.
 
 # Introduction
 
@@ -38,27 +38,32 @@ A few weeks ago I went to the [International Biometric Conference (IBC)](https:/
 Not all science is 'fun', but when balancing adding yet-another-table-from-a-simulation-study against 95% of the audience dozing off, I urge you to aim for an awake audience.
 
 So here is an additional session format in the spirit of **reproducible science**, which might help make statistics conference more alive again: Take the contents of a talk, find the corresponding paper/technical report/slides, download the data (of course these should be available) and start implementing. After all, hacking a statistical method is the best way to understand it and reproducing the results of an analysis is a form of peer-review we should do much more as statisticians.
+The important [talk](The Importance of Reproducible Research in High-Throughput Biology: Case Studies in Forensic Bioinformatics) by [Keith A. Baggerly](http://odin.mdacc.tmc.edu/~kabaggerly/) about reproducibility in bioinformatics more than underlines this.
 
-As a consequence, this blog entry is my attempt of a **repro-session** in connection with the IBC: The talk entitled *[Determining the end of an epidemic with human-to-human transmission](https://biometricconference.org/contributed-sessions/oral/detail/?sessionID=CS.15)* by [Hiroshi Nishiura](http://plaza.umin.ac.jp/~infepi/hnishiura.htm) was both interesting, from a field I'm interested in (infectious disease epidemiology) and the method he presented looked like it could be re-implemented in finite time. The methodological proposal communicated in @nishiura_etal2016 is about at which time point one can declare an outbreak of a communicable disease as having ended. Such statements are important in order to calm the population, tourists or to change your alertness status. The current WHO method to assess this currently requires that a period of two times the longest possible incubation time needs to have passed since the last cases before an outbreak can be declared as being over. However, as stated in their paper, the criterion clearly lacks statistical motivation. As an improvement the authors formulate a statistical criterion based on the serial interval distribution and the offspring distribution.
+As a consequence, this blog entry is my attempt of a **repro-session** in connection with the IBC: The talk entitled *[Determining the end of an epidemic with human-to-human transmission](https://biometricconference.org/contributed-sessions/oral/detail/?sessionID=CS.15)* by [Hiroshi Nishiura](http://plaza.umin.ac.jp/~infepi/hnishiura.htm) was both interesting, from a field I'm interested in (infectious disease epidemiology) and the method looked like it could be re-implemented in finite time. The question the method tries to answer is the following: at which time point can one declare an outbreak of a person-to-person transmitted disease as having ended. Such statements are important in order to calm the population, tourists or to change your alertness status. The current WHO method to assess this currently requires that a period of two times the longest possible incubation time needs to have passed since the last cases before an outbreak can be declared as being over. However, as stated in their paper (@nishiura_etal2016), the criterion clearly lacks a statistical motivation. As an improvement Nishiura and co-workers formulate a statistical criterion based on the serial interval distribution and the offspring distribution.
 
-In what follows we shall quickly describe the method and apply it to the 2015 MERS-CoV outbreak in Korea. As a small outlook, we shall implement some own thoughts on how to answer the posed questions using a hierarchical model.
+In what follows we shall quickly describe their method and apply it to the 2015 MERS-CoV outbreak in Korea. As a small outlook, we shall implement some own thoughts on how to answer the posed questions using a hierarchical model.
 
 # Method
 
-Given the currently available outbreak data about the symptom onset $D=\{t_i; i=1,\ldots,n\}$ in the $n$ cases of the outbreak, let $Y_t$ be a count variable representing the number of cases we will observe on a given day $t, t\geq \max_{i=1,\ldots,n}(t_i)$. In particular we will be interested in whether we will observe zero or more cases, that is we let $Z_t = I(Y_t>0)$. Furthermore, let $F_{\text{serial}}$ be the CDF of the serial interval distribution of the disease of interest, that is the time period between the onset of symptoms in the primary and onset of symptoms in the secondary case, see @svensson2007.
-Altogether, the paper by @nishiura_etal2016 uses that the probability $\pi_t = P(Z_t=1\>|\>D)$ can be computed as follows:
+Let $Y_t$ be a count variable representing the number of symptom onset in cases we observe on a given day $t$ during the outbreaj. The sequence of the $Y_t$ is also called the **epidemic cuve** of the outbreak. Furthermore, let  $D=\{t_i; i=1,\ldots,n\}$, be the currently available outbreak data containing the time of symptom onset in in each of the $n$ cases of the outbreak. In what follows we will be interested in what happens with $Y_t$ for future time points, i.e. time points after the last currently observed onset time $t\geq \max_{i=1,\ldots,n}(t_i)$. In particular we will be interested in, whether we will observe zero cases or more than zero cases, that is we define $Z_t = I(Y_t>0)$. 
+
+The important result of @nishiura_etal2016 is that the probability $\pi_t = P(Z_t=1\>|\>D)$ can be computed as follows:
 $$
 \begin{align*}
 \pi_t = 1 - \prod_{i=1}^n \sum_{o=0}^{\infty} f_{\text{offspring}}(o; R_0, k) \cdot \left[ F_{\text{serial}}(t-t_i) \right]^{o},
 \end{align*}
 $$
-where $f_{\text{offspring}}$ denotes the PMF for the number of secondary cases one primary case induces. It is assumed that this distribution is negative binomial with expectation $R_0>0$ and clumping parameter $k>0$. In other words, $\operatorname{E}(O)=R_0$ and $\operatorname{Var}(O)=R_0 + R_0^2/k$. Once $\pi_t$ is below some pre-defined threshold $c$, say $c=0.05$, one would declare the outbreak to be over, if no new cases have been observed by time $t$. In other words:
+where $f_{\text{offspring}}$ denotes the PMF for the number of secondary cases one primary case induces. It is assumed that this distribution is negative binomial with expectation $R_0>0$ and clumping parameter $k>0$. In other words, $\operatorname{E}(O)=R_0$ and $\operatorname{Var}(O)=R_0 + R_0^2/k$. 
+Furthermore, $F_{\text{serial}}$ is the CDF of the serial interval distribution of the disease of interest. The serial interval is the time period between the onset of symptoms in the primary and onset of symptoms in the secondary case, see @svensson2007. 
+
+Once $\pi_t$ is below some pre-defined threshold $c$, say $c=0.05$, one would declare the outbreak to be over, if no new cases have been observed by time $t$. In other words:
 $$
 T_{\text{end}} = \min_{t>t^*} \{ \pi_t < c \}.
 $$
 where $t^* = \max_{i=1,\ldots,n} t_i$, i.e. the onset time in the last observed case.
 
-Note that the formulated approach is conservative in as, that every observed cases is treated as having the potential to generate new secondary cases according to the full offspring distribution. In practice, observed cases towards the end will be observed secondary cases, hence these primary cases will be attributed as having the ability to generate more secondary cases than possible in practice. Another important assumption of the method is that all cases are observed: no asymptomatic nor under-reporting is allowed.
+Note that the formulated approach is conservative, because every available case is treated as having the potential to generate new secondary cases according to the entire offspring distribution. In practice, however, observed cases towards the end will be secondary cases of some of the earlier cases. Hence, these primary cases will be attributed as having the ability to generate more secondary cases than they actually have in practice. Another important assumption of the method is that all cases are observed: no asymptomatic nor under-reporting is allowed.
 
 ## Data from the MERS-Cov Oubtreak in Korea, 2015
 
@@ -91,18 +96,17 @@ t_star <- max(linelist$Date.of.symptoms.onset)
 
 The data basis for our analysis is the WHO data set on the
 [MERS-Cov outbreak in Korea](http://www.who.int/csr/don/21-july-2015-mers-korea/en/),
-which occurred during May-July 2015. It contains the information about the `r nrow(linelist)` cases of the MERS-CoV outbreak in Korea, 2015. These were already analysed in a previous [blog entry](./2016-07-19-nowCast.Rmd) for the purpose of nowcasting. However, we shall now be interested in answering the following question: Given the observations of symptoms on the last (known) case on `r t_star`. How many days without new infections would have to pass, before we would declare the outbreak as having ended?
+which occurred during May-July 2015. It contains the information about `r nrow(linelist)` cases of the MERS-CoV outbreak in Korea, 2015. These were already analysed in a previous [blog entry](./2016-07-19-nowCast.Rmd) for the purpose of nowcasting. However, we shall now be interested in answering the following question: Given the observations of symptoms on the last (known) case on `r t_star`. How many days without new infections would have to pass, before we would declare the outbreak as having **ended**?
 
 ## Results
 
-We shall distinguish between model parameters to be estimated from data and the computation of the probability $\pi_t$.
-
+In what follows we shall distinguish results between model parameters to be estimated from data and the computation of the probability $\pi_t$. Focus of this blog entry is on the later part. Details on the first part is available in the code.
 
 ## Parameter Estimation
 
-Parameters to estimate are the following:
+The parameters to estimate are the following:
 
-* parameters of the parametric distributional family governing the serial interval distribution (here assumed to be gamma distributed)
+* parameters of the parametric distributional family governing the serial interval distribution (in @nishiura_etal2016 assumed to be gamma distributed)
 * parameters of the offspring distribution, which here is assumed to be negative binomial with mean $R_0$ and clumping parameter $k$
 
 The first step is easily accomplished in
@@ -117,7 +121,7 @@ mean(rgamma(1e6,theta_serial[1],theta_serial[2]))
 sd(rgamma(1e6,theta_serial[1],theta_serial[2]))
 ```
 
-The second part is addressed in @nishiura_etal2015 by analysing final-size and generation data using a maximum likelihood approach. We will here only implement the respective methods using the data presented in Figure 1 and Table 1 of the paper. One cluster size is not reconstructable from the data, but guesstimating from the table on p.4 of the [ECDC Rapid Risk Assessment](http://ecdc.europa.eu/en/publications/Publications/RRA-Middle-East-respiratory-syndrome-coronavirus-Korea.pdf) it appears to be the outbreak in Jordan with a size of 19. The likelihood is then maximized for $\mathbf{\theta}=(\log(R_0),\log(k))'$ using `optim`. Based on the Hessian, a numeric approximation of the variance-covariance matrix of $\hat{\mathbf{\theta}}$ can be obtained -- see the code on github for details.
+The second part is addressed in @nishiura_etal2015 by analysing final-size and generation data using a maximum likelihood approach. We will here only implement the respective methods using the data presented in Figure 1 and Table 1 of the paper. One cluster size is not reconstructable from the data, but guesstimating from the table on p.4 of the [ECDC Rapid Risk Assessment](http://ecdc.europa.eu/en/publications/Publications/RRA-Middle-East-respiratory-syndrome-coronavirus-Korea.pdf) it appears to be the outbreak in Jordan with a size of 19. The likelihood is then maximized for $\mathbf{\theta}=(\log(R_0),\log(k))'$ using `optim`. Based on the Hessian, a numeric approximation of the variance-covariance matrix of $\hat{\mathbf{\theta}}$ can be obtained - see the code on github for details.
 
 ```{r,echo=FALSE,results='hide'}
 ######################################################################
@@ -249,7 +253,7 @@ These numbers deviate slightly from the values of $\hat{R}_0=0.75$ and $\hat{k}=
 
 ## Outbreak End
 
-The the above $\pi_t$ equations given a predefined offspring distribution  (`doffspring`) are implemented as follows:
+The above $\pi_t$ equation is implemented below. It requires the use of the PMF of the offspring distribution  (`doffspring`), which here is the negative binomial offspring distribution. 
 
 ```{r}
 ##Offspring distribution, this is just the negative binomial PMF.
@@ -281,7 +285,7 @@ p_oneormore <- Vectorize(function(t,R_0,k,theta_serial,yMax=1e4,verbose=FALSE) {
 },vectorize.args=c("t","R_0","k"))
 ```
 
-This allows us to re-calculate the results of @nishiura_etal2016:
+The function allows us to re-calculate the results of @nishiura_etal2016:
 
 ```{r,results='hide',cache=TRUE}
 ##Results from the Nishiura et al. (2015) paper
@@ -295,7 +299,7 @@ df <- df %>% mutate(pi =  p_oneormore(t,R_0=R_0_hat, k=k_hat, theta_serial=theta
 head(df, n=3)
 ```
 
-We can embed estimation uncertainty originating from the estimation of $R_0$ and $k$ by adding an additional bootstrap step with values of $(\log R_0, \log k)'$ originating from the asymptotic normal distribution with expectation given to the MLE and variance-covariance matrix obtained from the observed Fisher information.
+We can embed estimation uncertainty originating from the estimation of $R_0$ and $k$ by adding an additional bootstrap step with values of $(\log R_0, \log k)'$ sampled from the asymptotic normal distribution having expectation equal to the MLE and variance-covariance matrix equal to the observed Fisher information.
 
 ```{r,echo=FALSE,cache=TRUE}
 ##
@@ -313,18 +317,18 @@ ggplot(df2, aes(x=t,y=pi,group=1)) + geom_line() +
   xlab("Time (days)") + ylab("Probability of additional cases")
 ```
 
-We can thus find the date where we would declare the outbreak
-to be over as:
+Altogether, the date where we would declare the outbreak
+to be over is found as:
 ```{r}
 c_threshold <- 0.05
 (tEnd <- df2 %>% filter(`quantile.97.5%` < c_threshold) %>% head(n=1))
 ```
 In other words, given the assumptions of the model and the chosen threshold, we would declare the outbreak to be over, if no new cases are observed by `r tEnd$t`.
-
+The adequate choice of $c$ as cut-off in the procedure in general depends on what is at stake. Hence, choosing $c=0.05$ without additional thought is more than arbitrary, but a more careful discussion is beyond the scope of this blog note.
 
 ## Hierarchical model
 
-Commenting on the above derivations done in @nishiura_etal2016 from a Bayesian viewpoint, it appears more natural to formulate the model directly in hierarchical terms:
+Commenting on the derivations done in @nishiura_etal2016 from a Bayesian viewpoint, it appears more natural to formulate the model directly in hierarchical terms:
 
 $$
 \begin{align*}
@@ -334,11 +338,11 @@ Y_t\>|\> \mathbf{O}  &= \sum_{i=1}^n O_{i,t_i-t}, & t&=t^*+1,t^*+2,\ldots,\\
 Z_t\>|\> Y_t  &= I(Y_t>0), &t&=t^*+1,t^*+2,\ldots\,\
 \end{align*}
 $$
-where $\mathbf{p}_{\text{serial}}$ is the PMF of the discretized serial interval distribution for exampling obtained by computing $p_{y} = F_{\text{serial}}(y) - F_{\text{serial}}(y-1)$ for $0<y\leq S$, where $S$ is the largest possible/relevant serial interval to consider, and by defining $p_{0} = 0$. Furthermore, $O_{i,t_i-t}=0$ if $t_i-t<0$ or $t_i-t>S$.
+where $\mathbf{p}_{\text{serial}}$ is the PMF of the discretized serial interval distribution for exampling obtained by computing $p_{y} = F_{\text{serial}}(y) - F_{\text{serial}}(y-1)$ for $0<y\leq S$, where $S$ is the largest possible/relevant serial interval to consider, and letting $p_{0} = 0$. Furthermore, $O_{i,t_i-t}=0$ if $t_i-t<0$ or $t_i-t>S$ and corresponds to the value obtained from $M(N_i,\mathbf{p}_{\text{serial}})$ otherwise.
 
 Given $R_0$ and $k$ it is easy to use Monte Carlo simulation
-to obtain instances of, e.g., $Y_t$ for a selected range of values for $t$ from the above model. The code for this function `simulation` is available as part of this R-markdown document, see the underlying source on the github repository for details.
-Again, the simulation model is slightly conservative, because it does not take existing secondary cases in the data into account and samples $N_i$ new secondary cases for each observed case.
+to obtain instances of $Y_t$ for a selected time-range from the above model. The code for this function `simulation` is available as part of this R-markdown document (again, see the underlying source on the github repository for details).
+Similarly to the previous model the hierarchical model is also slightly conservative, because it does not take existing secondary cases in the data into account and samples $N_i$ new secondary cases for each observed case.
 
 ```{r,echo=FALSE,cache=TRUE,results='hide'}
 ##Simulation model
@@ -447,10 +451,17 @@ ggplot(df, aes(x=t,y=pi_star)) + geom_line() +
 
 # Discussion
 
-The present note introduced a statistical model based approach for declaring the end of a communicable disease outbreak such as MERS-Cov, Ebola, etc. If the considered outbreak has a different mode of transmission, e.g. foodborne or originates from a point-source, then different formulas apply, see e.g. @brookmeyer_you2006. Matters become even more complicated in case of vector borne disease outbreaks or in mixed transmission mode outbreaks as, e.g., STEC outbreaks. The adequate choice of $c$ as cut-off in the procedure would depend on the particular disease. As previously mentioned the method does not take under-reporting of cases as well as the possibility for asymptomatic cases into account. Furthermore, the present analysis assumed an estimate of the serial interval distribution was already available from other estimates. How to perform a reliable estimation of this quantity real-time during an outbreak (hence inducing right-truncation of long interval times) could be an interesting research question.
+The present note introduced a statistical model based approach for declaring the end of a person-to-person transmitted disease outbreak such as MERS-Cov, Ebola, etc. If the considered outbreak has a different mode of transmission, e.g. foodborne or originates from a point-source, then different formulas apply, see e.g. @brookmeyer_you2006. Matters become even more complicated in case of vector borne disease outbreaks or in mixed transmission mode outbreaks as, e.g., STEC outbreaks. Interestingly enough, there appears to be some methodological overlap between declaring the end of an outbreak and declaring a software product to be free of errors. 
+
+To summarise: The results of the @nishiura_etal2016 paper could - with some fiddling to guesstimate the data - be reproduced to lie in the same range as in the paper. A hierarchical model with simulation based inference was able to produce similar results. Availability of the full data in electronic form would have been helpful. Altoghether, it was fun to implement the method and hope is that the avaibility of the present analysis and R code might be helpful to someone at some point. You are certainly invited to **reprofy** this analysis.
+
+<center>
+![](https://openclipart.org/image/300px/svg_to_png/169987/copy.png&disposition=attachment)
+</center>
+<p>
 
 ### Acknowledgements
 
-I thank Hiroshi Nishiura for answering questions about his paper.
+I thank Hiroshi Nishiura for answering questions about their paper.
 
 # References
