@@ -326,7 +326,7 @@ Altogether, the date where we would declare the outbreak
 to be over is found as:
 ```{r}
 c_threshold <- 0.05
-(tEnd <- df2 %>% filter(`quantile.97.5%` < c_threshold) %>% first())
+(tEnd <- df2 %>% filter(`quantile.97.5%` < c_threshold) %>% slice(1L))
 ```
 In other words, given the assumptions of the model and the chosen threshold, we would declare the outbreak to be over, if no new cases are observed by `r tEnd$t`.
 The adequate choice of $c$ as cut-off in the procedure in general depends on what is at stake. Hence, choosing $c=0.05$ without additional thought is more than arbitrary, but a more careful discussion is beyond the scope of this blog note.

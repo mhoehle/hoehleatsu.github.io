@@ -6,8 +6,8 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 04 Aug 2016 21:13:17 +0200</pubDate>
-    <lastBuildDate>Thu, 04 Aug 2016 21:13:17 +0200</lastBuildDate>
+    <pubDate>Thu, 04 Aug 2016 21:27:29 +0200</pubDate>
+    <lastBuildDate>Thu, 04 Aug 2016 21:27:29 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
@@ -111,7 +111,7 @@ df &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;df %&amp;gt;%&lt;span
 &lt;/figure&gt;
 &lt;p&gt;Altogether, the date where we would declare the outbreak to be over is found as:&lt;/p&gt;
 &lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;c_threshold &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.05&lt;/span&gt;
-(tEnd &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;df2 %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;filter&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;quantile.97.5%&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;`&lt;/span&gt; &amp;lt;&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;c_threshold) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;head&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+(tEnd &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;df2 %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;filter&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;quantile.97.5%&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;`&lt;/span&gt; &amp;lt;&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;c_threshold) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;slice&lt;/span&gt;(1L))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;pre&gt;&lt;code&gt;##            t     pi quantile.2.5% quantile.97.5%
 ## 1 2015-07-21 0.0345        0.0253         0.0454&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;In other words, given the assumptions of the model and the chosen threshold, we would declare the outbreak to be over, if no new cases are observed by 2015-07-21. The adequate choice of &lt;span class=&quot;math inline&quot;&gt;\(c\)&lt;/span&gt; as cut-off in the procedure in general depends on what is at stake. Hence, choosing &lt;span class=&quot;math inline&quot;&gt;\(c=0.05\)&lt;/span&gt; without additional thought is more than arbitrary, but a more careful discussion is beyond the scope of this blog note.&lt;/p&gt;
