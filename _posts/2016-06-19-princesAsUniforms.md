@@ -24,7 +24,7 @@ alongside? The later variant is called the **partial information game** and is n
 # Introduction
 
 In the last blog post
-[*Optimal Choice - Mathematical Advice for Real Life*](../12/ optimalChoice.html)
+[*Optimal Choice - Mathematical Advice for Real Life*](../12/optimalChoice.html)
 our interest was in determining a strategy to select the overall best
 candidate from a sequence of $n$ candidates (e.g. princes, job candidates, houses, bids or tinder profiles) arriving sequentially. It
 was shown that the optimal strategy is to screen a number of candidates
@@ -185,7 +185,7 @@ apply(res,1,mean)
 
 ```
 ##         score    select_idx isOverallBest 
-##         0.871         4.960         0.530
+##         0.871         4.958         0.531
 ```
 
 ```r
