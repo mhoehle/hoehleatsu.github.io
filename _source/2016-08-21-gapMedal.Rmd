@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "The Olympic Medal Table Visualized in Gapminder Style"
+title: "The Olympic Medal Table Visualized Gapminder Style"
 tags: [datascience, rstats, olympic games]
 bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
@@ -27,31 +27,41 @@ theme_set(theme_bw())
 
 ## Abstract
 
-Following Hans Rosling's gapminder animation style we animate a country's number
-of medals won in the olympic summer games as a function of the country's [gross domestic product](https://en.wikipedia.org/wiki/Gross_domestic_product) (GDP) per capita.
+Following Hans Rosling's Gapminder animation style we visualize the total number a country wins during each olympic summer games in relation to the country's [gross domestic product](https://en.wikipedia.org/wiki/Gross_domestic_product) (GDP) per capita. We illustrate how R's data munging capabilities provide a useful toolbox to make such an analysis happen.
+
 
 # Introduction
 
-Long Swedish winter nights are best spent by watching Hans Rosling's inspiring [TED talks](https://www.youtube.com/watch?v=hVimVzgtD6w). Such visualizations help the statistician make points about temporal trends, which otherwise might drown in modelling details.
-Recently, I stumbled over a blog post on how to use the  `gganimate` R package to animate the Gapminder available from the `gapminder` package. So I got interested in trying to perform a Rosling style animation with R: Today, the olympic summer games end in Rio. As usual this spawns a debate, if the nation's participation has been successful. For this purpose the [olympic medal table](https://en.wikipedia.org/wiki/Olympic_medal_table) is preferably taken as basis for comparisons. Recent analyses have been interested in how to correct these tables for, e.g., population size or, more interesting, analyse the influence of GDP.
+Long Swedish winter nights are best spent watching [Hans Rosling](https://en.wikipedia.org/wiki/Hans_Rosling)'s inspiring [TED talks](https://www.youtube.com/watch?v=hVimVzgtD6w). Such visualizations help the statistician make points about temporal trends in an x-axis to y-axis relationship, which otherwise might drown in modelling details.
+Recently, I stumbled over a (blog post)[https://rpubs.com/sjackman/gapminder-gganimate] on how to use the  `gganimate` R package to animate the Gapminder available from the `gapminder` package. In order to perform a similar *Rosling style* animation consider the following task: Today, the olympic summer games end in Rio de Janeiro. As usual this spawns a debate, if the nation's participation has been successful. For this purpose the [olympic medal table](https://en.wikipedia.org/wiki/Olympic_medal_table) is often taken as basis for comparison, e.g., to mock your [neighbouring country](http://politiken.dk/sport/ol/ECE3349634/danmark-og-sverige-kaemper-til-det-sidste---men-hvor-daelen-er-norge-henne/). Recent analyses have been interested in how to correct these tables for, e.g., population size or, more interesting, analyse the influence of GDP.
 
-Aim of this blog note is to visualize how countries develop in the medal table while setting this in relation to their GDP. From a technical viewpoint we use R to scrape the olympic medal tables from Wikipedia and animate the results Gapminder style. **Disclaimer**: We only show the potential of such an analysis and, hence, worry less about the scientific validity of the analysis. 
+The aim of the present blog note is to visualize how countries perform in the medal table in relation to their GDP. From a technical viewpoint we experiment with using R to scrape the olympic medal tables from Wikipedia and animate the results Gapminder style. **Disclaimer**: We only show the potential of such an analysis and, hence, worry less about the scientific validity of the analysis.
 
 # Data
 
-We use the data of [Gapminder](https://www.gapminder.org/) in order to obtain country specific population and GDP data for each of the years 1960-2012. These are based on data from the World Bank. The olympic medal tables are harvested from Wikipedia.
+We use the data of [Gapminder](https://www.gapminder.org/) in order to obtain country specific population and GDP data for each of the years in the period of 1960-2016. The olympic medal tables are 'harvested' from Wikipedia.
 
 ## Olympic medal tables
 
-Olympic medal tables were extracted using the `rvest` package from Wikipedia pages using the post by [Cory Nissen](http://blog.corynissen.com/2015/01/using-rvest-to-scrape-html-table.html). These data contain the current state and takes  changes after the games, e.g. due to doping, partly into account. For details see for example the [medal table of the 2012 summer games](https://en.wikipedia.org/wiki/2012_Summer_Olympics_medal_table) in London. The scraping functionality is hidden in the function `scrape_medaltab` - see the code on GitHub for details.
+Olympic medal tables were extracted using the `rvest` package from the corresponding Wikipedia pages by using table-extracting-code described in the post by [Cory Nissen](http://blog.corynissen.com/2015/01/using-rvest-to-scrape-html-table.html). The Wikipedia tables contain the current state of the medal table and hence take changes in the medal distribution, e.g. deprivation due to doping, into account. For details see on such a table, see for example the [medal table of the 2012 summer games](https://en.wikipedia.org/wiki/2012_Summer_Olympics_medal_table) in London. In order to stay focuses we hide
+the scraping functionality in the function `scrape_medaltab` - see the code on GitHub for more details.
 
 ```{r,SCRAPE,echo=FALSE}
 #Base URL of the wikipedia pages
 base_url <- "https://en.wikipedia.org/wiki/1960_Summer_Olympics_medal_table"
 
-# Scrape medal table of one particular olympic summer game
+#############################################################
+# Function to scrape medal table of one particular olympic
+# summer game from Wikipedia.
+#
+# Parameters:
+#  year - the year of the summer Olympics to scrape
+#
+# Returns:
+#  A data.frame containing the medal table.
+#############################################################
 scrape_medaltab <- function(year) {
-  tableNumber <- ifelse(year %in% c(1960,1984,1992,1996,2000,2004,2008,2012), 2,1) #table number depends on year
+  tableNumber <- ifelse(year %in% c(1960,1984,1992,1996,2000,2004,2008,2012,2016), 2,1) #table number depends on year
   medals <- gsub("1960",year,base_url) %>%
     read_html() %>%
     html_nodes(xpath=paste0("//*[@id=\"mw-content-text\"]/table[",tableNumber,"]")) %>%
@@ -78,7 +88,7 @@ scrape_medaltab <- function(year) {
 
 ```{r}
 #Years which had olympic games
-olympic_years <- seq(1960, 2012, by=4)
+olympic_years <- seq(1960, 2016, by=4)
 
 # Extra olympic medal table from all olympic years since 1960
 medals <- bind_rows(lapply(olympic_years, scrape_medaltab))
@@ -89,45 +99,31 @@ DT::datatable(medals)
 
 ## Gapminder data
 
-We obtain GDP per capita and population data from [Gapminder](https://www.gapminder.org/data/). Unfortunately, these need to be fetched and merged manually. A more convenient way would have been to take these directly from the package [`gapminder`](https://cran.r-project.org/web/packages/gapminder/index.html), but the population is here only available for the years with GDP data and not, as in the original source data, for all years. For simplicity, we hide this data munging code and refer to the underlying code on GitHub for the details.
+We obtain GDP per capita and population data from [Gapminder](https://www.gapminder.org/data/). Unfortunately, these need to be fetched and merged manually. A more convenient way would have been to take these directly from the package [`gapminder`](https://cran.r-project.org/web/packages/gapminder/index.html), but the population is here only available for the years with GDP data and not, as in the original source data, for all years. Furthermore, newer (GDP data)[https://www.gapminder.org/data/documentation/gd001/] are available. We hide the data munging and refer to GitHub code for further details.
 
 ```{r,echo=FALSE, warning=FALSE}
 ##Library to read excel files
 library("openxlsx")
 
 # Obtain GDP/capita data from
-# https://www.gapminder.org/data/ -- this is is the file
-# Old version of Income per person (version 8)
+# https://www.gapminder.org/data/documentation/gd001/
 # From the file: 	Gross Domestic Product per capita by Purchasing
 # Power Parities (in international dollars, fixed 2005 prices).
 # The inflation and differences in the cost of living between
 # countries has been taken into account.
-if (!file.exists("../downloads/indicator_gdp_per_capita_ppp_version8.xlsx")) {
-   download.file(url="https://spreadsheets.google.com/pub?key=0ArfEDsV3bBwCdE5xWmcyYVZJQzJvOFpZUklqX3lkSkE&output=xls",destfile="../downloads/indicator_gdp_per_capita_ppp_version8.xlsx")
+
+if (!file.exists("../downloads/gapdata001_v14.xlsx")) {
+   download.file(url="https://www.gapminder.org/documentation/documentation/gapdata001%20v14.xlsx",destfile="../downloads/gapdata001_v14.xlsx")
 }
 
-gdp <- read.xlsx("../downloads/indicator_gdp_per_capita_ppp_version8.xlsx")
-names(gdp) <- gsub("\\.0$","",names(gdp))
-names(gdp)[1] <- c("Nation")
+#Load data from downloaded Excel file and rename columns
+gdp_long <- read.xlsx("../downloads/gapdata001_v14.xlsx", sheet=2)
+names(gdp_long)[c(1,3)] <- c("Nation","GDPpc")
+names(gdp_long)[14:16] <- paste0(names(gdp_long)[14:16],".",1:3)
 
 #Reshaping from wide format to long format
-gdp_long <- gdp %>% gather(Year, GDPpc, -Nation)
-gdp_long <- gdp_long %>% mutate(Year=as.numeric(Year)) %>% filter(Year >= 1950 & !is.na(GDPpc))
+gdp_long <- gdp_long %>% filter(Year >= 1950 & !is.na(GDPpc)) %>% select(Nation, Year, GDPpc)
 
-#Impute GDP per capita for each country using spline interpolation
-nations <- gdp_long  %>% select(Nation)  %>% distinct() %>% unlist
-
-#Function to interpolate GDP per capita for the olympic years
-#based on the gapminder data.
-interp_country <- function(country) {
-  nationData <- gdp_long %>% filter(Nation == country)
-  f <- splinefun(x=nationData$Year, y=nationData$GDPpc,method="natural")
-  interp_data <- data.frame(Nation=as.character(country), Year=olympic_years, GDPpc= f(olympic_years))
-  return(interp_data)
-}
-
-#Interpolate GDP for all countries
-gdp_long_interp <- bind_rows( lapply(nations, interp_country))
 
 if (!file.exists("../downloads/gapminder_population.xlsx")) {
   download.file(url="https://spreadsheets.google.com/pub?key=phAwcNAVuyj0XOoBL_n5tAQ&output=xls",destfile="../downloads/gapminder_population.xlsx")
@@ -138,8 +134,11 @@ names(pop)[1] <- c("Nation")
 pop_long <- pop %>% gather(Year, Population, -Nation)
 pop_long <- pop_long %>% mutate(Year=as.numeric(Year))
 
+#Carry last value forward to get population size for 2016
+pop_long <- pop_long %>% bind_rows(pop_long %>% filter(Year == 2015) %>% mutate(Year = 2016))
+
 #All this is part of the gapminder package, but unfortunately with uneven recordings
-gapminder_manual <- inner_join(gdp_long_interp, pop_long, by=c("Nation","Year"))
+gapminder_manual <- inner_join(gdp_long, pop_long, by=c("Nation","Year"))
 ```
 
 For convenience, we also extract the corresponding continent each country belongs to. This can be done conveniently by comparing with the `gapminder` dataset (see code for details).
@@ -152,21 +151,11 @@ gapminder_continent <- gapminder_unfiltered %>% rename(Continent = continent, Na
 gapminder_manual <- left_join(gapminder_manual, gapminder_continent, by=c("Nation"))
 ```
 
-```{r,eval=FALSE,echo=FALSE,warning=FALSE}
-library("gapminder")
-data("gapminder_unfiltered")
-#Rename column so they match the olympic medal table
-gapminder <- rename(gapminder_unfiltered, Continent = continent, Nation = country, Year = year, GDPpc = gdpPercap, Population = pop)
-#Data for 2012 is missing, we just copy 2011 data and pretend its 2012
-gapminder <- gapminder %>% bind_rows(
-  gapminder  %>% filter(Year == "2011") %>% mutate(Year = 2012))
-```
-
 ## Joining the two data sources
 
 In principle all that is left to do is to join the two data sources using the names of the gapminder dataset and the nation names of the olympic medal tables. However, this would ignore the fact that there is a discrepancy between the national olympic committees sending the athletes and the countries for which we have GDP information.
 
-A further challenge of the present country based analysis is how to incorporate the many political changes which happened during that period. As an example, East Germany participated as independent national olympic committee during 1968-1988, but the gapminder data only contain GDP data for Germany as a total. A further important change is the split of the former Soviet Union into several independent states. As a consequence, in 1992 the former Soviet republics participated as [Unified Team](https://en.wikipedia.org/wiki/Unified_Team_at_the_1992_Summer_Olympics). We skip the details of these many data munging details and simply refer to the GitHub code for details.
+A further challenge of the present country based analysis is how to incorporate the many political changes which happened during that period. As an example, East Germany participated as independent national olympic committee during 1968-1988, but the gapminder data only contain GDP data for Germany as a total. We therefore choose to aggregate the results of the two countries for the analysis. A further important change is the split of the former Soviet Union into several independent states. As a consequence, in 1992 a subset of the former Soviet republics participated as [Unified Team](https://en.wikipedia.org/wiki/Unified_Team_at_the_1992_Summer_Olympics). The GDP values have to be obtained from the Gapminder data by manual summing the individual Soviet republic GDP values. We skip further details of these many data munging details and simply refer to the GitHub code for details and a **transparent & reproducible** account of how some of the above problems were handled.
 
 ```{r,echo=FALSE}
 medals_mod <- medals %>% select(Nation,Year,Gold,Silver, Bronze,Total)
@@ -209,17 +198,17 @@ medals_gm <- left_join(medals_mod, gapminder_manual, by=c("Nation","Year"))
 
 # Results
 
-First we analyse the [all-time summer olympic medal table](https://en.wikipedia.org/wiki/All-time_Olympic_Games_medal_table) for the period 1960-2012.
+First we analyse the [all-time summer olympic medal table](https://en.wikipedia.org/wiki/All-time_Olympic_Games_medal_table) for the period 1960-2016.
 
 ```{r}
 medals_alltime <- medals_gm  %>% group_by(Nation)  %>% summarise(Total=sum(Total))  %>% arrange(desc(Total))
 DT::datatable(medals_alltime)
 ```
 
-We now plot of the total number of medals awarded for each summer games in the period of 1960-2012.
-```{r}
+We now plot of the total number of medals awarded for each summer games in the period of 1960-2016.
+```{r,TOTALMEDALSPERGAME}
 nTotal <- medals_gm %>% group_by(Year) %>% summarise(TotalOfGames=sum(Total))
-ggplot(nTotal, aes(x=Year,y=TotalOfGames)) + geom_line() + ylab("Total number of medals")
+ggplot(nTotal, aes(x=Year,y=TotalOfGames)) + geom_line() + ylab("Total number of medals per Summer Games")
 ```
 
 We observe a clear trend. Hence, in order to make between country comparisons over time based on the number of medals won, we normalize the numbers of medal won using the total number of medals awarded during the  games. We store this result in the column `Frac`.
@@ -228,38 +217,43 @@ We observe a clear trend. Hence, in order to make between country comparisons ov
 medals_gm <- medals_gm %>% left_join(nTotal, by="Year") %>% mutate(Frac = Total / TotalOfGames)
 ```
 
-We now look at the country results for each summer games starting from 1996.
+We now look at the country results for the summer games in the period 2000-2016.
 
-```{r,echo=FALSE,warning=FALSE}
+```{r,FACET2000ANDBEYOND,echo=FALSE,warning=FALSE}
 #Add city name for better visualization
-olympic_city <- data.frame(Year=olympic_years, City=c("Rome","Tokyo", "Mexico City","Munich", "Montreal", "Moscow","Los Angeles", "Seoul", "Barcelona", "Atlanta", "Sydney", "Athens", "Beijing", "London"))
+olympic_city <- data.frame(Year=olympic_years, City=c("Rome","Tokyo", "Mexico City","Munich", "Montreal", "Moscow","Los Angeles", "Seoul", "Barcelona", "Atlanta", "Sydney", "Athens", "Beijing", "London","Rio de Janeiro"))
 
 medals_gm <- left_join(medals_gm, olympic_city, by="Year") %>% mutate("YearCity"=paste0(Year," - ",City))
 
+#Restrict dataset to Year >= 2000
+medals_gm2000 <- medals_gm %>% filter(Year >= 2000)
 
-medals_gm1996 <- medals_gm %>% filter(Year >= 1996)
-p1 <- ggplot(medals_gm1996,
+#Plot
+p1 <- ggplot(medals_gm2000,
              aes(x=GDPpc, y=Frac, size = Population, colour= Continent)) +
              geom_point() +
-    geom_text(data=medals_gm1996, aes(x=GDPpc, y=Frac, label=Nation), vjust=-1,show.legend=FALSE) +
-             scale_x_log10() + xlab("GDP per Capita") + ylab("Fraction of All Medals") +
-  scale_y_continuous(labels = scales::percent)
+    geom_text(data=medals_gm2000, aes(x=GDPpc, y=Frac, label=Nation), vjust=-1,show.legend=FALSE) +
+             scale_x_log10() + scale_y_sqrt(labels = scales::percent) +
+  xlab("GDP per Capita") + ylab("Fraction of All Medals")
+
 p1 + facet_grid(. ~ YearCity)
 ```
 
-Finally, we can use the `gganimate` package to visualize the dependence of the total number of medals won in the summer games 1960-2012 as a function of GDP per capita. See the [package documentation](https://github.com/dgrtwo/gganimate) for details.
+Note that for better visualization of the many countries with a small number of medals, an sqrt-transform of the y-axis is used.
+
+Finally, we can use the `gganimate` package to visualize the dependence of the total number of medals won in the summer games 1960-2016 as a function of GDP per capita. See the [package documentation](https://github.com/dgrtwo/gganimate) for details.
 
 ```{r,GAPMINDERANIM,fig.width=8,fig.height=5,echo=FALSE,warning=FALSE,results='hide',message=FALSE,fig.keep='hide'}
 p2 <- ggplot(medals_gm, aes(x=GDPpc, y=Frac, size = Population, color = Continent, frame = YearCity)) +
   geom_point() +
-  geom_text(data=medals_gm, aes(x=GDPpc, y=Frac, label=Nation), vjust=-1,show.legend=FALSE) +
+  geom_text(data=medals_gm, aes(x=GDPpc, y=Frac, label=Nation), vjust=-0.7,show.legend=FALSE, size=1.4*(medals_gm$Population/1e6)^(1/4)+0.2) +
   scale_x_log10() +
   xlab("GDP per Capita") + ylab("Fraction of All Medals") +
-  scale_y_continuous(labels = scales::percent)
+   scale_y_sqrt(labels = scales::percent)
+  
 #Animate the result
-#gganimate::gg_animate(p2,interval = 2, ani.width=480, ani.height=480)
-gganimate::gg_animate(p2, filename="olympicMedals-gapminder-style.gif",interval = 2)
-#, ani.width=480, ani.height=480)
+#gganimate::gg_animate(p2,interval = 3, ani.width=600, ani.height=350)
+gganimate::gg_animate(p2, filename="olympicMedals-gapminder-style.gif",interval = 3, , ani.width=600, ani.height=350)
 ```
 
 ```{r,results='asis',echo=FALSE}
@@ -267,7 +261,35 @@ invisible(file.rename("olympicMedals-gapminder-style.gif",file.path(fullFigPath,
 cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"olympicMedals-gapminder-style.gif"),")")
 ```
 
-It is worth noticing that China, due to protests against the participation of Taiwan, did not participate in the Olympics 1956-1980. 
+As before a sqrt-transform of the y-axis is used for better visualization. One interesting observation we see from the animation is that the home-country of the Olympics always appears to do well in the following Olympics. Also note that the [1980](https://en.wikipedia.org/wiki/1980_Summer_Olympics_boycott) and [1984](https://en.wikipedia.org/wiki/1984_Summer_Olympics_boycott) were special due to boycotts. With respect to the top-5 nations it is worth noticing that China, due to protests against the participation of Taiwan, did not participate in the Olympics 1956-1980. Furthermore, up to 1988 the team denoted "Germany" actually consists of the combined number of medals of "East Germany" and "West Germany".
+
+To see the medal tables in a different light, we instead visualize a quantity relative to the number of medals per population. To enable cross-year comparisons we therefore compute the following index for each country and olympic summer games:
+$$
+\frac{\text{Fraction of All Medals the Country got in that Year}}{\text{Population in the Country that Year}} \times 10^6.
+$$
+We shall call this index the fraction of all medals per million population. A similar animation as above, now with logarithmic y-axis, illustrates the dynamics. To provide evidence supported neighbour mocking, we highlight the position of the three Nordic countries (Denmark, Sweden and Norway).
+
+```{r,GAPMINDERANIMPERPOP,fig.width=8,fig.height=5,echo=FALSE,warning=FALSE,results='hide',message=FALSE,fig.keep='hide'}
+#Make a per-population variable
+medals_gm <- medals_gm %>% mutate(FracPerPop=Frac/Population * 1e6)
+highlight_countries <- c("Denmark","Sweden","Norway")
+
+p3 <- ggplot(medals_gm, aes(x=GDPpc, y=FracPerPop, size = Population, color = Continent, frame = YearCity)) +
+  geom_point(data=medals_gm, aes(x=GDPpc, y=FracPerPop, size = Population, color = Continent, frame = YearCity, alpha=ifelse(Nation %in% highlight_countries, 1,0.4)), show.legend=FALSE) +
+  geom_text(data=medals_gm, aes(x=GDPpc, y=FracPerPop, label=Nation), vjust=-0.7,show.legend=FALSE,size=ifelse(medals_gm$Nation %in% highlight_countries, 6, 4),alpha=ifelse(medals_gm$Nation %in% highlight_countries, 1,0.4)) +
+  scale_x_log10() +
+  xlab("GDP per Capita") + ylab("Fraction of All Medals per Million Population") +
+   scale_y_log10()
+
+#Animate the result
+#gganimate::gg_animate(p3,interval = 3, ani.width=600, ani.height=350)
+gganimate::gg_animate(p3, filename="olympicMedals-perpop-gapminder-style.gif",interval = 3, , ani.width=600, ani.height=350)
+```
 
 
-# References
+```{r,results='asis',echo=FALSE}
+invisible(file.rename("olympicMedals-perpop-gapminder-style.gif",file.path(fullFigPath,"olympicMedals-perpop-gapminder-style.gif")))
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"olympicMedals-perpop-gapminder-style.gif"),")")
+```
+
+Jamaica, Bahamas and Grenada appear to do reasonably well lately compared to their population size. However, more more important - did you noticed the position of Denmark at the 2016 games in Rio?
