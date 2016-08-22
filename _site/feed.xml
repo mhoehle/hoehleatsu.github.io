@@ -6,8 +6,8 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 22 Aug 2016 13:44:07 +0200</pubDate>
-    <lastBuildDate>Mon, 22 Aug 2016 13:44:07 +0200</lastBuildDate>
+    <pubDate>Mon, 22 Aug 2016 15:09:38 +0200</pubDate>
+    <lastBuildDate>Mon, 22 Aug 2016 15:09:38 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
@@ -19,7 +19,7 @@ href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Comm
 &lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
 &lt;p&gt;Long Swedish winter nights are best spent watching &lt;a href=&quot;https://en.wikipedia.org/wiki/Hans_Rosling&quot;&gt;Hans Rosling&lt;/a&gt;&#39;s inspiring &lt;a href=&quot;https://www.youtube.com/watch?v=hVimVzgtD6w&quot;&gt;TED talks&lt;/a&gt;. Such visualizations help the statistician make points about temporal trends in an x-axis to y-axis relationship, which otherwise might drown in modelling details. Recently, I stumbled over a &lt;a href=&quot;https://rpubs.com/sjackman/gapminder-gganimate&quot;&gt;blog post&lt;/a&gt; on how to use the &lt;a href=&quot;https://github.com/dgrtwo/gganimate&quot;&gt;&lt;code&gt;gganimate&lt;/code&gt;&lt;/a&gt; R package to animate the Gapminder data available from the &lt;code&gt;gapminder&lt;/code&gt; package. In order to perform a similar &lt;em&gt;Rosling style&lt;/em&gt; animation consider the following: Today, the Olympic Summer Games in Rio de Janeiro end. As usual this spawns a debate, whether the nation&#39;s participation has been successful. For this purpose the &lt;a href=&quot;https://en.wikipedia.org/wiki/Olympic_medal_table&quot;&gt;olympic medal table&lt;/a&gt; is often taken as basis for comparisons, e.g., to mock your &lt;a href=&quot;http://politiken.dk/sport/ol/ECE3349634/danmark-og-sverige-kaemper-til-det-sidste---men-hvor-daelen-er-norge-henne/&quot;&gt;neighbouring countries&lt;/a&gt;. Recent analyses and visualization have been interested in how to correct these tables for, e.g., population size or, more interesting, analyse the influence of GDP. For example:&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Google provides &lt;a href=&quot;https://landing.google.com/altmedaltable/&quot;&gt;alternative Olympics medal tables&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;Google provides &lt;a href=&quot;https://landing.google.com/altmedaltable/&quot;&gt;alternative Olympics medal tables&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;Time Magazine discusses whether it is fair &lt;a href=&quot;http://time.com/4452128/olympics-medals-per-capita-rankings/&quot;&gt;to rank countries by medals achieved alone&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;The aim of the present blog note is to visualize how countries perform in the medal table in relation to their GDP per capita. From a technical viewpoint we experiment with using R to scrape the olympic medal tables from Wikipedia and animate the results Gapminder style. &lt;strong&gt;Disclaimer&lt;/strong&gt;: We only show the potential of such an analysis and, hence, worry less about the scientific validity of the analysis.&lt;/p&gt;
