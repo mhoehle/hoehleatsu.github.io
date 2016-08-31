@@ -256,7 +256,7 @@ p2 <- ggplot(medals_gm, aes(x=GDPpc, y=Frac, size = Population, color = Continen
   
 #Animate the result
 #gganimate::gg_animate(p2,interval = 3, ani.width=600, ani.height=350)
-gganimate::gg_animate(p2, filename="olympicMedals-gapminder-style.gif",interval = 3, , ani.width=600, ani.height=350)
+gganimate::gg_animate(p2, filename="olympicMedals-gapminder-style.gif",interval = 3, ani.width=600, ani.height=350)
 ```
 
 ```{r,results='asis',echo=FALSE}
@@ -265,6 +265,51 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"olympicM
 ```
 
 As before a $\sqrt{}$-transform of the y-axis is used for better visualization. One interesting observation we see from the animation is that the home-country of the Olympics always appears to do well in the following Olympics. Also note that the [1980](https://en.wikipedia.org/wiki/1980_Summer_Olympics_boycott) and [1984](https://en.wikipedia.org/wiki/1984_Summer_Olympics_boycott) were special due to boycotts. With respect to the top-5 nations it is also worth noticing that China, due to protests against the participation of Taiwan, did not participate in the Olympics 1956-1980. Furthermore, up to 1988 the team denoted "Germany" in the animation consists of the combined number of medals of "East Germany" and "West Germany".
+
+### Fun with Flags
+
+Update: After being made aware of the concurrent [blog entry](http://pmassicotte.github.io/2016-08-25-olympics2016) by [Philippe Massicotte](https://www.researchgate.net/profile/Philippe_Massicotte) on how to visualize the Rio medal table using the `ggflags` package, the above gapminder visualization can easily be extended to use flags instead of nation names. As the `ggflags` package only contains the flags of currently existing countries we start the visualization in 1990. For better visability we also add the trajectory of each nation.
+
+```{r,echo=FALSE,results='hide',warning=FALSE,message=FALSE}
+#Use the ggflags package - not on CRAN
+#devtools::install_github("baptiste/ggflags")
+library("ggflags")
+library("countrycode")
+
+medals_gm <- medals_gm %>% mutate(code= countrycode(Nation, "country.name", "iso2c")) %>% mutate(code = tolower(code))
+medals_gm %>% select(code)
+
+#Plot starting year 1990 (only then flags & nations match)
+medals_gm1990 <- medals_gm %>% filter(Year >= 1990)
+
+#gganimate doesn't work with ggflags, instead create the animation manually
+library("animation")
+
+##Safe animation as GIF. Alternative for power point: safeSWF
+saveGIF( {
+  for (y in olympic_years[olympic_years >= 1990]) {
+    #All medals up to now
+    medals_up2now <- medals_gm1990 %>% filter(Year <= y)
+
+    p4 <- ggplot(data=medals_up2now, aes(x=GDPpc, y=Frac, group=Nation)) +
+      geom_line(aes(alpha=1/(abs(Year-y)/4 + 1)),linejoin="round") +
+       geom_flag(data=medals_gm1990 %>% filter(Year==y), aes(x=GDPpc, y=Frac, country=code), size = 10) + 
+      scale_x_log10(limits=c(min(medals_gm$GDPpc,na.rm=TRUE),max(medals_gm$GDPpc,na.rm=TRUE))) + 
+      scale_y_sqrt(labels = scales::percent, limits=c(0,max(medals_gm1990$Frac))) +
+       guides(alpha=FALSE) + 
+      xlab("GDP per Capita") + ylab("Fraction of All Medals") + ggtitle(medals_gm1990 %>% filter(Year==y)  %>% select(YearCity)  %>% slice(1) %>% unlist)
+    print(p4)
+  }
+}, movie.name="olympicMedals-flags.gif",ani.width=600, ani.height=350)
+```
+
+```{r,results='asis',echo=FALSE}
+invisible(file.rename("olympicMedals-flags.gif",file.path(fullFigPath,"olympicMedals-flags.gif")))
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"olympicMedals-flags.gif"),")")
+```
+
+
+### Number of Medals per Population
 
 To see the medal tables in a different light, we instead visualize a quantity relative to the number of medals per population. To enable cross-year comparisons we therefore compute the following index for each country and olympic summer games:
 $$
@@ -286,7 +331,7 @@ p3 <- ggplot(medals_gm, aes(x=GDPpc, y=FracPerPop, size = Population, color = Co
 
 #Animate the result
 #gganimate::gg_animate(p3,interval = 3, ani.width=600, ani.height=350)
-gganimate::gg_animate(p3, filename="olympicMedals-perpop-gapminder-style.gif",interval = 3, , ani.width=600, ani.height=350)
+gganimate::gg_animate(p3, filename="olympicMedals-perpop-gapminder-style.gif",interval = 3, ani.width=600, ani.height=350)
 ```
 
 
@@ -296,3 +341,5 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"olympicM
 ```
 
 Jamaica, Bahamas and Grenada appear to do reasonably well lately compared to their population size. However, more more important - did you noticed the position of Denmark at the 2016 games in Rio?
+
+
