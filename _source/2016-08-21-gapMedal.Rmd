@@ -23,12 +23,11 @@ library("methods")
 theme_set(theme_bw())
 ```
 
-{% include license.html %}
-
 ## Abstract
 
 Following Hans Rosling's Gapminder animation style we visualize the total number of medals a country wins during each olympic summer games in relation to the country's [gross domestic product](https://en.wikipedia.org/wiki/Gross_domestic_product) (GDP) per capita. We illustrate how R's data wrangling capabilities provide a useful toolbox to make such an analysis happen.
 
+{% include license.html %}
 
 # Introduction
 

@@ -11,8 +11,6 @@ html_document:
 
 
 
-{% include license.html %}
-
 ## Abstract
 
 We revisit the **secretary problem** as a mathematical fairy tale: Princes wooing a princess sequentially arrive each having a qualification score originating from a known parametric distribution with all parameters known, e.g., the standard uniform distribution or the normal distribution with known mean and variance.
@@ -20,6 +18,8 @@ For this so called **full information game** the question of interest is: How do
 maximizes the expected score of the selected candidate? As a further twist: How does the
 strategy change, if we sequentially have to estimate the parameters of the distribution
 alongside? The later variant is called the **partial information game** and is nicely addressed using sequential Bayesian updating.
+
+{% include license.html %}
 
 # Introduction
 
@@ -185,7 +185,7 @@ apply(res,1,mean)
 
 ```
 ##         score    select_idx isOverallBest 
-##         0.871         4.958         0.531
+##         0.870         4.964         0.529
 ```
 
 ```r

@@ -9,8 +9,6 @@ comments: true
 
 
 
-{% include license.html %}
-
 ## Abstract
 
 We discuss how to choose the optimal candidate from a rankable sequence of
@@ -19,6 +17,8 @@ decision making and is solved using optimal stopping theory. Two R functions are
 compute optimal selection strategies in two specific instances of the problem. Altogether,
 the mathematical inclined decision maker is given valuable open-source tools to support prudent
 real life decision making.
+
+{% include license.html %}
 
 # Introduction
 
@@ -70,13 +70,11 @@ relrank <- function(x) {
   return(output)
 }
 
-rbind(x=x, y=y<-relrank(x))
+rbind(x=x, y=yrelrank(x))
 ```
 
 ```
-##   [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
-## x    3    8    4    7    6    1   10    9    2     5
-## y    1    2    2    3    3    1    7    7    2     5
+## Error in rbind(x = x, y = yrelrank(x)): could not find function "yrelrank"
 ```
 
 ## Finding the best
@@ -122,7 +120,7 @@ We can illustrate $\phi_n(r)$ as a function of $r$:
 ![](http://staff.math.su.se/hoehle/blog/figure/source/2016-06-12-optimalChoice/PHIPLOT-1.png)
 
 We thus select the $r$, which gives the highest value of $\phi_n(r)$. In the example with
-$n=10$ we therefore look at $r-1=3$ candidates in order to get a *baseline* and then take the first candidate, which is better than this baseline. In the example:
+$n=10$ the best choice is $r=4$; we therefore look at $r-1=3$ candidates in order to get a *baseline* and then take the first candidate, which is better than this baseline. In the example:
 
 
 ```r
@@ -161,7 +159,7 @@ which.max(y <= s)
 ```
 
 ```
-## [1] 6
+## Error in which.max(y <= s): object 'y' not found
 ```
 
 For small $n$ the optimal $r$ and corresponding probability of success
@@ -205,6 +203,9 @@ strategy_best <- function(n) {
 ...and sometimes one animation says more than a lot of text and equations:
 
 
+```
+## Error in which.max(y <= s): object 'y' not found
+```
 
 ![]({{ site.baseurl }}/figure/source/2016-06-12-optimalChoice/animation-select.gif)
 

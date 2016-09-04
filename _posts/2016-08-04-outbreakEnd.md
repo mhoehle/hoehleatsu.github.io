@@ -11,12 +11,11 @@ html_document:
 
 
 
-
-{% include license.html %}
-
 ## Abstract
 
 R code is provided for implementing a statistical method by @nishiura_etal2016 to assess when to declare the end of an outbreak of a person-to-person transmitted disease. The motivating example is the MERS-CoV outbreak in Korea, 2015. From a greater perspective, the blog entry is an attempt to advocate for spicing up statistical conferences by a **reproducibility session**.
+
+{% include license.html %}
 
 # Introduction
 

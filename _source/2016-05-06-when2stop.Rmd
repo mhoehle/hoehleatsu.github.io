@@ -15,8 +15,6 @@ knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='')
 options(width=90)
 ```
 
-{% include license.html %}
-
 # Abstract
 
 This is a small note rediscovering a gem published by S. R. Dalal and C. L. Mallows on
@@ -25,6 +23,8 @@ In their paper they answer the question on how long to continue testing your sof
 shipping. The problem is translated into a sequential decision problem, where an optimal stopping rule has to be found minimizing expected loss.
 We sketch the main result of their paper and apply their stopping rule to an example
 using R code.
+
+{% include license.html %}
 
 # Introduction
 

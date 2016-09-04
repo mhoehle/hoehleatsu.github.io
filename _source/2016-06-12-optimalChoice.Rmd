@@ -16,8 +16,6 @@ library("tidyr")
 library("animation")
 ```
 
-{% include license.html %}
-
 ## Abstract
 
 We discuss how to choose the optimal candidate from a rankable sequence of
@@ -26,6 +24,8 @@ decision making and is solved using optimal stopping theory. Two R functions are
 compute optimal selection strategies in two specific instances of the problem. Altogether,
 the mathematical inclined decision maker is given valuable open-source tools to support prudent
 real life decision making.
+
+{% include license.html %}
 
 # Introduction
 
@@ -76,7 +76,7 @@ relrank <- function(x) {
   return(output)
 }
 
-rbind(x=x, y=y<-relrank(x))
+rbind(x=x, y=yrelrank(x))
 ```
 
 ## Finding the best
@@ -128,7 +128,7 @@ ggplot(df, aes(x=i,y=phi)) + geom_line() + geom_point() +
 ```
 
 We thus select the $r$, which gives the highest value of $\phi_n(r)$. In the example with
-$n=`r n`$ we therefore look at $r-1=`r r-1`$ candidates in order to get a *baseline* and then take the first candidate, which is better than this baseline. In the example:
+$n=`r n`$ the best choice is $r=`r r`$; we therefore look at $r-1=`r r-1`$ candidates in order to get a *baseline* and then take the first candidate, which is better than this baseline. In the example:
 
 ```{r}
 (pickIdx <- which.max(relrank(x)[r:n] == 1 | (r:n == n)))

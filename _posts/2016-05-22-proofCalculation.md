@@ -7,9 +7,6 @@ comments: true
 
 
 
-{% include license.html %}
-
-
 ## Abstract
 
 How does a statistician ensure that an analysis that comprises of outputting $N$ results is
@@ -17,7 +14,7 @@ correct? Can this be done without manually checking each of the results? Some st
 approaches for this task of **proof-calculation** are described - e.g. capture-recapture
 estimation and sequential decision making.
 
-
+{% include license.html %}
 
 # Introduction
 
