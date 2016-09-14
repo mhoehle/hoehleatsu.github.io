@@ -6,8 +6,8 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sun, 04 Sep 2016 12:47:24 +0200</pubDate>
-    <lastBuildDate>Sun, 04 Sep 2016 12:47:24 +0200</lastBuildDate>
+    <pubDate>Wed, 14 Sep 2016 23:20:46 +0200</pubDate>
+    <lastBuildDate>Wed, 14 Sep 2016 23:20:46 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
@@ -872,8 +872,10 @@ relrank &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(x) {
   &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(output)
 }
 
-&lt;span class=&quot;kw&quot;&gt;rbind&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;x, &lt;span class=&quot;dt&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;yrelrank&lt;/span&gt;(x))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;pre&gt;&lt;code&gt;## Error in rbind(x = x, y = yrelrank(x)): could not find function &amp;quot;yrelrank&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;span class=&quot;kw&quot;&gt;rbind&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;x, &lt;span class=&quot;dt&quot;&gt;y=&lt;/span&gt;y&amp;lt;-&lt;span class=&quot;kw&quot;&gt;relrank&lt;/span&gt;(x))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##   [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+## x    3    8    4    7    6    1   10    9    2     5
+## y    1    2    2    3    3    1    7    7    2     5&lt;/code&gt;&lt;/pre&gt;
 &lt;h2 id=&quot;finding-the-best&quot;&gt;Finding the best&lt;/h2&gt;
 &lt;p&gt;It is possible to show &lt;span class=&quot;citation&quot; data-cites=&quot;gilbert_mosteller1966&quot;&gt;(Gilbert and Mosteller 1966)&lt;/span&gt; that the optimal selection policy is to follow the rather intuitive procedure:&lt;/p&gt;
 &lt;ul&gt;
@@ -918,7 +920,7 @@ s&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;pre&gt;&lt;code&gt;##  [1]  0  0  0  1  1  1  1  1  1 10&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;And the selected candidate can easily found as&lt;/p&gt;
 &lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;which.max&lt;/span&gt;(y &amp;lt;=&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;s)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;pre&gt;&lt;code&gt;## Error in which.max(y &amp;lt;= s): object &amp;#39;y&amp;#39; not found&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] 6&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;For small &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; the optimal &lt;span class=&quot;math inline&quot;&gt;\(r\)&lt;/span&gt; and corresponding probability of success can easily be computed numerically. However, for large &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; the numerical precision as well as the computations become more tedious and hence interest is in finding a general asymptotic approximation as &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; grows large: One can show that as &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; gets large the optimal procedure is always to screen the first &lt;span class=&quot;math inline&quot;&gt;\(1/e\)&lt;/span&gt; = 37% and then select the first candidate better than the training sample &lt;span class=&quot;citation&quot; data-cites=&quot;gilbert_mosteller1966&quot;&gt;(Gilbert and Mosteller 1966)&lt;/span&gt;. The asymptotic probability of success, i.e. finding the overall best candidate, when following the such a procedure is also about &lt;span class=&quot;math inline&quot;&gt;\(1/e\)&lt;/span&gt;=37% &lt;span class=&quot;citation&quot; data-cites=&quot;gilbert_mosteller1966&quot;&gt;(Gilbert and Mosteller 1966)&lt;/span&gt;. Below we show a small table illustrating the precision of the asymptotic approximation.&lt;/p&gt;
 &lt;center&gt;
 &lt;table&gt;
@@ -963,7 +965,6 @@ s&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 (s &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;strategy_best&lt;/span&gt;(n))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;pre&gt;&lt;code&gt;##  [1]  0  0  0  1  1  1  1  1  1 10&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;...and sometimes one animation says more than a lot of text and equations:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;## Error in which.max(y &amp;lt;= s): object &amp;#39;y&amp;#39; not found&lt;/code&gt;&lt;/pre&gt;
 &lt;figure&gt;
 &lt;img src=&quot;/hoehle/blog/figure/source/2016-06-12-optimalChoice/animation-select.gif&quot; /&gt;
 &lt;/figure&gt;

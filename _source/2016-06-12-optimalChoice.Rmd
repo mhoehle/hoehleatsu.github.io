@@ -67,7 +67,25 @@ set.seed(123)
 n <- 10L ; x <- sample(1:n,replace=FALSE)
 
 #Function to compute sequential relative ranks, where smallest is best
-relrank <- function(x) {
+#Now programmed with Rcpp, which is faster than plain R. Github code
+#contains an even faster version relrank_rcpp_novec. Note index start at 0
+#in Rcpp.
+Rcpp::cppFunction('NumericVector relrank(NumericVector x) {
+  int n = x.size();
+  NumericVector output(n);
+  for (int i = 0; i < n; ++i) {
+     output[i] = sum(x[Range(0,i)] <= x[i]);
+  }
+  return output;
+}')
+
+rbind(x=x, y=y<-relrank(x)) 
+```
+
+```{r,echo=FALSE,eval=FALSE}
+#Function to compute sequential relative ranks, where smallest is best
+#This is plain R with a manual for loop (slow) + a vectorized sum (fast)
+relrank_r <- function(x) {
   output <- rep(NA,length(x))
   # take vector and find relative ranks, if sequentially disclosed
   for (i in seq_len(length(x))) {
@@ -76,7 +94,22 @@ relrank <- function(x) {
   return(output)
 }
 
-rbind(x=x, y=yrelrank(x))
+
+Rcpp::cppFunction('NumericVector relrank_rcpp_novec(NumericVector x) {
+  int n = x.size();
+  NumericVector output(n);
+  for (int i = 0; i < n; ++i) {
+     for (int j=0; j <= i; ++j) {
+        if (x[j] <= x[i]) output[i]++;
+     }
+  }
+  return output;
+}') 
+
+x2 <- rnorm(1e4)
+rbind(r=system.time(relrank_r(x2)),
+      rcpp_sugar=system.time(relrank(x2)),
+      rcpp_novec=system.time(relrank_rcpp_novec(x2)))
 ```
 
 ## Finding the best

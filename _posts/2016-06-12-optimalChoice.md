@@ -70,11 +70,13 @@ relrank <- function(x) {
   return(output)
 }
 
-rbind(x=x, y=yrelrank(x))
+rbind(x=x, y=y<-relrank(x))
 ```
 
 ```
-## Error in rbind(x = x, y = yrelrank(x)): could not find function "yrelrank"
+##   [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+## x    3    8    4    7    6    1   10    9    2     5
+## y    1    2    2    3    3    1    7    7    2     5
 ```
 
 ## Finding the best
@@ -159,7 +161,7 @@ which.max(y <= s)
 ```
 
 ```
-## Error in which.max(y <= s): object 'y' not found
+## [1] 6
 ```
 
 For small $n$ the optimal $r$ and corresponding probability of success
@@ -203,9 +205,6 @@ strategy_best <- function(n) {
 ...and sometimes one animation says more than a lot of text and equations:
 
 
-```
-## Error in which.max(y <= s): object 'y' not found
-```
 
 ![]({{ site.baseurl }}/figure/source/2016-06-12-optimalChoice/animation-select.gif)
 
