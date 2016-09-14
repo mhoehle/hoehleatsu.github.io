@@ -6,8 +6,8 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 14 Sep 2016 23:20:46 +0200</pubDate>
-    <lastBuildDate>Wed, 14 Sep 2016 23:20:46 +0200</lastBuildDate>
+    <pubDate>Thu, 15 Sep 2016 00:38:33 +0200</pubDate>
+    <lastBuildDate>Thu, 15 Sep 2016 00:38:33 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
@@ -863,16 +863,19 @@ href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Comm
 n &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;10L ; x &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;sample&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;:n,&lt;span class=&quot;dt&quot;&gt;replace=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;FALSE&lt;/span&gt;)
 
 &lt;span class=&quot;co&quot;&gt;#Function to compute sequential relative ranks, where smallest is best&lt;/span&gt;
-relrank &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(x) {
-  output &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rep&lt;/span&gt;(&lt;span class=&quot;ot&quot;&gt;NA&lt;/span&gt;,&lt;span class=&quot;kw&quot;&gt;length&lt;/span&gt;(x))
-  &lt;span class=&quot;co&quot;&gt;# take vector and find relative ranks, if sequentially disclosed&lt;/span&gt;
-  for (i in &lt;span class=&quot;kw&quot;&gt;seq_len&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;length&lt;/span&gt;(x))) {
-    output[i] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;sum&lt;/span&gt;(x[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;:i] &amp;lt;=&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;x[i])
-  }
-  &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(output)
-}
+&lt;span class=&quot;co&quot;&gt;#Now programmed with Rcpp, which is faster than plain R. Github code&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#contains an even faster version relrank_rcpp_novec. Note index start at 0&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#in Rcpp.&lt;/span&gt;
+Rcpp::&lt;span class=&quot;kw&quot;&gt;cppFunction&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;#39;NumericVector relrank(NumericVector x) {&lt;/span&gt;
+&lt;span class=&quot;st&quot;&gt;  int n = x.size();&lt;/span&gt;
+&lt;span class=&quot;st&quot;&gt;  NumericVector output(n);&lt;/span&gt;
+&lt;span class=&quot;st&quot;&gt;  for (int i = 0; i &amp;lt; n; ++i) {&lt;/span&gt;
+&lt;span class=&quot;st&quot;&gt;     output[i] = sum(x[Range(0,i)] &amp;lt;= x[i]);&lt;/span&gt;
+&lt;span class=&quot;st&quot;&gt;  }&lt;/span&gt;
+&lt;span class=&quot;st&quot;&gt;  return output;&lt;/span&gt;
+&lt;span class=&quot;st&quot;&gt;}&amp;#39;&lt;/span&gt;)
 
-&lt;span class=&quot;kw&quot;&gt;rbind&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;x, &lt;span class=&quot;dt&quot;&gt;y=&lt;/span&gt;y&amp;lt;-&lt;span class=&quot;kw&quot;&gt;relrank&lt;/span&gt;(x))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;span class=&quot;kw&quot;&gt;rbind&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;x, &lt;span class=&quot;dt&quot;&gt;y=&lt;/span&gt;y&amp;lt;-&lt;span class=&quot;kw&quot;&gt;relrank&lt;/span&gt;(x)) &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;pre&gt;&lt;code&gt;##   [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
 ## x    3    8    4    7    6    1   10    9    2     5
 ## y    1    2    2    3    3    1    7    7    2     5&lt;/code&gt;&lt;/pre&gt;
@@ -1055,7 +1058,7 @@ res &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot
 &lt;li&gt;Candidate score originating from an &lt;span class=&quot;math inline&quot;&gt;\(U(a,b)\)&lt;/span&gt; uniform with unknown &lt;span class=&quot;math inline&quot;&gt;\(a&amp;lt;b\)&lt;/span&gt;, but with a conjugate and sequentially updated bivariate Pareto prior on &lt;span class=&quot;math inline&quot;&gt;\((a,b)\)&lt;/span&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Altogether, such methods provide decision support: One can evaluate a potential decision and compare results with other ways of reaching the decision. &lt;span class=&quot;citation&quot; data-cites=&quot;frey_eichenberger1996&quot;&gt;Frey and Eichenberger (1996)&lt;/span&gt; discuss that for marriage decisions investigations show that individuals decide rather quickly marrying the first reasonably serious partner. Where does this misalignment between theory and practice originate from? Some of it appears to be consequences of additional effects not addressed by the model, e.g., little marginal gain of searching longer, &lt;em&gt;lemon effects&lt;/em&gt;, satisficing, endowment effects, etc... &lt;strong&gt;Life is complicated&lt;/strong&gt;. Finding a satisficing complexity representation is non-trivial - even for mathematicians. :-)&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-06-12-optimalChoice/unnamed-chunk-16-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-06-12-optimalChoice/unnamed-chunk-17-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
 &lt;h1 id=&quot;references&quot; class=&quot;unnumbered&quot;&gt;References&lt;/h1&gt;
 &lt;div id=&quot;refs&quot; class=&quot;references&quot;&gt;
 &lt;div id=&quot;ref-berger1985&quot;&gt;

@@ -61,16 +61,19 @@ set.seed(123)
 n <- 10L ; x <- sample(1:n,replace=FALSE)
 
 #Function to compute sequential relative ranks, where smallest is best
-relrank <- function(x) {
-  output <- rep(NA,length(x))
-  # take vector and find relative ranks, if sequentially disclosed
-  for (i in seq_len(length(x))) {
-    output[i] <- sum(x[1:i] <= x[i])
+#Now programmed with Rcpp, which is faster than plain R. Github code
+#contains an even faster version relrank_rcpp_novec. Note index start at 0
+#in Rcpp.
+Rcpp::cppFunction('NumericVector relrank(NumericVector x) {
+  int n = x.size();
+  NumericVector output(n);
+  for (int i = 0; i < n; ++i) {
+     output[i] = sum(x[Range(0,i)] <= x[i]);
   }
-  return(output)
-}
+  return output;
+}')
 
-rbind(x=x, y=y<-relrank(x))
+rbind(x=x, y=y<-relrank(x)) 
 ```
 
 ```
@@ -78,6 +81,8 @@ rbind(x=x, y=y<-relrank(x))
 ## x    3    8    4    7    6    1   10    9    2     5
 ## y    1    2    2    3    3    1    7    7    2     5
 ```
+
+
 
 ## Finding the best
 
@@ -378,7 +383,7 @@ effects*, satisficing, endowment effects, etc... **Life is
 complicated**. Finding a satisficing complexity representation is
 non-trivial - even for mathematicians. :-)
 
-<img src="http://staff.math.su.se/hoehle/blog/figure/source/2016-06-12-optimalChoice/unnamed-chunk-16-1.png" style="display: block; margin: auto;" />
+<img src="http://staff.math.su.se/hoehle/blog/figure/source/2016-06-12-optimalChoice/unnamed-chunk-17-1.png" style="display: block; margin: auto;" />
 
 
 # References
