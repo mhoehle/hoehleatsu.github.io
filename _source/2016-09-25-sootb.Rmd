@@ -26,7 +26,7 @@ theme_set(theme_bw())
 
 ## Abstract
 
-We perform a social experiment to investigate, if zombie related twitter posts can used as a reliable indicator for an early warning system. We show how such a system can be set up almost out-of-the-box using R - a free software environment for statistical computing and graphics. **Warning**: This blog entry contains toxic doses of Danish irony and sarcasm as well as disturbing graphs.
+We perform a social experiment to investigate, if zombie related twitter posts can be used as a reliable indicator for an early warning system. We show how such a system can be set up almost out-of-the-box using R - a free software environment for statistical computing and graphics. **Warning**: This blog entry contains toxic doses of Danish irony and sarcasm as well as disturbing graphs.
 
 {% include license.html %}
 
@@ -253,7 +253,7 @@ R provides ideal functionality to quickly extract and monitor twitter time serie
 
 The important question although remains: Does this really work in practice? Can you sleep
 tight, while your R zombie monitor scans twitter? Here is where the **social experiment** starts: Please help by retweeting the post below to create a drill alarm situation.
-More than `r nExtraBeforeAlarm(zombie)` (!) and `r nExtraBeforeAlarm(zombieattack)` tweets, respectively, are needed before an alarm will sound. 
+More than `r nExtraBeforeAlarm(zombie)` (!) and `r nExtraBeforeAlarm(zombieattack)` additional tweets, respectively, are needed before an alarm will sound. 
 
 <center>
 <blockquote class="twitter-tweet" data-lang="de"><p lang="en" dir="ltr">New blog entry: Please RT to help me evaluate my <a href="https://twitter.com/hashtag/zombie?src=hash">#zombie</a> monitoring system - <a href="https://t.co/b0gNfpJ0RM">https://t.co/b0gNfpJ0RM</a> <a href="https://twitter.com/hashtag/zombieattack?src=hash">#zombieattack</a> <a href="https://twitter.com/hashtag/biosurveillance?src=hash">#biosurveillance</a> <a href="https://twitter.com/hashtag/rstats?src=hash">#rstats</a> <a href="https://t.co/N3PTZBnaw4">pic.twitter.com/N3PTZBnaw4</a></p>&mdash; Michael Höhle (\@m_hoehle) <a href="https://twitter.com/m_hoehle/status/780037067183157248">25. September 2016</a></blockquote>

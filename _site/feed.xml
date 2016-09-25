@@ -6,14 +6,14 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sun, 25 Sep 2016 15:56:06 +0200</pubDate>
-    <lastBuildDate>Sun, 25 Sep 2016 15:56:06 +0200</lastBuildDate>
+    <pubDate>Sun, 25 Sep 2016 16:04:29 +0200</pubDate>
+    <lastBuildDate>Sun, 25 Sep 2016 16:04:29 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
         <title>Surveillance Out of the Box - The #Zombie Experiment</title>
         <description>&lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
-&lt;p&gt;We perform a social experiment to investigate, if zombie related twitter posts can used as a reliable indicator for an early warning system. We show how such a system can be set up almost out-of-the-box using R - a free software environment for statistical computing and graphics. &lt;strong&gt;Warning&lt;/strong&gt;: This blog entry contains toxic doses of Danish irony and sarcasm as well as disturbing graphs.&lt;/p&gt;
+&lt;p&gt;We perform a social experiment to investigate, if zombie related twitter posts can be used as a reliable indicator for an early warning system. We show how such a system can be set up almost out-of-the-box using R - a free software environment for statistical computing and graphics. &lt;strong&gt;Warning&lt;/strong&gt;: This blog entry contains toxic doses of Danish irony and sarcasm as well as disturbing graphs.&lt;/p&gt;
 &lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
 href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
@@ -116,7 +116,7 @@ zombie &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&q
 &lt;p&gt;Also no indication of zombie activity. The number of additional tweets needed before alarm in this case is: 21. Altogether, it looks safe out there...&lt;/p&gt;
 &lt;h2 id=&quot;summary&quot;&gt;Summary&lt;/h2&gt;
 &lt;p&gt;R provides ideal functionality to quickly extract and monitor twitter time series. Combining with statistical process control methods allows you to prospectively monitor the use of hashtags. Twitter has released a dedicated package for this purpose, however, in case of low count time series it is better to use count-time series monitoring devices as implemented in the &lt;code&gt;surveillance&lt;/code&gt; package. &lt;span class=&quot;citation&quot; data-cites=&quot;salmon_etal2016a&quot;&gt;Salmon, Schumacher, and Höhle (2016)&lt;/span&gt; contains further details on how to proceed in this case.&lt;/p&gt;
-&lt;p&gt;The important question although remains: Does this really work in practice? Can you sleep tight, while your R zombie monitor scans twitter? Here is where the &lt;strong&gt;social experiment&lt;/strong&gt; starts: Please help by retweeting the post below to create a drill alarm situation. More than 511 (!) and 21 tweets, respectively, are needed before an alarm will sound.&lt;/p&gt;
+&lt;p&gt;The important question although remains: Does this really work in practice? Can you sleep tight, while your R zombie monitor scans twitter? Here is where the &lt;strong&gt;social experiment&lt;/strong&gt; starts: Please help by retweeting the post below to create a drill alarm situation. More than 511 (!) and 21 additional tweets, respectively, are needed before an alarm will sound.&lt;/p&gt;
 &lt;center&gt;
 &lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;de&quot;&gt;
 &lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;
