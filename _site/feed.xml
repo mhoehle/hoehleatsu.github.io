@@ -6,9 +6,160 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 15 Sep 2016 00:38:33 +0200</pubDate>
-    <lastBuildDate>Thu, 15 Sep 2016 00:38:33 +0200</lastBuildDate>
+    <pubDate>Sun, 25 Sep 2016 15:20:34 +0200</pubDate>
+    <lastBuildDate>Sun, 25 Sep 2016 15:20:34 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
+    
+      <item>
+        <title>Surveillance Out of the Box - The #Zombie Experiment</title>
+        <description>&lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
+&lt;p&gt;We perform a social experiment to investigate, if zombie related twitter posts can used as a reliable indicator for an early warning system. We show how such a system can be set up almost out-of-the-box using R - a free software environment for statistical computing and graphics. &lt;strong&gt;Warning&lt;/strong&gt;: This blog entry contains toxic doses of Danish irony and sarcasm as well as disturbing graphs.&lt;/p&gt;
+&lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
+href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
+&lt;p&gt;Proposing statistical methods is only mediocre fun if nobody applies them. As an act of desperation the prudent statistician has been forced to provide R packages supplemented with a CRAN, github, useR! or word-of-mouth advertising strategy. To underpin efforts, a reproducibility-crisis has been announced in order to scare decent comma-separated scientist &lt;a href=&quot;https://www.washingtonpost.com/news/wonk/wp/2016/08/26/an-alarming-number-of-scientific-papers-contain-excel-errors/&quot;&gt;from using Excel&lt;/a&gt;. Social media marketing strategies of your R package include hashtag &lt;code&gt;#rstats&lt;/code&gt; twitter announcements, possibly enhanced by a picture or animation showing your package at its best:&lt;/p&gt;
+&lt;center&gt;
+&lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;en&quot;&gt;
+&lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;
+Introducing gganimate: &lt;a href=&quot;https://twitter.com/hashtag/rstats?src=hash&quot;&gt;#rstats&lt;/a&gt; package for adding animation to any ggplot2 figure &lt;a href=&quot;https://t.co/UBWKHmIc0e&quot;&gt;https://t.co/UBWKHmIc0e&lt;/a&gt; &lt;a href=&quot;https://t.co/oQhQaYBqOj&quot;&gt;pic.twitter.com/oQhQaYBqOj&lt;/a&gt;
+&lt;/p&gt;
+— David Robinson (@drob) &lt;a href=&quot;https://twitter.com/drob/status/694274942813102080&quot;&gt;February 1, 2016&lt;/a&gt;
+&lt;/blockquote&gt;
+&lt;script async src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+&lt;/center&gt;
+&lt;p&gt;
+&lt;p&gt;Unfortunately, little experience with the interactive aspect of this statistical software marketing strategy appears to be available. In order to fill this scientific advertising gap, this blog post constitutes an advertisement for the &lt;strong&gt;out-of-the-box-functionality&lt;/strong&gt; of the &lt;code&gt;surveillance&lt;/code&gt; package hidden as social experiment. It shows shows what you can do with R when combining a couple of packages, wrangle the data, cleverly visualize the results and then team up with the fantastic R community.&lt;/p&gt;
+&lt;h2 id=&quot;the-setup-detecting-a-zombie-attack&quot;&gt;The Setup: Detecting a Zombie Attack&lt;/h2&gt;
+&lt;p&gt;As previously explained in an &lt;a href=&quot;http://user2015.math.aau.dk/lightning_talks&quot;&gt;useR! 2015 lightning talk&lt;/a&gt;, Max Brooks&#39; &lt;a href=&quot;https://en.wikipedia.org/wiki/The_Zombie_Survival_Guide&quot;&gt;Zombie Survival Guide&lt;/a&gt; is very concerned about the &lt;strong&gt;early warning&lt;/strong&gt; of Zombie outbreaks.&lt;/p&gt;
+&lt;center&gt;
+&lt;a href=&quot;http://staff.math.su.se/hoehle/software/surveillance/hoehle-userR2015-web.pdf&quot;&gt;&lt;img src=&quot;/hoehle/blog/figure/source/2016-09-25-sootb/zombiepreparedness.png&quot;&gt;&lt;/a&gt;
+&lt;/center&gt;
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;However, despite of extensive research and recommendations, no reliable service appears available for the early detection of such upcoming events. Twitter, on the other hand, has become the media darling to stay informed about news as they unfold. Hence, continuous monitoring of hashtags like &lt;code&gt;#zombie&lt;/code&gt; or &lt;code&gt;#zombieattack&lt;/code&gt; appears an essential component of your zombie survival strategy.&lt;/p&gt;
+&lt;h1 id=&quot;tight-clothes-short-hair-and-r&quot;&gt;Tight Clothes, Short Hair and R&lt;/h1&gt;
+&lt;p&gt;Extending the recommendations of the Zombie Survival guide we provide an out-of-the-box (OOTB) monitoring system by using the &lt;code&gt;rtweet&lt;/code&gt; R package to obtain all individual tweets containing the hashtags &lt;code&gt;#zombie&lt;/code&gt; or &lt;code&gt;#zombieattack&lt;/code&gt;.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;the_query &amp;lt;-&lt;span class=&quot;st&quot;&gt; &amp;quot;#zombieattack OR #zombie&amp;quot;&lt;/span&gt;
+geocode &amp;lt;-&lt;span class=&quot;st&quot;&gt; &amp;quot;&amp;quot;&lt;/span&gt;  &lt;span class=&quot;co&quot;&gt;#To limit the seach to berlin &amp;amp; surroundings: geocode &amp;lt;- &amp;quot;52.520583,13.402765,25km&amp;quot;&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#Converted query string which works for storing as file&lt;/span&gt;
+safe_query &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;stringr::&lt;span class=&quot;kw&quot;&gt;str_replace_all&lt;/span&gt;(the_query, &lt;span class=&quot;st&quot;&gt;&amp;quot;[^[:alnum:]]&amp;quot;&lt;/span&gt;, &lt;span class=&quot;st&quot;&gt;&amp;quot;X&amp;quot;&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;In particular, the &lt;a href=&quot;https://github.com/mkearney/rtweet&quot;&gt;README&lt;/a&gt; of the &lt;code&gt;rtweet&lt;/code&gt; package provides helpful information on how to create a twitter app to automatically search tweets using the twitter API. One annoyance of the twitter REST API is that only the tweets of the past 7 days are kept in the index. Hence, your time series are going to be short unless you accumulate data over several queries spread over a time period. Instead of using a fancy database setup for this data collection, we provide a simple R solution based on &lt;code&gt;dplyr&lt;/code&gt; and &lt;code&gt;saveRDS&lt;/code&gt; - see the underlying R code of this post by clicking on the github logo in the license statement of this post. Basically,&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;all tweets fulfilling the above hashtag search queries are extracted&lt;/li&gt;
+&lt;li&gt;each tweet is extended with a time stamp of the query-time&lt;/li&gt;
+&lt;li&gt;the entire result of each query us stored into a separate RDS-files using &lt;code&gt;saveRDS&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In a next step, all stored queries are loaded from the RDS files and put together. Subsequently, only the newest time stamped entry about each tweet is kept - this ensures that the re-tweeted counts are up-to-date and no post is counted twice. All these data wrangling operations are easily conducted using &lt;code&gt;dplyr&lt;/code&gt;. Of course a full database solution would have been more elegant, but R does the job just as well as long it&#39;s not millions of queries. No matter the data backend, at the end of this pipeline we have a database of tweets.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;co&quot;&gt;#Read the tweet database&lt;/span&gt;
+tw &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;readRDS&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;file=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;paste0&lt;/span&gt;(filePath,&lt;span class=&quot;st&quot;&gt;&amp;quot;Tweets-Database-&amp;quot;&lt;/span&gt;,safe_query,&lt;span class=&quot;st&quot;&gt;&amp;quot;-&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;2016-09-25&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;.RDS&amp;quot;&lt;/span&gt;))
+&lt;span class=&quot;kw&quot;&gt;options&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;width=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;300&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;tibble.width =&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;Inf&lt;/span&gt;)
+tw %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;select&lt;/span&gt;(created_at, retweet_count,screen_name,text,hashtags,query_at)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## # A tibble: 10,974 × 6
+##             created_at retweet_count    screen_name                                                                                                                                          text  hashtags            query_at
+##                 &amp;lt;dttm&amp;gt;         &amp;lt;int&amp;gt;          &amp;lt;chr&amp;gt;                                                                                                                                         &amp;lt;chr&amp;gt;    &amp;lt;list&amp;gt;              &amp;lt;dttm&amp;gt;
+## 1  2016-09-25 10:26:28             0       Lovebian                                               The latest #Zombie Nation! https://t.co/8ZkOFSZH2v Thanks to @NJTVNews @MaxfireXSA @Xtopgun901X &amp;lt;chr [1]&amp;gt; 2016-09-25 10:30:44
+## 2  2016-09-25 10:25:49             2  MilesssAwaaay RT @Shaaooun: I&amp;#39;m gonna turn to a zombie soon! xdxdxdxd #AlmostSurvived #204Days #ITried #Zombie #StuckInMyRoom #Haha\n\n#MediaDoomsDay #Kame &amp;lt;chr [7]&amp;gt; 2016-09-25 10:30:44
+## 3  2016-09-25 10:21:10             6 catZzinthecity          RT @ZombieEventsUK: 7 reasons #TheGirlWithAllTheGifts is the best #zombie movie in years https://t.co/MB82ssxss2 via @MetroUK #Metro &amp;lt;chr [3]&amp;gt; 2016-09-25 10:30:44
+## 4  2016-09-25 10:19:41             0  CoolStuff2Get                             Think Geek Zombie Plush Slippers https://t.co/0em920WCMh #Zombie #Slippers #MyFeetAreCold https://t.co/iCEkPBykCa &amp;lt;chr [3]&amp;gt; 2016-09-25 10:30:44
+## 5  2016-09-25 10:19:41             4  TwitchersNews    RT @zOOkerx: Nur der frhe Vogel fngt den #zombie also schaut gemtlich rein bei @booty_pax! Now live #dayz on #twitch \n\nhttps://t.co/OIk6 &amp;lt;chr [3]&amp;gt; 2016-09-25 10:30:44
+## 6  2016-09-25 10:17:45             0 ZombieExaminer     Washington mall shooting suspect Arcan Cetin was &amp;#39;#Zombie-like&amp;#39; during arrest - USA TODAY https://t.co/itoDXG3L8T https://t.co/q2mURi24DB &amp;lt;chr [1]&amp;gt; 2016-09-25 10:30:44
+## 7  2016-09-25 10:17:44             4       SpawnRTs    RT @zOOkerx: Nur der frhe Vogel fngt den #zombie also schaut gemtlich rein bei @booty_pax! Now live #dayz on #twitch \n\nhttps://t.co/OIk6 &amp;lt;chr [3]&amp;gt; 2016-09-25 10:30:44
+## 8  2016-09-25 10:17:23             0   BennyPrabowo                   bad miku - bad oni-chan... no mercy\n.\n.\n.\n.\n#left4dead #games #hatsunemiku #fps #zombie #witch https://t.co/YP0nRDFFj7 &amp;lt;chr [6]&amp;gt; 2016-09-25 10:30:44
+## 9  2016-09-25 10:12:53            62   Nblackthorne  RT @PennilessScribe: He would end her pain, but he could no longer live in a world that demanded such sacrifice. #zombie #apocalypse\nhttps: &amp;lt;chr [2]&amp;gt; 2016-09-25 10:30:44
+## 10 2016-09-25 10:06:46             0   mthvillaalva                                                             Pak ganern!!! Kakatapos ko lang kumain ng dugo! \n#Zombie https://t.co/Zyd0btVJH4 &amp;lt;chr [1]&amp;gt; 2016-09-25 10:30:44
+## # ... with 10,964 more rows&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&quot;ootb-zombie-surveillance&quot;&gt;OOTB Zombie Surveillance&lt;/h3&gt;
+&lt;p&gt;We are now ready to prospectively detect changes using the &lt;code&gt;surveillance&lt;/code&gt; R package &lt;span class=&quot;citation&quot; data-cites=&quot;salmon_etal2016a&quot;&gt;(Salmon, Schumacher, and Höhle 2016)&lt;/span&gt;.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;library&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;surveillance&amp;quot;&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We shall initially focus on the &lt;code&gt;#zombie&lt;/code&gt; series as it contains more counts. The first step is to convert the &lt;code&gt;data.frame&lt;/code&gt; of individual tweets into a time series of daily counts.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;co&quot;&gt;#&amp;#39; Function to convert data.frame to queries. For convenience we store the time series&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#&amp;#39; and the data.frame jointly as a list. This allows for easy manipulations later on&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#&amp;#39; as we see data.frame and time series to be a joint package.&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#&amp;#39;&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#&amp;#39; @param tw data.frame containing the linelist of tweets.&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#&amp;#39; @param the_query_subset String containing a regexp to restrict the hashtags&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#&amp;#39; @return List containing sts object as well as the original data frame.&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#&amp;#39;&lt;/span&gt;
+df_2_timeseries &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(tw, the_query_subset) {
+  tw_subset &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;tw %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;filter&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;grepl&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;gsub&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;#&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;,the_query_subset),hashtags))
+
+  &lt;span class=&quot;co&quot;&gt;#Aggregate data per day and convert times series to sts object&lt;/span&gt;
+  ts &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;surveillance::&lt;span class=&quot;kw&quot;&gt;linelist2sts&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;as.data.frame&lt;/span&gt;(tw_subset), &lt;span class=&quot;dt&quot;&gt;dateCol=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;created_at_Date&amp;quot;&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;aggregate.by=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;1 day&amp;quot;&lt;/span&gt;)
+  &lt;span class=&quot;co&quot;&gt;#Drop first day with observations, due to the moving window of the twitter index, this count is incomplete&lt;/span&gt;
+  ts &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;ts[-&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,]
+
+  &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;tw=&lt;/span&gt;tw_subset,&lt;span class=&quot;dt&quot;&gt;ts=&lt;/span&gt;ts, &lt;span class=&quot;dt&quot;&gt;the_query_subset=&lt;/span&gt;the_query_subset))
+}
+
+zombie &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;df_2_timeseries&lt;/span&gt;(tw, &lt;span class=&quot;dt&quot;&gt;the_query_subset =&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;#zombie&amp;quot;&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;It&#39;s easy to visualize the resulting time series using the plotting functionality of the surveillance package.&lt;/p&gt;
+&lt;figure&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-09-25-sootb/unnamed-chunk-9-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;We see that the counts on the last day are incomplete. This is because the query was performed at 10:30 CEST and not at midnight. We therefore adjust counts on the last day based on simple inverse probability weighting. This just means that we scale up the counts by the inverse of the fraction the query-hour (10:30 CEST) makes up of 24h (see github code for details). This relies on the assumption that queries are evenly distributed over the day.&lt;/p&gt;
+&lt;p&gt;We are now ready to apply a surveillance algorithm to the pre-processed time series. We shall pick the so called C1 version of the EARS algorithm documented in &lt;span class=&quot;citation&quot; data-cites=&quot;hutwagner_etal2003&quot;&gt;Hutwagner et al. (2003)&lt;/span&gt; or &lt;span class=&quot;citation&quot; data-cites=&quot;fricker_etal2008&quot;&gt;Fricker, Hegler, and Dunfee (2008)&lt;/span&gt;. For a monitored time point &lt;span class=&quot;math inline&quot;&gt;\(s\)&lt;/span&gt; (here: a particular day, say 2016-09-23), this simple algorithm takes the previous seven observations before &lt;span class=&quot;math inline&quot;&gt;\(s\)&lt;/span&gt; in order to compute the mean and standard deviation, i.e. &lt;span class=&quot;math display&quot;&gt;\[
+\begin{align*}
+\bar{y}_s             &amp;amp;= \frac{1}{7} \sum_{t=s-8}^{s-1} y_t, \\
+\operatorname{sd}_s   &amp;amp;= \frac{1}{7-1} \sum_{t=s-8}^{s-1} (y_t - \bar{y}_s)^2
+\end{align*}
+\]&lt;/span&gt; The algorithm then computes the z-statistic &lt;span class=&quot;math inline&quot;&gt;\(\operatorname{C1}_s = (y_s - \bar{y}_s)/\operatorname{sd}_s\)&lt;/span&gt; for each time point to monitor. Once the value of this statistic is above 3 an alarm is flagged. This means that we assume that the previous 7 observations are what is to be expected when no unusual activity is going on. One can interpret the statistic as a transformation to (standard) normality: once the current observation is too extreme under this model an alarm is sounded. Such normal-approximations are justified given the large number of daily counts in the zombie series we consider, but does not take secular trends or day of the week effects into account. Note that the calculations can also be reversed in order to determine how large the number of observations need to be in order to generate an alarm.&lt;/p&gt;
+&lt;p&gt;We now apply the EARS C1 monitoring procedure to the zombie time series starting at the 8th day of the time series. It is important to realize that the result of monitoring a time point in the graphic is obtained by only &lt;strong&gt;looking into the past&lt;/strong&gt;. Hence, the relevant time point to consider today is if an alarm would have occurred 2016-09-25. We also show the other time points to see, if we could have detected potential alarms earlier.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;zombie[[&lt;span class=&quot;st&quot;&gt;&amp;quot;sts&amp;quot;&lt;/span&gt;]] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;earsC&lt;/span&gt;(zombie$ts, &lt;span class=&quot;dt&quot;&gt;control=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;range =&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;8&lt;/span&gt;:&lt;span class=&quot;kw&quot;&gt;nrow&lt;/span&gt;(zombie$ts),
+                         &lt;span class=&quot;dt&quot;&gt;method =&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;C1&amp;quot;&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;alpha =&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;-&lt;span class=&quot;kw&quot;&gt;pnorm&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;)))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;figure&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-09-25-sootb/ZOMBIE-TS-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;What a relief! No suspicious zombie activity appears to be ongoing. Actually, it would have taken 511 tweets before we would have raised an alarm on 2016-09-25. This is quite a number.&lt;/p&gt;
+&lt;p&gt;As an additional sensitivity analysis we redo the analyses for the &lt;code&gt;#zombieattack&lt;/code&gt; hashtag. Here the use of the normal approximation in the computation of the alerts is more questionable. Still, we can get a time series of counts together with the alarm limits.&lt;/p&gt;
+&lt;figure&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-09-25-sootb/ZOMBIEATTACK-TS-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;Also no indication of zombie activity. The number of additional tweets needed before alarm in this case is: 21. Altogether, it looks safe out there...&lt;/p&gt;
+&lt;h2 id=&quot;summary&quot;&gt;Summary&lt;/h2&gt;
+&lt;p&gt;R provides ideal functionality to quickly extract and monitor twitter time series. Combining with statistical process control methods allows you to prospectively monitor the use of hashtags. Twitter has released a dedicated package for this purpose, however, in case of low count time series it is better to use count-time series monitoring devices as implemented in the &lt;code&gt;surveillance&lt;/code&gt; package. &lt;span class=&quot;citation&quot; data-cites=&quot;salmon_etal2016a&quot;&gt;Salmon, Schumacher, and Höhle (2016)&lt;/span&gt; contains further details on how to proceed in this case.&lt;/p&gt;
+&lt;p&gt;The important question although remains: Does this really work in practice? Can you sleep tight, while your R zombie monitor scans twitter? Here is where the &lt;strong&gt;social experiment starts&lt;/strong&gt;: Please help answer this question by retweeting the post below to create a drill alarm situation. More than 511 (!) and 21 tweets, respectively, are needed before an alarm will sound.&lt;/p&gt;
+(placeholder tweet, this will change in a couple of minutes!!)
+&lt;center&gt;
+&lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;de&quot;&gt;
+&lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;
+Video recording, slides &amp;amp; R code of our &lt;a href=&quot;https://twitter.com/ISDS&quot;&gt;&lt;span class=&quot;citation&quot; data-cites=&quot;ISDS&quot;&gt;(&lt;span class=&quot;citeproc-not-found&quot; data-reference-id=&quot;ISDS&quot;&gt;&lt;strong&gt;???&lt;/strong&gt;&lt;/span&gt;)&lt;/span&gt;&lt;/a&gt; MV Time Series webinar now available at &lt;a href=&quot;https://t.co/XVtLrjbJKZ&quot;&gt;https://t.co/XVtLrjbJKZ&lt;/a&gt; &lt;a href=&quot;https://twitter.com/hashtag/biosurveillance?src=hash&quot;&gt;#biosurveillance&lt;/a&gt; &lt;a href=&quot;https://twitter.com/hashtag/rstats?src=hash&quot;&gt;#rstats&lt;/a&gt;
+&lt;/p&gt;
+— Michael Höhle (@m_hoehle) &lt;a href=&quot;https://twitter.com/m_hoehle/status/778712624426995712&quot;&gt;21. September 2016&lt;/a&gt;
+&lt;/blockquote&gt;
+&lt;script async src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+&lt;/center&gt;
+&lt;p&gt;I will continuously update the graphs in this post to see how our efforts are reflected in the time series of tweets containing the &lt;code&gt;#zombieattack&lt;/code&gt; and &lt;code&gt;#zombie&lt;/code&gt; hashtags. Thanks for your help!&lt;/p&gt;
+&lt;p&gt;
+&lt;center&gt;
+&lt;img src=&quot;/hoehle/blog/figure/source/2016-09-25-sootb/zombie.png&quot; title=&quot;Source: https://openclipart.org/detail/201838/zombie-head&quot; /&gt; &lt;img src=&quot;/hoehle/blog/figure/source/2016-09-25-sootb/zombie.png&quot; title=&quot;Source: https://openclipart.org/detail/201838/zombie-head&quot; /&gt; &lt;img src=&quot;/hoehle/blog/figure/source/2016-09-25-sootb/zombie.png&quot; title=&quot;Source: https://openclipart.org/detail/201838/zombie-head&quot; /&gt;
+&lt;/center&gt;
+&lt;p&gt;
+&lt;h1 id=&quot;references&quot; class=&quot;unnumbered&quot;&gt;References&lt;/h1&gt;
+&lt;div id=&quot;refs&quot; class=&quot;references&quot;&gt;
+&lt;div id=&quot;ref-fricker_etal2008&quot;&gt;
+&lt;p&gt;Fricker, R. D., B. L. Hegler, and D. A. Dunfee. 2008. “Comparing syndromic surveillance detection methods: EARS’ versus a CUSUM-based methodology.” &lt;em&gt;Stat Med&lt;/em&gt; 27 (17): 3407–29.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-hutwagner_etal2003&quot;&gt;
+&lt;p&gt;Hutwagner, L., W. Thompson, G. M. Seeman, and T. Treadwell. 2003. “The bioterrorism preparedness and response Early Aberration Reporting System (EARS).” &lt;em&gt;J Urban Health&lt;/em&gt; 80 (2 Suppl 1): 89–96.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-salmon_etal2016a&quot;&gt;
+&lt;p&gt;Salmon, M., D. Schumacher, and M. Höhle. 2016. “Monitoring Count Time Series in R: Aberration Detection in Public Health Surveillance.” &lt;em&gt;Journal of Statistical Software&lt;/em&gt; 70 (10). doi:&lt;a href=&quot;https://doi.org/10.18637/jss.v070.i10&quot;&gt;10.18637/jss.v070.i10&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Sun, 25 Sep 2016 00:00:00 +0200</pubDate>
+        <link>http://staff.math.su.se/hoehle/blog/2016/09/25/sootb.html</link>
+        <guid isPermaLink="true">http://staff.math.su.se/hoehle/blog/2016/09/25/sootb.html</guid>
+        
+        <category>datascience</category>
+        
+        <category>rstats</category>
+        
+        <category>statistical process control</category>
+        
+        <category>biosurveillance</category>
+        
+        
+      </item>
     
       <item>
         <title>The Olympic Medal Table Visualized Gapminder Style</title>

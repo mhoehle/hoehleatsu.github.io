@@ -1,0 +1,274 @@
+---
+layout: post
+title: "Surveillance Out of the Box - The #Zombie Experiment"
+tags: [datascience, rstats, statistical process control, biosurveillance]
+bibliography: ~/Literature/Bibtex/jabref.bib
+comments: true
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2016-09-25-sootb/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2016-09-25-sootb/"
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='')
+options(width=90)
+library("dplyr")
+library("ggplot2")
+library("tidyr")
+library("methods")
+theme_set(theme_bw())
+```
+
+## Abstract
+
+We perform a social experiment to investigate, if zombie related twitter posts can used as a reliable indicator for an early warning system. We show how such a system can be set up almost out-of-the-box using R - a free software environment for statistical computing and graphics. **Warning**: This blog entry contains toxic doses of Danish irony and sarcasm as well as disturbing graphs.
+
+{% include license.html %}
+
+## Introduction
+
+Proposing statistical methods is only mediocre fun if nobody applies them. As an act of desperation the prudent statistician has been forced to provide R packages supplemented with a CRAN, github, useR! or word-of-mouth advertising strategy. To underpin efforts, a reproducibility-crisis has been announced in order to scare decent comma-separated scientist [from using Excel](https://www.washingtonpost.com/news/wonk/wp/2016/08/26/an-alarming-number-of-scientific-papers-contain-excel-errors/). Social media marketing strategies of your R package include hashtag `#rstats` twitter announcements, possibly enhanced by a picture or animation showing your package at its best:
+
+<center>
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">Introducing gganimate: <a href="https://twitter.com/hashtag/rstats?src=hash">#rstats</a> package for adding animation to any ggplot2 figure <a href="https://t.co/UBWKHmIc0e">https://t.co/UBWKHmIc0e</a> <a href="https://t.co/oQhQaYBqOj">pic.twitter.com/oQhQaYBqOj</a></p>&mdash; David Robinson (\@drob) <a href="https://twitter.com/drob/status/694274942813102080">February 1, 2016</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+</center>
+
+<p>
+Unfortunately, little experience with the interactive aspect of this statistical software marketing strategy appears to be available. In order to fill this scientific advertising gap, this blog post constitutes an advertisement for the **out-of-the-box-functionality** of the `surveillance` package hidden as social experiment. It shows shows what you can do with R when combining a couple of packages, wrangle the data, cleverly visualize the results and then 
+team up with the fantastic R community.
+
+## The Setup: Detecting a Zombie Attack
+
+As previously explained in an [useR! 2015 lightning talk](http://user2015.math.aau.dk/lightning_talks), Max Brooks' [Zombie Survival Guide](https://en.wikipedia.org/wiki/The_Zombie_Survival_Guide) is very concerned about the **early warning** of Zombie outbreaks.
+
+<center>
+[<img src="{{ site.baseurl }}/figure/source/2016-09-25-sootb/zombiepreparedness.png">](http://staff.math.su.se/hoehle/software/surveillance/hoehle-userR2015-web.pdf)
+</center>
+<br>
+
+However, despite of extensive research and recommendations, no reliable service appears available for the early detection of such upcoming events. Twitter, on the other hand, has become the media darling to stay informed about news as they unfold. Hence, continuous monitoring of hashtags like `#zombie` or `#zombieattack` appears an essential component of your zombie survival strategy.
+
+# Tight Clothes, Short Hair and R
+
+Extending the recommendations of the Zombie Survival guide we provide an out-of-the-box (OOTB)
+monitoring system by using the `rtweet` R package to obtain all individual tweets containing the hashtags `#zombie` or `#zombieattack`.
+
+```{r}
+the_query <- "#zombieattack OR #zombie"
+geocode <- ""  #To limit the seach to berlin & surroundings: geocode <- "52.520583,13.402765,25km"
+#Converted query string which works for storing as file
+safe_query <- stringr::str_replace_all(the_query, "[^[:alnum:]]", "X")
+```
+
+In particular, the [README](https://github.com/mkearney/rtweet) of the `rtweet` package provides helpful information on how to create a twitter app to automatically search tweets using the twitter API. One annoyance of the twitter REST API is that only the tweets of the past 7 days are kept in the index. Hence, your time series are going to be short unless you accumulate data over several queries spread over a time period. Instead of using a fancy database setup for this data collection, we provide a simple R solution based on `dplyr` and `saveRDS` - see the underlying R code of this post by clicking on the github logo in the license statement of this post. Basically,
+
+* all tweets fulfilling the above hashtag search queries are extracted
+* each tweet is extended with a time stamp of the query-time
+* the entire result of each query us stored into a separate RDS-files using `saveRDS`
+
+```{r,eval=FALSE,echo=FALSE}
+library("rtweet")
+# A file containing the information of your twitter app. To protect the
+# information stored here, this is kept outside the public git repository.
+#
+# The contents of the file are simply:
+# twitter_token <- create_token(app = "zombiemonitor", # whatever you named app
+#   consumer_key = "2zIXXX4L6USa4UfXXXXXXXXXX",
+#   consumer_secret = "oXXXXXXXSwwXXXXXXXXXXXXXXsXXXXXXXmXXXXXXXX")
+
+source("~/Sandbox/Twitter-Trends/auth-zombie.R",encoding="UTF8")
+
+#Perform the query and add time stamp information
+tw_one <- search_tweets(the_query, n = 15000, type="recent", token = twitter_token, geocode=geocode)
+tw_one <- tw_one %>% mutate(query_at = Sys.time(), created_at_Date = as.Date(created_at), the_query = the_query)
+
+#Show what we got
+tw_one %>% summarise(n=n())
+
+#Store to file
+saveRDS(tw_one, file=paste0(filePath,"Stored-Tweets-",safe_query,"-",Sys.Date(),".RDS"))
+```
+
+In a next step, all stored queries are loaded from the RDS files and put together. Subsequently, only the newest time stamped entry about each tweet is kept - this ensures that the re-tweeted counts are up-to-date and no post is counted twice. All these data wrangling operations are easily conducted using `dplyr`. Of course a full database solution would have been more elegant, but R does the job just as well as long it's not millions of queries. No matter the data backend, at the end of this pipeline we have a database of tweets.
+
+```{r,eval=FALSE,echo=FALSE}
+##Load all stored tweet queries
+data_files <- list.files(path = filePath, pattern = paste0("Stored-Tweets-",safe_query,"-*"),full.names=TRUE)
+tw <- as.tbl(bind_rows(lapply(data_files, readRDS)))
+
+##Only keep the newest entry available about each post (retweet counts could have changed)
+tw <- tw %>% group_by(status_id) %>% filter(query_at == max(query_at)) %>% ungroup()
+
+#Store results, this constitutes our database of tweets.
+saveRDS(tw, file=paste0(filePath,"Tweets-Database-",safe_query,"-",Sys.Date(),".RDS"))
+```
+
+```{r}
+#Read the tweet database
+tw <- readRDS(file=paste0(filePath,"Tweets-Database-",safe_query,"-","2016-09-25",".RDS"))
+options(width=300,tibble.width = Inf)
+tw %>% select(created_at, retweet_count,screen_name,text,hashtags,query_at)
+```
+```{r,echo=FALSE}
+options(width=90)
+```
+
+### OOTB Zombie Surveillance 
+
+We are now ready to prospectively detect changes using the `surveillance` R package [@salmon_etal2016a].
+
+```{r,message=FALSE,warning=FALSE}
+library("surveillance")
+```
+
+We shall initially focus on the `#zombie` series as it contains more counts. The first step is to convert the `data.frame` of individual tweets into a time series of daily counts.
+
+```{r}
+#' Function to convert data.frame to queries. For convenience we store the time series
+#' and the data.frame jointly as a list. This allows for easy manipulations later on
+#' as we see data.frame and time series to be a joint package.
+#'
+#' @param tw data.frame containing the linelist of tweets.
+#' @param the_query_subset String containing a regexp to restrict the hashtags
+#' @return List containing sts object as well as the original data frame.
+#'
+df_2_timeseries <- function(tw, the_query_subset) {
+  tw_subset <- tw %>% filter(grepl(gsub("#","",the_query_subset),hashtags))
+
+  #Aggregate data per day and convert times series to sts object
+  ts <- surveillance::linelist2sts(as.data.frame(tw_subset), dateCol="created_at_Date", aggregate.by="1 day")
+  #Drop first day with observations, due to the moving window of the twitter index, this count is incomplete
+  ts <- ts[-1,]
+
+  return(list(tw=tw_subset,ts=ts, the_query_subset=the_query_subset))
+}
+
+zombie <- df_2_timeseries(tw, the_query_subset = "#zombie")
+```
+
+It's easy to visualize the resulting time series using the plotting functionality of the surveillance package.
+
+```{r,echo=FALSE}
+plot(zombie$ts, legend.opts=NULL,
+          xaxis.tickFreq=list("%d"=atChange,"%m"=atChange),
+          xaxis.labelFreq=list("%d"=at2ndChange),xaxis.labelFormat="%d-%b",
+     xlab="Time (days)",col=c("lightgray","black","indianred3"),
+     lty=c(1,1,1,1),lwd=c(1.5,2,2),main=zombie$the_query_subset,ylab="No. of tweets")
+```
+
+We see that the counts on the last day are incomplete. This is because the query was performed at 10:30 CEST and not at midnight. We therefore adjust counts on the last day based on simple inverse probability weighting. This just means that we scale up the counts by the inverse of the fraction the query-hour (10:30 CEST) makes up of 24h (see github code for details). This relies on the assumption that queries are evenly distributed over the day. 
+
+```{r,echo=FALSE,message=FALSE}
+#' Scale up incomplete cases on the last day
+#'
+#' @param tsl Time series list containing the data.frame of tweets as well as the sts time series
+
+scale_up_last_day <- function(tsl) {
+  require("lubridate")
+  max_time <- tsl$tw %>% select(query_at) %>% summarise(m=max(query_at))
+  when_query <- hour(max_time$m) + minute(max_time$m)/60 + second(max_time$m)/(60*60)
+  scaling_factor <- 24 / when_query
+
+  idx <- which(epoch(tsl$ts) == as.Date(max_time$m))
+
+  #Crude inverse probability weighting to adjust the counts for today.
+  observed(tsl$ts)[idx,] <- round(observed(tsl$ts)[idx,] * scaling_factor)
+  return(tsl)
+}
+
+zombie <- scale_up_last_day(zombie)
+```
+
+We are now ready to apply a surveillance algorithm to the pre-processed time series. We shall pick the so called C1 version of the EARS algorithm documented in @hutwagner_etal2003 or @fricker_etal2008. For a monitored time point $s$ (here: a particular day, say 2016-09-23), this simple algorithm takes the previous seven observations before $s$ in order to compute the mean and standard deviation, i.e.
+$$
+\begin{align*}
+\bar{y}_s             &= \frac{1}{7} \sum_{t=s-8}^{s-1} y_t, \\
+\operatorname{sd}_s   &= \frac{1}{7-1} \sum_{t=s-8}^{s-1} (y_t - \bar{y}_s)^2
+\end{align*}
+$$
+The algorithm then computes the z-statistic $\operatorname{C1}_s = (y_s - \bar{y}_s)/\operatorname{sd}_s$ for each time point to monitor. Once the value of this statistic is above 3 an alarm is flagged. This means that we assume that the previous 7 observations are what is to be expected when no unusual activity is going on. One can interpret the statistic as a transformation to (standard) normality: once the current observation is too extreme under this model an alarm is sounded. Such normal-approximations are justified given the large number of daily counts in the zombie series we consider, but does not take secular trends or day of the week effects into account. Note that the calculations can also be reversed in order to determine how large the number of observations need to be in order to generate an alarm. 
+
+We now apply the EARS C1 monitoring procedure to the zombie time series starting at the 8th day  of the time series. It is important to realize that the result of monitoring a time point in the graphic is obtained by only **looking into the past**. Hence, the relevant time point to consider today is if an alarm would have occurred 2016-09-25. We also show the other time points to see, if we could have detected potential alarms earlier.
+
+```{r}
+zombie[["sts"]] <- earsC(zombie$ts, control=list(range = 8:nrow(zombie$ts),
+                         method = "C1", alpha = 1-pnorm(3)))
+```
+
+```{r,ZOMBIE-TS,echo=FALSE}
+plot_ts_and_sts <- function(tsl) {
+  plot(tsl$ts, legend.opts=NULL,
+       xaxis.tickFreq=list("%d"=atChange,"%m"=atChange),
+       xaxis.labelFreq=list("%d"=at2ndChange),xaxis.labelFormat="%d-%b",
+       xlab="Time (days)",col=c("lightgray","black","indianred3"),
+       lty=c(1,1,1,1),lwd=c(1.5,2,2),main=tsl$the_query,ylab="No. of tweets", ylim=c(0,max(observed(tsl$ts),upperbound(tsl$sts))))
+
+  idx <- seq_len(nrow(tsl$ts))
+  idx_monitor <- which( epoch(tsl$ts) %in% epoch(tsl$sts))
+  idx_alarm <- idx[c(rep(0,min(idx_monitor)-1),as.numeric(alarms(tsl$sts) == 1)) == 1]
+
+  #alarms
+  points(idx_alarm, rep(-12,length(idx_alarm)), pch=24, col="indianred3", cex=1.5, lwd=2)
+  #upper bound
+  lines( c(idx_monitor,tail(idx_monitor,n=1)+1)-0.5, c(upperbound(tsl$sts),tail(upperbound(tsl$sts),n=1)), type="s",col="indianred3",lwd=2)
+  #legend
+  legend(x="topleft",c("earsC1 threshold","alarm"), lwd=c(2,NA), pch=c(NA,24),col="indianred3",pt.cex=c(1,1.5))
+
+}
+
+#' Calculate additional number of cases needed before alarm.
+#' @param tsl Time series list object containing sts object as well as data.frame of cases
+nExtraBeforeAlarm <- function(tsl) {
+  ((upperbound(tsl$sts) %>%  tail(n=1)) - (observed(tsl$ts) %>% tail(n=1))) %>% 
+    ceiling %>% as.numeric
+}
+
+plot_ts_and_sts(zombie)
+```
+
+What a relief! No suspicious zombie activity appears to be ongoing. Actually, it would have taken `r nExtraBeforeAlarm(zombie)` tweets before we would have raised an alarm on 2016-09-25. This is quite a number.
+
+As an additional sensitivity analysis we redo the analyses for the `#zombieattack` hashtag. Here the use of the normal approximation in the computation of the alerts is more questionable. Still, we can get a time series of counts together with the alarm limits.
+
+```{r,ZOMBIEATTACK-TS,echo=FALSE}
+#Repeat everything for the other hashtag.
+zombieattack <- df_2_timeseries(tw, the_query_subset = "#zombieattack") %>% scale_up_last_day
+#Monitor
+zombieattack[["sts"]] <- earsC(zombieattack$ts, control=list(range = 8:nrow(zombieattack$ts),
+                              method = "C1", alpha = 1-pnorm(3)))
+plot_ts_and_sts(zombieattack)
+```
+
+Also no indication of zombie activity. The number of additional tweets needed before alarm in this case is: `r nExtraBeforeAlarm(zombieattack)`. Altogether, it looks safe out there...
+
+## Summary
+
+R provides ideal functionality to quickly extract and monitor twitter time series. Combining with statistical process control methods allows you to prospectively monitor the use of hashtags. Twitter has released a dedicated package for this purpose, however, in case of low count time series it is better to use count-time series monitoring devices as implemented in the `surveillance` package. @salmon_etal2016a contains further details on how to proceed in this case.
+
+The important question although remains: Does this really work in practice? Can you sleep
+tight, while your R zombie monitor scans twitter? Here is where the **social experiment starts**: Please help answer this question by retweeting the post below to create a drill alarm situation.
+More than `r nExtraBeforeAlarm(zombie)` (!) and `r nExtraBeforeAlarm(zombieattack)` tweets, respectively, are needed before an alarm will sound. 
+
+(placeholder tweet, this will change in a couple of minutes!!)
+<center>
+<blockquote class="twitter-tweet" data-lang="de"><p lang="en" dir="ltr">Video recording, slides &amp; R code of our <a href="https://twitter.com/ISDS">@ISDS</a> MV Time Series webinar now available at <a href="https://t.co/XVtLrjbJKZ">https://t.co/XVtLrjbJKZ</a> <a href="https://twitter.com/hashtag/biosurveillance?src=hash">#biosurveillance</a> <a href="https://twitter.com/hashtag/rstats?src=hash">#rstats</a></p>&mdash; Michael Höhle (\@m_hoehle) <a href="https://twitter.com/m_hoehle/status/778712624426995712">21. September 2016</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+</center>
+
+I will continuously update the graphs in this post to see how our efforts are reflected in the time series of tweets containing the `#zombieattack` and `#zombie` hashtags. Thanks for your help!
+
+<p>
+<center>
+![]({{ site.baseurl }}/figure/source/2016-09-25-sootb/zombie.png "Source: https://openclipart.org/detail/201838/zombie-head")
+![]({{ site.baseurl }}/figure/source/2016-09-25-sootb/zombie.png "Source: https://openclipart.org/detail/201838/zombie-head")
+![]({{ site.baseurl }}/figure/source/2016-09-25-sootb/zombie.png "Source: https://openclipart.org/detail/201838/zombie-head")
+</center>
+<p>
+
+# References
