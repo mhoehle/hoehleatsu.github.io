@@ -32,7 +32,7 @@ We perform a social experiment to investigate, if zombie related twitter posts c
 
 ## Introduction
 
-Proposing statistical methods is only mediocre fun if nobody applies them. As an act of desperation the prudent statistician has been forced to provide R packages supplemented with a CRAN, github, useR! or word-of-mouth advertising strategy. To underpin efforts, a reproducibility-crisis has been announced in order to scare decent comma-separated scientist [from using Excel](https://www.washingtonpost.com/news/wonk/wp/2016/08/26/an-alarming-number-of-scientific-papers-contain-excel-errors/). Social media marketing strategies of your R package include hashtag `#rstats` twitter announcements, possibly enhanced by a picture or animation showing your package at its best:
+Proposing statistical methods is only mediocre fun if nobody applies them. As an act of desperation the prudent statistician has been forced to provide R packages supplemented with a CRAN, github, useR! or word-of-mouth advertising strategy. To underpin efforts, a reproducibility-crisis has been announced in order to scare decent comma-separated scientists [from using Excel](https://www.washingtonpost.com/news/wonk/wp/2016/08/26/an-alarming-number-of-scientific-papers-contain-excel-errors/). Social media marketing strategies of your R package include hashtag `#rstats` twitter announcements, possibly enhanced by a picture or animation showing your package at its best:
 
 <center>
 <blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">Introducing gganimate: <a href="https://twitter.com/hashtag/rstats?src=hash">#rstats</a> package for adding animation to any ggplot2 figure <a href="https://t.co/UBWKHmIc0e">https://t.co/UBWKHmIc0e</a> <a href="https://t.co/oQhQaYBqOj">pic.twitter.com/oQhQaYBqOj</a></p>&mdash; David Robinson (\@drob) <a href="https://twitter.com/drob/status/694274942813102080">February 1, 2016</a></blockquote>
@@ -95,7 +95,7 @@ tw_one %>% summarise(n=n())
 saveRDS(tw_one, file=paste0(filePath,"Stored-Tweets-",safe_query,"-",Sys.Date(),".RDS"))
 ```
 
-In a next step, all stored queries are loaded from the RDS files and put together. Subsequently, only the newest time stamped entry about each tweet is kept - this ensures that the re-tweeted counts are up-to-date and no post is counted twice. All these data wrangling operations are easily conducted using `dplyr`. Of course a full database solution would have been more elegant, but R does the job just as well as long it's not millions of queries. No matter the data backend, at the end of this pipeline we have a database of tweets.
+In a next step, all stored queries are loaded from the RDS files and put together. Subsequently, only the newest time stamped entry about each tweet is kept - this ensures that the re-tweeted counts are up-to-date and no post is counted twice. All these data wrangling operations are easily conducted using `dplyr`. Of course a full database solution would have been more elegant, but R does the job just as well as long it's not millions of queries. Actually, in the example I'm going to use the results of a single query. No matter the data backend, at the end of this pipeline we have a database of tweets. 
 
 ```{r,eval=FALSE,echo=FALSE}
 ##Load all stored tweet queries
@@ -162,7 +162,7 @@ plot(zombie$ts, legend.opts=NULL,
      lty=c(1,1,1,1),lwd=c(1.5,2,2),main=zombie$the_query_subset,ylab="No. of tweets")
 ```
 
-We see that the counts on the last day are incomplete. This is because the query was performed at 10:30 CEST and not at midnight. We therefore adjust counts on the last day based on simple inverse probability weighting. This just means that we scale up the counts by the inverse of the fraction the query-hour (10:30 CEST) makes up of 24h (see github code for details). This relies on the assumption that queries are evenly distributed over the day. 
+We see that the counts on the last day are incomplete. This is because the query was performed at 10:30 CEST and not at midnight. We therefore adjust counts on the last day based on simple inverse probability weighting. This just means that we scale up the counts by the inverse of the fraction the query-hour (10:30 CEST) makes up of 24h (see github code for details). The usefulness of this adjustment relies on the assumption that queries are evenly distributed over the day. 
 
 ```{r,echo=FALSE,message=FALSE}
 #' Scale up incomplete cases on the last day
@@ -185,14 +185,14 @@ scale_up_last_day <- function(tsl) {
 zombie <- scale_up_last_day(zombie)
 ```
 
-We are now ready to apply a surveillance algorithm to the pre-processed time series. We shall pick the so called C1 version of the EARS algorithm documented in @hutwagner_etal2003 or @fricker_etal2008. For a monitored time point $s$ (here: a particular day, say 2016-09-23), this simple algorithm takes the previous seven observations before $s$ in order to compute the mean and standard deviation, i.e.
+We are now ready to apply a surveillance algorithm to the pre-processed time series. We shall pick the so called C1 version of the EARS algorithm documented in @hutwagner_etal2003 or @fricker_etal2008. For a monitored time point $s$ (here: a particular day, say, 2016-09-23), this simple algorithm takes the previous seven observations before $s$ in order to compute the mean and standard deviation, i.e.
 $$
 \begin{align*}
 \bar{y}_s             &= \frac{1}{7} \sum_{t=s-8}^{s-1} y_t, \\
 \operatorname{sd}_s   &= \frac{1}{7-1} \sum_{t=s-8}^{s-1} (y_t - \bar{y}_s)^2
 \end{align*}
 $$
-The algorithm then computes the z-statistic $\operatorname{C1}_s = (y_s - \bar{y}_s)/\operatorname{sd}_s$ for each time point to monitor. Once the value of this statistic is above 3 an alarm is flagged. This means that we assume that the previous 7 observations are what is to be expected when no unusual activity is going on. One can interpret the statistic as a transformation to (standard) normality: once the current observation is too extreme under this model an alarm is sounded. Such normal-approximations are justified given the large number of daily counts in the zombie series we consider, but does not take secular trends or day of the week effects into account. Note that the calculations can also be reversed in order to determine how large the number of observations need to be in order to generate an alarm. 
+The algorithm then computes the z-statistic $\operatorname{C1}_s = (y_s - \bar{y}_s)/\operatorname{sd}_s$ for each time point to monitor. Once the value of this statistic is above 3 an alarm is flagged. This means that we assume that the previous 7 observations are what is to be expected when no unusual activity is going on. One can interpret the statistic as a transformation to (standard) normality: once the current observation is too extreme under this model an alarm is sounded. Such normal-approximations are justified given the large number of daily counts in the zombie series we consider, but does not take secular trends or day of the week effects into account. Note also that the calculations can also be reversed in order to determine how large the number of observations need to be in order to generate an alarm (shown as a red line in the graph). 
 
 We now apply the EARS C1 monitoring procedure to the zombie time series starting at the 8th day  of the time series. It is important to realize that the result of monitoring a time point in the graphic is obtained by only **looking into the past**. Hence, the relevant time point to consider today is if an alarm would have occurred 2016-09-25. We also show the other time points to see, if we could have detected potential alarms earlier.
 
@@ -232,7 +232,7 @@ nExtraBeforeAlarm <- function(tsl) {
 plot_ts_and_sts(zombie)
 ```
 
-What a relief! No suspicious zombie activity appears to be ongoing. Actually, it would have taken `r nExtraBeforeAlarm(zombie)` tweets before we would have raised an alarm on 2016-09-25. This is quite a number.
+What a relief! No suspicious zombie activity appears to be ongoing. Actually, it would have taken `r nExtraBeforeAlarm(zombie)` additional tweets before we would have raised an alarm on 2016-09-25. This is quite a number.
 
 As an additional sensitivity analysis we redo the analyses for the `#zombieattack` hashtag. Here the use of the normal approximation in the computation of the alerts is more questionable. Still, we can get a time series of counts together with the alarm limits.
 
@@ -252,12 +252,11 @@ Also no indication of zombie activity. The number of additional tweets needed be
 R provides ideal functionality to quickly extract and monitor twitter time series. Combining with statistical process control methods allows you to prospectively monitor the use of hashtags. Twitter has released a dedicated package for this purpose, however, in case of low count time series it is better to use count-time series monitoring devices as implemented in the `surveillance` package. @salmon_etal2016a contains further details on how to proceed in this case.
 
 The important question although remains: Does this really work in practice? Can you sleep
-tight, while your R zombie monitor scans twitter? Here is where the **social experiment starts**: Please help answer this question by retweeting the post below to create a drill alarm situation.
+tight, while your R zombie monitor scans twitter? Here is where the **social experiment** starts: Please help by retweeting the post below to create a drill alarm situation.
 More than `r nExtraBeforeAlarm(zombie)` (!) and `r nExtraBeforeAlarm(zombieattack)` tweets, respectively, are needed before an alarm will sound. 
 
-(placeholder tweet, this will change in a couple of minutes!!)
 <center>
-<blockquote class="twitter-tweet" data-lang="de"><p lang="en" dir="ltr">Video recording, slides &amp; R code of our <a href="https://twitter.com/ISDS">@ISDS</a> MV Time Series webinar now available at <a href="https://t.co/XVtLrjbJKZ">https://t.co/XVtLrjbJKZ</a> <a href="https://twitter.com/hashtag/biosurveillance?src=hash">#biosurveillance</a> <a href="https://twitter.com/hashtag/rstats?src=hash">#rstats</a></p>&mdash; Michael Höhle (\@m_hoehle) <a href="https://twitter.com/m_hoehle/status/778712624426995712">21. September 2016</a></blockquote>
+<blockquote class="twitter-tweet" data-lang="de"><p lang="en" dir="ltr">New blog entry: Please RT to help me evaluate my <a href="https://twitter.com/hashtag/zombie?src=hash">#zombie</a> monitoring system - <a href="https://t.co/b0gNfpJ0RM">https://t.co/b0gNfpJ0RM</a> <a href="https://twitter.com/hashtag/zombieattack?src=hash">#zombieattack</a> <a href="https://twitter.com/hashtag/biosurveillance?src=hash">#biosurveillance</a> <a href="https://twitter.com/hashtag/rstats?src=hash">#rstats</a> <a href="https://t.co/N3PTZBnaw4">pic.twitter.com/N3PTZBnaw4</a></p>&mdash; Michael Höhle (\@m_hoehle) <a href="https://twitter.com/m_hoehle/status/780037067183157248">25. September 2016</a></blockquote>
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 </center>
 
