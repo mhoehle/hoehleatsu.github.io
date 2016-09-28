@@ -6,8 +6,8 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sun, 25 Sep 2016 16:04:29 +0200</pubDate>
-    <lastBuildDate>Sun, 25 Sep 2016 16:04:29 +0200</lastBuildDate>
+    <pubDate>Thu, 29 Sep 2016 00:05:19 +0200</pubDate>
+    <lastBuildDate>Thu, 29 Sep 2016 00:05:19 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
@@ -50,23 +50,23 @@ safe_query &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;stringr::&lt;
 &lt;/ul&gt;
 &lt;p&gt;In a next step, all stored queries are loaded from the RDS files and put together. Subsequently, only the newest time stamped entry about each tweet is kept - this ensures that the re-tweeted counts are up-to-date and no post is counted twice. All these data wrangling operations are easily conducted using &lt;code&gt;dplyr&lt;/code&gt;. Of course a full database solution would have been more elegant, but R does the job just as well as long it&#39;s not millions of queries. Actually, in the example I&#39;m going to use the results of a single query. No matter the data backend, at the end of this pipeline we have a database of tweets.&lt;/p&gt;
 &lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;co&quot;&gt;#Read the tweet database&lt;/span&gt;
-tw &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;readRDS&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;file=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;paste0&lt;/span&gt;(filePath,&lt;span class=&quot;st&quot;&gt;&amp;quot;Tweets-Database-&amp;quot;&lt;/span&gt;,safe_query,&lt;span class=&quot;st&quot;&gt;&amp;quot;-&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;2016-09-25&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;.RDS&amp;quot;&lt;/span&gt;))
+tw &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;readRDS&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;file=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;paste0&lt;/span&gt;(filePath,&lt;span class=&quot;st&quot;&gt;&amp;quot;Tweets-Database-&amp;quot;&lt;/span&gt;,safe_query,&lt;span class=&quot;st&quot;&gt;&amp;quot;-&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;2016-09-26&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;.RDS&amp;quot;&lt;/span&gt;))
 &lt;span class=&quot;kw&quot;&gt;options&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;width=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;300&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;tibble.width =&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;Inf&lt;/span&gt;)
 tw %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;select&lt;/span&gt;(created_at, retweet_count,screen_name,text,hashtags,query_at)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;pre&gt;&lt;code&gt;## # A tibble: 10,974 × 6
-##             created_at retweet_count    screen_name                                                                                                                                          text  hashtags            query_at
-##                 &amp;lt;dttm&amp;gt;         &amp;lt;int&amp;gt;          &amp;lt;chr&amp;gt;                                                                                                                                         &amp;lt;chr&amp;gt;    &amp;lt;list&amp;gt;              &amp;lt;dttm&amp;gt;
-## 1  2016-09-25 10:26:28             0       Lovebian                                               The latest #Zombie Nation! https://t.co/8ZkOFSZH2v Thanks to @NJTVNews @MaxfireXSA @Xtopgun901X &amp;lt;chr [1]&amp;gt; 2016-09-25 10:30:44
-## 2  2016-09-25 10:25:49             2  MilesssAwaaay RT @Shaaooun: I&amp;#39;m gonna turn to a zombie soon! xdxdxdxd #AlmostSurvived #204Days #ITried #Zombie #StuckInMyRoom #Haha\n\n#MediaDoomsDay #Kame &amp;lt;chr [7]&amp;gt; 2016-09-25 10:30:44
-## 3  2016-09-25 10:21:10             6 catZzinthecity          RT @ZombieEventsUK: 7 reasons #TheGirlWithAllTheGifts is the best #zombie movie in years https://t.co/MB82ssxss2 via @MetroUK #Metro &amp;lt;chr [3]&amp;gt; 2016-09-25 10:30:44
-## 4  2016-09-25 10:19:41             0  CoolStuff2Get                             Think Geek Zombie Plush Slippers https://t.co/0em920WCMh #Zombie #Slippers #MyFeetAreCold https://t.co/iCEkPBykCa &amp;lt;chr [3]&amp;gt; 2016-09-25 10:30:44
-## 5  2016-09-25 10:19:41             4  TwitchersNews    RT @zOOkerx: Nur der frhe Vogel fngt den #zombie also schaut gemtlich rein bei @booty_pax! Now live #dayz on #twitch \n\nhttps://t.co/OIk6 &amp;lt;chr [3]&amp;gt; 2016-09-25 10:30:44
-## 6  2016-09-25 10:17:45             0 ZombieExaminer     Washington mall shooting suspect Arcan Cetin was &amp;#39;#Zombie-like&amp;#39; during arrest - USA TODAY https://t.co/itoDXG3L8T https://t.co/q2mURi24DB &amp;lt;chr [1]&amp;gt; 2016-09-25 10:30:44
-## 7  2016-09-25 10:17:44             4       SpawnRTs    RT @zOOkerx: Nur der frhe Vogel fngt den #zombie also schaut gemtlich rein bei @booty_pax! Now live #dayz on #twitch \n\nhttps://t.co/OIk6 &amp;lt;chr [3]&amp;gt; 2016-09-25 10:30:44
-## 8  2016-09-25 10:17:23             0   BennyPrabowo                   bad miku - bad oni-chan... no mercy\n.\n.\n.\n.\n#left4dead #games #hatsunemiku #fps #zombie #witch https://t.co/YP0nRDFFj7 &amp;lt;chr [6]&amp;gt; 2016-09-25 10:30:44
-## 9  2016-09-25 10:12:53            62   Nblackthorne  RT @PennilessScribe: He would end her pain, but he could no longer live in a world that demanded such sacrifice. #zombie #apocalypse\nhttps: &amp;lt;chr [2]&amp;gt; 2016-09-25 10:30:44
-## 10 2016-09-25 10:06:46             0   mthvillaalva                                                             Pak ganern!!! Kakatapos ko lang kumain ng dugo! \n#Zombie https://t.co/Zyd0btVJH4 &amp;lt;chr [1]&amp;gt; 2016-09-25 10:30:44
-## # ... with 10,964 more rows&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## # A tibble: 12,931 × 6
+##             created_at retweet_count     screen_name                                                                                                                                         text  hashtags            query_at
+##                 &amp;lt;dttm&amp;gt;         &amp;lt;int&amp;gt;           &amp;lt;chr&amp;gt;                                                                                                                                        &amp;lt;chr&amp;gt;    &amp;lt;list&amp;gt;              &amp;lt;dttm&amp;gt;
+## 1  2016-09-25 06:16:28             6 christinebygrav  RT @GEEKYGIRLMMM: #TheWalkingDead #zombie #handmade #travel bag set https://t.co/rdGveWjBVC  #epiconetsy #craftshout #twdfanbas https://t.c &amp;lt;chr [7]&amp;gt; 2016-09-25 10:30:44
+## 2  2016-09-25 05:53:37             2 christinebygrav  RT @GEEKYGIRLMMM: #TheWalkingDead #zombie #handmade #travel bag set https://t.co/rdGveWjBVC  #epiconetsy #craftshout #twdfanbas https://t.c &amp;lt;chr [7]&amp;gt; 2016-09-25 10:30:44
+## 3  2016-09-25 04:45:11             0 KneelBeforeBlog   #TheGirlWithAlltheGifts #MovieReview https://t.co/Oewq6gShPx #GemmaArterton #PaddyConsidine #GlennClose #SenniaNanua #ColmMcCarthy #zombie &amp;lt;chr [8]&amp;gt; 2016-09-25 10:30:44
+## 4  2016-09-25 04:45:10             0     Nemesis4909   #TheGirlWithAlltheGifts #MovieReview https://t.co/AEhhGWYsmw #GemmaArterton #PaddyConsidine #GlennClose #SenniaNanua #ColmMcCarthy #zombie &amp;lt;chr [8]&amp;gt; 2016-09-25 10:30:44
+## 5  2016-09-25 04:28:51             1      donaldo945  RT @NorthWestDecks: Sonic The Hedgehog ZOMBIE Skateboard! #northwestdecks #skateboard #skateboarding #skate #skater #skatelife #zombie http &amp;lt;chr [7]&amp;gt; 2016-09-25 10:30:44
+## 6  2016-09-25 04:03:48             2    clarksonm369   RT @thelovelymars: Throwback to being walkers for Halloween with this chica. #TheWalkingDead #walkers #zombie #twd https://t.co/xPqVnUrAwU &amp;lt;chr [4]&amp;gt; 2016-09-25 10:30:44
+## 7  2016-09-25 01:45:55            62     ColleenTews RT @PennilessScribe: He would end her pain, but he could no longer live in a world that demanded such sacrifice. #zombie #apocalypse\nhttps: &amp;lt;chr [2]&amp;gt; 2016-09-25 10:30:44
+## 8  2016-09-24 23:45:22             0     Nemesis4909   #TheGirlWithAlltheGifts #MovieReview https://t.co/AEhhGWYsmw #GemmaArterton #PaddyConsidine #ColmMcCarthy #GlennClose #SenniaNanua #zombie &amp;lt;chr [8]&amp;gt; 2016-09-25 10:30:44
+## 9  2016-09-24 23:45:21             0 KneelBeforeBlog   #TheGirlWithAlltheGifts #MovieReview https://t.co/Oewq6gShPx #GemmaArterton #PaddyConsidine #ColmMcCarthy #GlennClose #SenniaNanua #zombie &amp;lt;chr [8]&amp;gt; 2016-09-25 10:30:44
+## 10 2016-09-24 23:20:07             2   BlizzGetsBizz   RT @tr1lla_van1lla: hit me in advance for Halloween makeup!!! so excited for fall  #specialeffects #sfx #makeup #halloween #zombie https:/ &amp;lt;chr [5]&amp;gt; 2016-09-25 10:30:44
+## # ... with 12,921 more rows&lt;/code&gt;&lt;/pre&gt;
 &lt;h3 id=&quot;ootb-zombie-surveillance&quot;&gt;OOTB Zombie Surveillance&lt;/h3&gt;
 &lt;p&gt;We are now ready to prospectively detect changes using the &lt;code&gt;surveillance&lt;/code&gt; R package &lt;span class=&quot;citation&quot; data-cites=&quot;salmon_etal2016a&quot;&gt;(Salmon, Schumacher, and Höhle 2016)&lt;/span&gt;.&lt;/p&gt;
 &lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;library&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;surveillance&amp;quot;&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
@@ -77,15 +77,16 @@ tw %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot
 &lt;span class=&quot;co&quot;&gt;#&amp;#39;&lt;/span&gt;
 &lt;span class=&quot;co&quot;&gt;#&amp;#39; @param tw data.frame containing the linelist of tweets.&lt;/span&gt;
 &lt;span class=&quot;co&quot;&gt;#&amp;#39; @param the_query_subset String containing a regexp to restrict the hashtags&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#&amp;#39; @param delete_first_day (boolean) Delete first day of the series due to it being incomplete&lt;/span&gt;
 &lt;span class=&quot;co&quot;&gt;#&amp;#39; @return List containing sts object as well as the original data frame.&lt;/span&gt;
 &lt;span class=&quot;co&quot;&gt;#&amp;#39;&lt;/span&gt;
-df_2_timeseries &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(tw, the_query_subset) {
+df_2_timeseries &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(tw, the_query_subset, &lt;span class=&quot;dt&quot;&gt;delete_first_day=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;TRUE&lt;/span&gt;) {
   tw_subset &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;tw %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;filter&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;grepl&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;gsub&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;#&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;,the_query_subset),hashtags))
 
   &lt;span class=&quot;co&quot;&gt;#Aggregate data per day and convert times series to sts object&lt;/span&gt;
   ts &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;surveillance::&lt;span class=&quot;kw&quot;&gt;linelist2sts&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;as.data.frame&lt;/span&gt;(tw_subset), &lt;span class=&quot;dt&quot;&gt;dateCol=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;created_at_Date&amp;quot;&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;aggregate.by=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;1 day&amp;quot;&lt;/span&gt;)
   &lt;span class=&quot;co&quot;&gt;#Drop first day with observations, due to the moving window of the twitter index, this count is incomplete&lt;/span&gt;
-  ts &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;ts[-&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,]
+  if (delete_first_day) ts &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;ts[-&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,]
 
   &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;tw=&lt;/span&gt;tw_subset,&lt;span class=&quot;dt&quot;&gt;ts=&lt;/span&gt;ts, &lt;span class=&quot;dt&quot;&gt;the_query_subset=&lt;/span&gt;the_query_subset))
 }
@@ -99,24 +100,24 @@ zombie &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&q
 &lt;p&gt;We are now ready to apply a surveillance algorithm to the pre-processed time series. We shall pick the so called C1 version of the EARS algorithm documented in &lt;span class=&quot;citation&quot; data-cites=&quot;hutwagner_etal2003&quot;&gt;Hutwagner et al. (2003)&lt;/span&gt; or &lt;span class=&quot;citation&quot; data-cites=&quot;fricker_etal2008&quot;&gt;Fricker, Hegler, and Dunfee (2008)&lt;/span&gt;. For a monitored time point &lt;span class=&quot;math inline&quot;&gt;\(s\)&lt;/span&gt; (here: a particular day, say, 2016-09-23), this simple algorithm takes the previous seven observations before &lt;span class=&quot;math inline&quot;&gt;\(s\)&lt;/span&gt; in order to compute the mean and standard deviation, i.e. &lt;span class=&quot;math display&quot;&gt;\[
 \begin{align*}
 \bar{y}_s             &amp;amp;= \frac{1}{7} \sum_{t=s-8}^{s-1} y_t, \\
-\operatorname{sd}_s   &amp;amp;= \frac{1}{7-1} \sum_{t=s-8}^{s-1} (y_t - \bar{y}_s)^2
+\operatorname{sd}_s   &amp;amp;= \frac{1}{7-1} \sum_{t=s-8}^{s-1} (y_t - \bar{y}_s)^2.
 \end{align*}
-\]&lt;/span&gt; The algorithm then computes the z-statistic &lt;span class=&quot;math inline&quot;&gt;\(\operatorname{C1}_s = (y_s - \bar{y}_s)/\operatorname{sd}_s\)&lt;/span&gt; for each time point to monitor. Once the value of this statistic is above 3 an alarm is flagged. This means that we assume that the previous 7 observations are what is to be expected when no unusual activity is going on. One can interpret the statistic as a transformation to (standard) normality: once the current observation is too extreme under this model an alarm is sounded. Such normal-approximations are justified given the large number of daily counts in the zombie series we consider, but does not take secular trends or day of the week effects into account. Note also that the calculations can also be reversed in order to determine how large the number of observations need to be in order to generate an alarm (shown as a red line in the graph).&lt;/p&gt;
+\]&lt;/span&gt; The algorithm then computes the z-statistic &lt;span class=&quot;math inline&quot;&gt;\(\operatorname{C1}_s = (y_s - \bar{y}_s)/\operatorname{sd}_s\)&lt;/span&gt; for each time point to monitor. Once the value of this statistic is above 3 an alarm is flagged. This means that we assume that the previous 7 observations are what is to be expected when no unusual activity is going on. One can interpret the statistic as a transformation to (standard) normality: once the current observation is too extreme under this model an alarm is sounded. Such normal-approximations are justified given the large number of daily counts in the zombie series we consider, but does not take secular trends or day of the week effects into account. Note also that the calculations can also be reversed in order to determine how large the number of observations needs to be in order to generate an alarm (shown as a red line in the graph).&lt;/p&gt;
 &lt;p&gt;We now apply the EARS C1 monitoring procedure to the zombie time series starting at the 8th day of the time series. It is important to realize that the result of monitoring a time point in the graphic is obtained by only &lt;strong&gt;looking into the past&lt;/strong&gt;. Hence, the relevant time point to consider today is if an alarm would have occurred 2016-09-25. We also show the other time points to see, if we could have detected potential alarms earlier.&lt;/p&gt;
 &lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;zombie[[&lt;span class=&quot;st&quot;&gt;&amp;quot;sts&amp;quot;&lt;/span&gt;]] &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;earsC&lt;/span&gt;(zombie$ts, &lt;span class=&quot;dt&quot;&gt;control=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;range =&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;8&lt;/span&gt;:&lt;span class=&quot;kw&quot;&gt;nrow&lt;/span&gt;(zombie$ts),
                          &lt;span class=&quot;dt&quot;&gt;method =&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;C1&amp;quot;&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;alpha =&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;-&lt;span class=&quot;kw&quot;&gt;pnorm&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;)))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;figure&gt;
 &lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-09-25-sootb/ZOMBIE-TS-1.png&quot; /&gt;
 &lt;/figure&gt;
-&lt;p&gt;What a relief! No suspicious zombie activity appears to be ongoing. Actually, it would have taken 511 additional tweets before we would have raised an alarm on 2016-09-25. This is quite a number.&lt;/p&gt;
+&lt;p&gt;What a relief! No suspicious zombie activity appears to be ongoing. Actually, it would have taken 372 additional tweets before we would have raised an alarm on 2016-09-25. This is quite a number.&lt;/p&gt;
 &lt;p&gt;As an additional sensitivity analysis we redo the analyses for the &lt;code&gt;#zombieattack&lt;/code&gt; hashtag. Here the use of the normal approximation in the computation of the alerts is more questionable. Still, we can get a time series of counts together with the alarm limits.&lt;/p&gt;
 &lt;figure&gt;
 &lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-09-25-sootb/ZOMBIEATTACK-TS-1.png&quot; /&gt;
 &lt;/figure&gt;
-&lt;p&gt;Also no indication of zombie activity. The number of additional tweets needed before alarm in this case is: 21. Altogether, it looks safe out there...&lt;/p&gt;
+&lt;p&gt;Also no indication of zombie activity. The number of additional tweets needed before alarm in this case is: 23. Altogether, it looks safe out there...&lt;/p&gt;
 &lt;h2 id=&quot;summary&quot;&gt;Summary&lt;/h2&gt;
 &lt;p&gt;R provides ideal functionality to quickly extract and monitor twitter time series. Combining with statistical process control methods allows you to prospectively monitor the use of hashtags. Twitter has released a dedicated package for this purpose, however, in case of low count time series it is better to use count-time series monitoring devices as implemented in the &lt;code&gt;surveillance&lt;/code&gt; package. &lt;span class=&quot;citation&quot; data-cites=&quot;salmon_etal2016a&quot;&gt;Salmon, Schumacher, and Höhle (2016)&lt;/span&gt; contains further details on how to proceed in this case.&lt;/p&gt;
-&lt;p&gt;The important question although remains: Does this really work in practice? Can you sleep tight, while your R zombie monitor scans twitter? Here is where the &lt;strong&gt;social experiment&lt;/strong&gt; starts: Please help by retweeting the post below to create a drill alarm situation. More than 511 (!) and 21 additional tweets, respectively, are needed before an alarm will sound.&lt;/p&gt;
+&lt;p&gt;The important question although remains: Does this really work in practice? Can you sleep tight, while your R zombie monitor scans twitter? Here is where the &lt;strong&gt;social experiment&lt;/strong&gt; starts: Please help by retweeting the post below to create a drill alarm situation. More than 372 (!) and 23 additional tweets, respectively, are needed before an alarm will sound.&lt;/p&gt;
 &lt;center&gt;
 &lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;de&quot;&gt;
 &lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;
@@ -132,6 +133,25 @@ New blog entry: Please RT to help me evaluate my &lt;a href=&quot;https://twitte
 &lt;img src=&quot;/hoehle/blog/figure/source/2016-09-25-sootb/zombie.png&quot; title=&quot;Source: https://openclipart.org/detail/201838/zombie-head&quot; /&gt; &lt;img src=&quot;/hoehle/blog/figure/source/2016-09-25-sootb/zombie.png&quot; title=&quot;Source: https://openclipart.org/detail/201838/zombie-head&quot; /&gt; &lt;img src=&quot;/hoehle/blog/figure/source/2016-09-25-sootb/zombie.png&quot; title=&quot;Source: https://openclipart.org/detail/201838/zombie-head&quot; /&gt;
 &lt;/center&gt;
 &lt;p&gt;
+&lt;p&gt;
+&lt;h3 id=&quot;update-at-2016-09-29-000517&quot;&gt;Update at 2016-09-29 00:05:17&lt;/h3&gt;
+&lt;p&gt;Below we show how the &lt;code&gt;#zombieattack&lt;/code&gt; series developed after the post was made public:&lt;/p&gt;
+&lt;figure&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-09-25-sootb/ZOMBIEATTACK_UPDATED-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;The orange part of the bars indicates the fake outbreak tweet as well as its retweets. It is obvious that despite the increased activity due to the fake outbreak tweets, no alarm is generated. In parts this is explained by the high activity during 20-21 Sep (a previous outbreak?), which inflates the expected number of baseline counts.&lt;/p&gt;
+&lt;p&gt;Altogether, the &amp;quot;failed&amp;quot;&amp;quot; test proves several points:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;its hard to distinguish between previous outbreaks and irregular tweeting behaviour&lt;/li&gt;
+&lt;li&gt;robust estimation of the baseline parameters might be needed&lt;/li&gt;
+&lt;li&gt;is twitter monitoring really sensitive enough to detect weak signals early enough?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The last point could indeed induce sleepless nights...&lt;/p&gt;
+&lt;p&gt;From a statistical point, the EARS algorithm sequentially estimates the variance of the baseline counts. As a consequence, the peak on 20-21 Sep inflates the variance, which results in a high upperbound. Despite some extra activity 25-27 Sep, none of the days are above this bound. For further comparison, we also use a negative binomial CUSUM to see, if the increase is sustained.&lt;/p&gt;
+&lt;figure&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-09-25-sootb/ZOMBIEUPDATE-NBINOM-CUSUM-PLOT-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;The gray line shows the estimated mean from the eight base-line counts, the orange line shows the corresponding upper 95% quantile of this estimated distribution. The red line shows the alarm limit of a CUSUM method where the potential shift in the mean is estimated by maximum likelihood at each monitoring instance. The threshold is tuned such that it initially roughly coincides with the 99% quantile of the estimated distribution. Even here, no signal is detected.&lt;/p&gt;
 &lt;h1 id=&quot;references&quot; class=&quot;unnumbered&quot;&gt;References&lt;/h1&gt;
 &lt;div id=&quot;refs&quot; class=&quot;references&quot;&gt;
 &lt;div id=&quot;ref-fricker_etal2008&quot;&gt;
