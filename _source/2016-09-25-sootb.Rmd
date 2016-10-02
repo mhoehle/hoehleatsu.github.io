@@ -203,19 +203,19 @@ zombie[["sts"]] <- earsC(zombie$ts, control=list(range = 8:nrow(zombie$ts),
 ```
 
 ```{r,ZOMBIE-TS,echo=FALSE}
-plot_ts_and_sts <- function(tsl,legend_l1="earsC1 threshold") {
+plot_ts_and_sts <- function(tsl,legend_l1="earsC1 threshold",ylimextra=0,y_alarms=-12) {
   plot(tsl$ts, legend.opts=NULL,
        xaxis.tickFreq=list("%d"=atChange,"%m"=atChange),
        xaxis.labelFreq=list("%d"=at2ndChange),xaxis.labelFormat="%d-%b",
        xlab="Time (days)",col=c("lightgray","black","indianred3"),
-       lty=c(1,1,1,1),lwd=c(1.5,2,2),main=tsl$the_query,ylab="No. of tweets", ylim=c(0,max(observed(tsl$ts),upperbound(tsl$sts))))
+       lty=c(1,1,1,1),lwd=c(1.5,2,2),main=tsl$the_query,ylab="No. of tweets", ylim=c(0,max(ylimextra,observed(tsl$ts),upperbound(tsl$sts))))
 
   idx <- seq_len(nrow(tsl$ts))
   idx_monitor <- which( epoch(tsl$ts) %in% epoch(tsl$sts))
   idx_alarm <- idx[c(rep(0,min(idx_monitor)-1),as.numeric(alarms(tsl$sts) == 1)) == 1]
 
-  #alarms
-  points(idx_alarm, rep(-12,length(idx_alarm)), pch=24, col="indianred3", cex=1.5, lwd=2)
+  #show alarms
+  points(idx_alarm, rep(y_alarms,length(idx_alarm)), pch=24, col="indianred3", cex=1.5, lwd=2)
   #upper bound
   lines( c(idx_monitor,tail(idx_monitor,n=1)+1)-0.5, c(upperbound(tsl$sts),tail(upperbound(tsl$sts),n=1)), type="s",col="indianred3",lwd=2)
   #legend
@@ -277,7 +277,7 @@ I will continuously update the graphs in this post to see how our efforts are re
 Below we show how the `#zombieattack` series developed after the post was made public:
 
 ```{r,ZOMBIEATTACK_UPDATED,echo=FALSE}
-tw <- readRDS(file=paste0(filePath,"Tweets-Database-",safe_query,"-","2016-09-28",".RDS"))
+tw <- readRDS(file=paste0(filePath,"Tweets-Database-",safe_query,"-","2016-10-02",".RDS"))
 
 #Work the zombie attack series
 zombieattack_updated <- df_2_timeseries(tw, the_query_subset = "#zombieattack") %>% scale_up_last_day
@@ -292,7 +292,7 @@ idxFakeOutbreak <- which(epoch(zombieattack_updated$ts) %in% epoch(zombieattack_
 from <- observed(zombieattack_updated$ts)[idxFakeOutbreak,] - as.numeric(observed(zombieattack_fakeOutbreak$ts))
 to <-  observed(zombieattack_updated$ts)[idxFakeOutbreak,]
 
-plot_ts_and_sts(zombieattack_updated)
+plot_ts_and_sts(zombieattack_updated,y_alarms=0)
 for (i in seq_len(length(idxFakeOutbreak))) {
   x <- idxFakeOutbreak[i] + c(-0.5,0.5)
   polygon( c(x,rev(x)), c(rep(from[i],2), rep(to[i],2)),col="orange")
@@ -309,7 +309,9 @@ Altogether, the "failed"" test proves several points:
 
 The last point could indeed induce sleepless nights...
 
-From a statistical point, the EARS algorithm sequentially estimates the variance of the baseline counts. As a consequence, the peak on 20-21 Sep  inflates the variance, which results in a high upperbound. Despite some extra activity 25-27 Sep, none of the days are above this bound. For further comparison, we also use a negative binomial CUSUM to see, if the increase is sustained.
+From a statistical point, the EARS algorithm sequentially estimates the variance of the baseline counts. As a consequence, the peak on 20-21 Sep  inflates the variance, which results in a high upperbound. Despite some extra activity 25-27 Sep, none of the days are above this bound. Furthermore, the baseline consists only of the previous 7 days. Hence, once the 20-21 Sep peak is out of the baseline, the alarm threshold decreases noticeably. We thus get an alarm for the peak on 30 September, even though it's not higher than the previous peak on 20-21 Sep.
+
+For further comparison, we also use a negative binomial CUSUM, which keeps the baseline stedy and also allows the detection of sustained increases.
 
 ```{r,ZOMBIEUPDATE-POISSONCUSUM,echo=FALSE,message=FALSE,results='hide',cache=TRUE}
 #Use Poisson CUSUM with 
@@ -322,12 +324,17 @@ theta.hat <- zombieattack_updated$sts@control$mu0Model$fitted[[1]]$theta
 #x <- replicate(20000, rpois(length(mu0.hat),lambda=mu0.hat))
 #x <- replicate(100000, rnbinom(length(mu0.hat),mu=mu0.hat,size=theta.hat))
 #pi <- apply(x,1,quantile,prob=c(0.95))
-pi <- qnbinom(0.99, mu=mu0.hat, size=theta.hat)
+alpha <- 0.01
+pi <- qnbinom(1-alpha, mu=mu0.hat, size=theta.hat)
 ```
 
 ```{r,ZOMBIEUPDATE-NBINOM-CUSUM-PLOT,results='hide',echo=FALSE}
 #Show result
-plot_ts_and_sts(zombieattack_updated,legend_l1="NBinom CUSUM threshold")
+plot_ts_and_sts(zombieattack_updated,legend_l1="NBinom CUSUM threshold",y_alarm=0)
+for (i in seq_len(length(idxFakeOutbreak))) {
+  x <- idxFakeOutbreak[i] + c(-0.5,0.5)
+  polygon( c(x,rev(x)), c(rep(from[i],2), rep(to[i],2)),col="orange")
+}
 lines(seq_len(min(zombieattack_updated[["sts"]]@control$range)-1),mu0.hat,type="b",pch=20,col="darkgray")
 lines(seq_len(min(zombieattack_updated[["sts"]]@control$range)-1),pi,pch=20,col="orange")
 
@@ -335,8 +342,29 @@ qnbinom(0.95,mu=mu0.hat[1],size=theta.hat)
 qnbinom(0.95,mu=1.2*mu0.hat[1],size=theta.hat)
 ```
 
-The gray line shows the estimated mean from the eight base-line counts, the orange line shows the corresponding upper 95% quantile of this estimated  distribution. The red line shows the alarm limit of a CUSUM method where the potential shift in the mean is estimated by maximum likelihood at each monitoring instance. The threshold is tuned such that it initially roughly coincides with the 99% quantile of the estimated distribution. Even here, no signal is detected.
+The gray line shows the estimated mean from the eight base-line counts, the orange line shows the corresponding upper `r (1-alpha)*100`% quantile of this estimated  distribution. The red line shows the alarm limit of a CUSUM method where the potential shift in the mean is estimated by maximum likelihood at each monitoring instance. The threshold is tuned such that it initially roughly coincides with the `r (1-alpha)*100`% quantile of the estimated distribution. Here, no signal is detected. Of course this depends on the quantile used for the detection and the 20-21 September peak being included fully in the baseline. Still, according to this metric it looks kind of safe out there! 
+
+#### The take home message of this update
+To enhance statistical competence and preserve sleep: stick with the negative binomial CUSUM!
 
 
+
+```{r,eval=FALSE,results='hide',echo=FALSE,fig.keep='none'}
+#Remove jewlery posts.
+zombieattack_2 <- df_2_timeseries(tw %>% filter(!grepl("handmadejewelry",hashtags)), the_query_subset = "#zombieattack") %>% scale_up_last_day
+zombieattack_2[["sts"]] <- glrnb(zombieattack_2$ts, control=list(range = 9:nrow(zombieattack_2$ts),mu0=list(S=0,trend=FALSE),c.ARL=0.471,ret="cases",theta=log(1.2)))
+mu0.hat <- predict(zombieattack_2$sts@control$mu0Model$fitted[[1]],type="response")
+theta.hat <- zombieattack_2$sts@control$mu0Model$fitted[[1]]$theta
+
+pi <- qnbinom(0.99, mu=mu0.hat, size=theta.hat)
+
+#Show result
+plot_ts_and_sts(zombieattack_2,legend_l1="NBinom CUSUM threshold",ylimextra=pi)
+lines(seq_len(min(zombieattack_2[["sts"]]@control$range)-1),mu0.hat,type="b",pch=20,col="darkgray")
+lines(seq_len(min(zombieattack_2[["sts"]]@control$range)-1),pi,pch=20,col="orange")
+
+
+
+```
 
 # References
