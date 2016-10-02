@@ -287,7 +287,10 @@ zombieattack_updated[["sts"]] <- earsC(zombieattack_updated$ts, control=list(ran
 #Only the fake part
 fakeOutbreak <- zombieattack_updated$tw %>% filter(retweet_status_id == "780037067183157248" | status_id == "780037067183157248")
 zombieattack_fakeOutbreak <- df_2_timeseries(fakeOutbreak, the_query_subset = ".*",delete_first_day=FALSE)
-  
+
+#Count the number of retweets
+n_retweets <- zombieattack_updated$tw %>% filter(retweet_status_id == "780037067183157248") %>% summarise(n()) %>% unlist()
+
 idxFakeOutbreak <- which(epoch(zombieattack_updated$ts) %in% epoch(zombieattack_fakeOutbreak$ts))
 from <- observed(zombieattack_updated$ts)[idxFakeOutbreak,] - as.numeric(observed(zombieattack_fakeOutbreak$ts))
 to <-  observed(zombieattack_updated$ts)[idxFakeOutbreak,]
@@ -299,25 +302,21 @@ for (i in seq_len(length(idxFakeOutbreak))) {
 }
 ```
 
-The orange part of the bars indicates the fake outbreak tweet as well as its retweets. It is obvious that despite the increased activity due to the fake outbreak tweets, no alarm is generated. In parts this is explained by the high activity during 20-21 Sep (a previous outbreak?), which inflates the expected number of baseline counts. 
+The orange part of the bars indicates the fake outbreak tweet (1) as well as its retweets (`r n_retweets`). It is obvious that despite the increased activity due to the fake outbreak tweets, no alarm was generated, because of the fake outbreak tweets. In parts this is explained by the high activity during 20-21 Sep (a previous outbreak?), which inflates the expected number of baseline counts. Since the EARS algorithm sequentially estimates the variance of the baseline counts, the peak on 20-21 Sep inflates the mean and variance and thus results in a high upperbound as long as it enters the baseline. Despite some extra activity 25-27 Sep due to the fake outbreak tweets, none of the days are above this bound. However, once the 20-21 Sep peak is out of the previous 7 days baseline, the alarm threshold decreases noticeably. We thus get an alarm for the peak on 30 September, even though it's not higher than the previous peak on 20-21 Sep and it appears to be caused by other phenomena not related to our fake outbreak. A more careful analysis of the tweets reveals that they are caused by a [charity fun run](http://charityfunrun2016.tumblr.com/post/149930159797/charity-fun-run-2016) near Kuala Lumpur with a [zombie attack theme](https://www.instagram.com/p/BK-_l8oDD38/)!
 
-Altogether, the "failed"" test proves several points:
+<p>
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">SPAM FAM 😋 <a href="https://twitter.com/hashtag/zombieattack?src=hash">#zombieattack</a> <a href="https://twitter.com/hashtag/charityfunrun2016?src=hash">#charityfunrun2016</a> <a href="https://t.co/YJW8Mjpd0L">pic.twitter.com/YJW8Mjpd0L</a></p>&mdash; PAAN (\@noorfarhan_) <a href="https://twitter.com/noorfarhan_/status/781887252519460864">September 30, 2016</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>
 
-* its hard to distinguish between previous outbreaks and irregular tweeting behaviour
-* robust estimation of the baseline parameters might be needed
-* is twitter monitoring really sensitive enough to detect weak signals early enough?
+For further comparison, we also use a negative binomial CUSUM, which keeps the baseline steady, but allows the detection of sustained increases.
 
-The last point could indeed induce sleepless nights...
-
-From a statistical point, the EARS algorithm sequentially estimates the variance of the baseline counts. As a consequence, the peak on 20-21 Sep  inflates the variance, which results in a high upperbound. Despite some extra activity 25-27 Sep, none of the days are above this bound. Furthermore, the baseline consists only of the previous 7 days. Hence, once the 20-21 Sep peak is out of the baseline, the alarm threshold decreases noticeably. We thus get an alarm for the peak on 30 September, even though it's not higher than the previous peak on 20-21 Sep.
-
-For further comparison, we also use a negative binomial CUSUM, which keeps the baseline stedy and also allows the detection of sustained increases.
-
-```{r,ZOMBIEUPDATE-POISSONCUSUM,echo=FALSE,message=FALSE,results='hide',cache=TRUE}
+```{r,ZOMBIEUPDATE-POISSONCUSUM,echo=FALSE,message=FALSE,results='hide'}
 #Use Poisson CUSUM with 
 #  \log(\mu_{t,0}) = \beta_0 vs.
-#  \log(\mu_{t,1}) = \beta_0 + \log(2).
-zombieattack_updated[["sts"]] <- glrnb(zombieattack_updated$ts, control=list(range = 9:nrow(zombieattack_updated$ts),mu0=list(S=0,trend=FALSE),c.ARL=0.471,ret="cases",theta=log(1.2)))
+#  \log(\mu_{t,1}) = \beta_0 + \kappa
+zombieattack_updated[["sts"]] <- glrnb(zombieattack_updated$ts, control=list(range = 9:nrow(zombieattack_updated$ts),mu0=list(S=0,trend=FALSE),c.ARL=1.9,ret="cases"))
+                                       
 mu0.hat <- predict(zombieattack_updated$sts@control$mu0Model$fitted[[1]],type="response")
 theta.hat <- zombieattack_updated$sts@control$mu0Model$fitted[[1]]$theta
 #set.seed(123)
@@ -342,29 +341,17 @@ qnbinom(0.95,mu=mu0.hat[1],size=theta.hat)
 qnbinom(0.95,mu=1.2*mu0.hat[1],size=theta.hat)
 ```
 
-The gray line shows the estimated mean from the eight base-line counts, the orange line shows the corresponding upper `r (1-alpha)*100`% quantile of this estimated  distribution. The red line shows the alarm limit of a CUSUM method where the potential shift in the mean is estimated by maximum likelihood at each monitoring instance. The threshold is tuned such that it initially roughly coincides with the `r (1-alpha)*100`% quantile of the estimated distribution. Here, no signal is detected. Of course this depends on the quantile used for the detection and the 20-21 September peak being included fully in the baseline. Still, according to this metric it looks kind of safe out there! 
+The gray line shows the estimated mean from the eight base-line counts, the orange line shows the corresponding upper `r (1-alpha)*100`% quantile of this estimated  distribution. The red line shows the alarm limit of a CUSUM method where the potential shift in the mean is estimated by maximum likelihood at each monitoring instance. The threshold is tuned such that it initially roughly coincides with the `r (1-alpha)*100`% quantile of the estimated distribution. Here, no signal is detected. Of course this depends on the quantile used for the detection and the 20-21 September peak being included fully in the baseline. Still, according to this metric occasional fake zombie runs are part of the routine.
+
+Altogether, the "failed"" test proves several points:
+
+* its hard to distinguish between previous outbreaks and irregular tweeting behaviour
+* robust estimation of the baseline parameters might be needed
+* the results are sensitive to the choice of which values to include in the baseline and the underlying probability model
+* is twitter monitoring really sensitive enough to detect weak signals early enough?
 
 #### The take home message of this update
 To enhance statistical competence and preserve sleep: stick with the negative binomial CUSUM!
 
-
-
-```{r,eval=FALSE,results='hide',echo=FALSE,fig.keep='none'}
-#Remove jewlery posts.
-zombieattack_2 <- df_2_timeseries(tw %>% filter(!grepl("handmadejewelry",hashtags)), the_query_subset = "#zombieattack") %>% scale_up_last_day
-zombieattack_2[["sts"]] <- glrnb(zombieattack_2$ts, control=list(range = 9:nrow(zombieattack_2$ts),mu0=list(S=0,trend=FALSE),c.ARL=0.471,ret="cases",theta=log(1.2)))
-mu0.hat <- predict(zombieattack_2$sts@control$mu0Model$fitted[[1]],type="response")
-theta.hat <- zombieattack_2$sts@control$mu0Model$fitted[[1]]$theta
-
-pi <- qnbinom(0.99, mu=mu0.hat, size=theta.hat)
-
-#Show result
-plot_ts_and_sts(zombieattack_2,legend_l1="NBinom CUSUM threshold",ylimextra=pi)
-lines(seq_len(min(zombieattack_2[["sts"]]@control$range)-1),mu0.hat,type="b",pch=20,col="darkgray")
-lines(seq_len(min(zombieattack_2[["sts"]]@control$range)-1),pi,pch=20,col="orange")
-
-
-
-```
 
 # References
