@@ -1,0 +1,268 @@
+---
+layout: post
+title: "Cartograms with R"
+tags: [dataviz, rstats, spatial, GIS]
+bibliography: ~/Literature/Bibtex/jabref.bib
+comments: true
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2016-10-10-cartograms/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2016-10-10-cartograms/"
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='')
+options(width=90)
+library("dplyr")
+library("ggplot2")
+library("tidyr")
+library("methods")
+theme_set(theme_bw())
+```
+
+## Abstract
+
+We show how to create
+[cartograms](https://en.wikipedia.org/wiki/Cartogram) with R by
+illustrating the population and age-distribution of the planning
+regions of Berlin.
+
+{% include license.html %}
+
+## Introduction
+
+Every good lecture on sophisticated statistical modelling starts with
+underlining the importance of **data visualization** as a first step
+of any decent
+analysis. [Choropleth maps](https://en.wikipedia.org/wiki/Choropleth_map)
+are a common choice for visualizing the spatial distribution of a
+feature, e.g. population density or the incidence rate disease cases,
+in administrative regions. Here, each area is shaded with a color
+selected in accordance with the feature variable, e.g. higher hue if
+the feature is higher. Chosing the right palette for such visualations
+is a science of its own. However, a nice way to spice up your spatial
+visualizations are **area cartograms**, where the boundary shape of
+each region is warped such that its area becomes proportional to the
+value of the feature variable you want to illustrate. The difficult
+part here is to preserve the arrangement of the regions, see for
+example @gastner_newman2004 for the methodological challenges of this
+task.
+
+In this post we show how such area cartograms can be created within R
+using the spatial packages `sp`, `rgeos` and `rgdal available from
+CRAN `. As well as the packages `Rcartogram` and `getcartr` from
+github. The later two packages are only available from github, because
+the license of the underlying
+[`Cart`](http://www-personal.umich.edu/~mejn/cart/) implementing the
+method of @gastner_newman2004 does not appear to be GPL (or the like)
+compatible.
+
+# The Data
+
+We use population on the 447 planning regions of Berlin
+(Lebensweltlich orientierte Räume (LOR)) available as ESRI Shapefile
+through the
+[open data portal of Berlin](http://daten.berlin.de/datensaetze/rbs-lor-lebensweltlich-orientierte-r%C3%A4ume-dezember-2015)
+under the CC BY license. The 2015 population data are available as CSV through the same
+[data portal](http://daten.berlin.de/datensaetze/einwohnerinnen-und-einwohner-berlin-lor-planungsr%C3%A4umen-am-31122015).
+
+```{r}
+tmpfile <- paste0(tempfile(),".zip")
+download.file("https://www.statistik-berlin-brandenburg.de/opendata/RBS_OD_LOR_2015_12.zip",destfile=tmpfile)
+unzip(tmpfile,exdir=file.path(filePath,"RBS_OD_LOR_2015_12"))
+download.file("https://www.statistik-berlin-brandenburg.de/opendata/EWR201512E_Matrix.csv",destfile=file.path(filePath,"EWR201512E_Matrix.csv"))
+```
+
+Using the fantastic `rgdal`, `sp` and the `rgeos` CRAN packages, R can
+be used as GIS. This allows for easy merging of these two data sources
+together with an aggregation to the **Prognoseräume** level, which is
+a slightly higher level of aggregation than the LORs (see GitHub code
+for details).
+
+```{r}
+library(rgdal)
+library(sp)
+library(rgeos)
+
+##Read shapefile
+lor <- readOGR(dsn=file.path(filePath,"RBS_OD_LOR_2015_12"),layer="RBS_OD_LOR_2015_12")
+proj4string(lor)
+##Compute area of each LOR in km^2 area (unit: meters -> convert to square km)
+lor$area <- gArea(lor, byid=TRUE) / (1e6)
+##check the area computation:
+#sum(lor$area) ##should be approx equal to 891,8 km^2 according to https://en.wikipedia.org/wiki/Berlin)
+
+##Read population
+pop <- readr::read_csv2(file=file.path(filePath, "EWR201512E_Matrix.csv"))
+
+##Merge SpatialPolygonsDataFrame with population information
+lor_pop <- merge(lor, pop, by.x="PLR",by.y="RAUMID")
+
+#Make more adequate names for the PGRs -> extended PGR name
+lor_pop$EXTPGRNAME <- as.character(lor_pop$PGRNAME)
+lor_pop$EXTPGRNAME <- gsub("Region ","Steglitz-Zehlendorf ",lor_pop$EXTPGRNAME)
+lor_pop$EXTPGRNAME <- gsub("^SPA ","Spandau ",lor_pop$EXTPGRNAME)
+lor_pop$EXTPGRNAME <- gsub("^CW ","Charl.-Wilm. ",lor_pop$EXTPGRNAME)
+
+## Aggregate to level of Prognoseräume (there are 60 of them)
+## Population numbers and area is aggregated using sum, extended PGR
+## name will be the same in each area and hence one can take the first
+aggr_fun <- function(x) {
+  if (is.numeric(x)) {
+    return(sum(x,na.rm=TRUE))
+  } else {
+    return(x[1])
+  }
+}
+
+##Do the aggregation
+pgrs <- aggregate(lor_pop[,grep("^E_|^area|^EXTPGRNAME",colnames(as.data.frame(lor_pop)))], by=list(PGR=lor_pop$PGR.x), FUN=aggr_fun)
+
+##Add a population density variable
+pgrs$density <- pgrs$E_E / pgrs$area
+```
+
+Plotting the result of the `pgrs` object which is an instance of `SpatialPolygonsDataFrame`.
+
+```{r}
+######################################################################
+## Plotting the result, see nice tutorial by
+## http://www.nickeubank.com/wp-content/uploads/2015/10/RGIS3_MakingMaps_part1_mappingVectorData.html
+## or the Spatial-R-Bible Bivand et al. (200X)
+######################################################################
+
+library(RColorBrewer)
+my.palette <- brewer.pal(n = 6, name = "Purples")
+##Helper function for making labels for each entry
+sp.label <- function(x, label) {list("sp.text", coordinates(x), label,cex=0.5)}
+borderCol <- "white"
+
+spplot(pgrs, "density", col.regions = my.palette, cuts = length(my.palette)-1, col = borderCol,main="Choropleth map of Population density",sp.layout=sp.label(pgrs, pgrs$EXTPGRNAME))
+require(grid)
+grid.text("Population density", x=unit(0.95, "npc"), y=unit(0.50, "npc"), rot=-90)
+```
+
+## Installing the Cartogram R packages
+
+Two packages `Rcartogram` and `getcartr` make the functionality of the
+@gastner_newman2004 procedure easily available for working with
+objects of class `Spatial*`. Installing `Rcartogram` requires the
+[`fftw` library](http://www.fftw.org/) to be installed. How to best do
+that depends on your system, for Mac OS X the
+[homebrew package system](http://brew.sh/) makes this installation easy.
+
+```{r,eval=FALSE}
+##On command line in OS/X with homebrew. Wrapped in FALSE statement to not run system() unintentionally
+if (FALSE) {
+  system("brew install fftw")
+}
+##Install the R implementation of Cart by Gastner and Newman (2004)
+devtools::install_github("omegahat/Rcartogram")
+devtools::install_github('chrisbrunsdon/getcartr',subdir='getcartr')
+```
+We are now ready to compute our first cartogram using the
+`getcartr::quick.carto` function.
+
+```{r}
+library(Rcartogram)
+library(getcartr)
+
+##Make a cartogram
+pgrs_carto <- quick.carto(spdf=pgrs,v=pgrs$E_E,res=256)
+
+##Display it using sp functionality
+spplot(pgrs_carto, "area", col.regions = my.palette, cuts = length(my.palette)-1, col = borderCol,main="Population Cartogram as Choropleth of Area",sp.layout=sp.label(pgrs_carto, label=pgrs_carto$EXTPGRNAME))
+grid::grid.text(expression("Area (km"^2*")"), x=unit(0.95, "npc"), y=unit(0.50, "npc"), rot=-90)
+```
+With the functionality now being directly available through R allows
+one to embedd operations in a full R pipeline. For example by gathering
+a sequence of cartograms into an animated GIF file using the
+`animation` package. The figure below shows a cartogram for the
+population size for all available age groups. One observes that the 25-45
+year old tend to live in the city centre, while the
+95-110 year old seem to concentrate in the wealthy regions in the
+south west.
+
+```{r,echo=FALSE}
+##Find the selection of col names to do the operation on. These are the different age groups
+cols <- grep("E_E[0-9]",colnames(as.data.frame(pgrs)),val=TRUE)
+cols <- cols[!grepl("U",cols)]
+
+##Warp based on each age strata
+cartos <- pbapply::pblapply(cols, function(agegrp) {
+  ##Zero population maps don't work
+  pgrs[[agegrp]] <- ifelse(pgrs[[agegrp]] > 0, pgrs[[agegrp]], 0.1)
+  ##Warp
+  pgrs_warp <- quick.carto(pgrs,pgrs[[agegrp]])
+  return(pgrs_warp)
+})
+```
+
+```{r,echo=FALSE,results='hide',message=FALSE}
+##Animate the warp
+library(animation)
+ani.options(interval=0.6)
+
+## Make an animation by looping over all age groups.
+saveGIF({
+  for (i in 1:length(cartos)) {
+    agegrp <- cols[i]
+    cat(agegrp,"\n")
+    pgrs_carto <- cartos[[i]]
+    agename <- paste0("Population age ",gsub("_","-",gsub("E_E","",agegrp)),"y")
+
+    par(mar=c(0, 0, 3, 0) + 0.1)
+    plot(pgrs_carto,
+         xlim=bbox(cartos[[1]])[1, ], ylim = bbox(cartos[[1]])[2, ],
+         main=paste0(agename, " Cartogram"),col="#DADAEB",border="white",lwd=2)
+    text(coordinates(pgrs_carto)[,1],coordinates(pgrs_carto)[,2],pgrs_name$EXTPGRNAME,cex=.45,col="darkgray")
+  }
+}, movie.name=file.path(filePath,"pop-cartograms.gif"),ani.width=700,ani.height=700,ani.dev=function(...) png(...,res=125))
+```
+
+![]({{ site.baseurl }}/figure/source/2016-06-12-optimalChoice/pop-cartograms.gif)
+
+```{r,echo=FALSE,results='hide',eval=FALSE}
+######################################################################
+# Sandbox zone
+######################################################################
+
+plot(pgrs)
+plot(pgrs_carto[1,],add=TRUE,col="lightgray",border="transparent")
+proj4string(pgrs)
+bbox(pgrs)
+proj4string(pgrs_carto)
+bbox(pgrs_carto)
+```
+
+##Read
+tiffFiles <- list.files(path="~/Sandbox/OpenBerlin/Maps/DTK100_Color_EPSG25833/",pattern="*.tif")
+images <- lapply(tiffFiles, function(fileName) {
+  i <- readGDAL(fname=file.path("~/Sandbox/OpenBerlin/Maps/DTK100_Color_EPSG25833",fileName))
+  proj4string(i) <- CRS("+init=epsg:25833")
+  return(i)
+})
+library(dplyr)
+x <- bind_rows(lapply(images, function(x) as.data.frame(t(bbox(x)["x",]))))
+xlim <- c(min(x[,1]),max(x[,2]))
+y <- bind_rows(lapply(images, function(x) as.data.frame(t(bbox(x)["y",]))))
+ylim <- c(min(y[,1]),max(y[,2]))
+
+image(images[[1]]["band1"],xlim=xlim,ylim=ylim)
+image(images[[2]]["band1"],xlim=xlim,ylim=ylim,add=TRUE)
+image(images[[3]]["band1"],xlim=xlim,ylim=ylim,add=TRUE)
+image(images[[4]]["band1"],xlim=xlim,ylim=ylim,add=TRUE)
+plot(pgrs,add=TRUE,border="white")
+
+library(raster)
+#dots_warp <- warp.points(dots, pgrs_warp)
+```
+
+
+# References
+
+
