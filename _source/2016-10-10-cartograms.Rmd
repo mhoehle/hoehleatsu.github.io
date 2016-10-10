@@ -29,7 +29,7 @@ theme_set(theme_bw())
 We show how to create
 [cartograms](https://en.wikipedia.org/wiki/Cartogram) with R by
 illustrating the population and age-distribution of the planning
-regions of Berlin.
+regions of Berlin by static plots and animations.
 
 {% include license.html %}
 
@@ -77,31 +77,34 @@ unzip(tmpfile,exdir=file.path(filePath,"RBS_OD_LOR_2015_12"))
 download.file("https://www.statistik-berlin-brandenburg.de/opendata/EWR201512E_Matrix.csv",destfile=file.path(filePath,"EWR201512E_Matrix.csv"))
 ```
 
-Using the fantastic `rgdal`, `sp` and the `rgeos` CRAN packages, R can
-be used as GIS. This allows for easy merging of these two data sources
-together with an aggregation to the **Prognoseräume** level, which is
-a slightly higher level of aggregation than the LORs (see GitHub code
-for details).
+Using the powerful `rgdal`, `sp` and the `rgeos` CRAN packages, R can
+be used as a
+[geograhic information system (GIS)](https://en.wikipedia.org/wiki/Geographic_information_system). This
+allows for easy merging of these two data sources together with a
+spatial aggregation to the **Prognoseräume** level, which is a
+slightly higher level of aggregation than the LORs (60 regions instead
+of 447). The output of these data wrangling steps will be a
+SpatialPolygonsDataFrame object names `pgrs` - see GitHub code for details.
 
-```{r}
+```{r,message=FALSE}
 library(rgdal)
 library(sp)
 library(rgeos)
-
+```
+```{r,message=FALSE,warning=FALSE}
 ##Read shapefile
 lor <- readOGR(dsn=file.path(filePath,"RBS_OD_LOR_2015_12"),layer="RBS_OD_LOR_2015_12")
 proj4string(lor)
 ##Compute area of each LOR in km^2 area (unit: meters -> convert to square km)
 lor$area <- gArea(lor, byid=TRUE) / (1e6)
-##check the area computation:
-#sum(lor$area) ##should be approx equal to 891,8 km^2 according to https://en.wikipedia.org/wiki/Berlin)
 
 ##Read population
 pop <- readr::read_csv2(file=file.path(filePath, "EWR201512E_Matrix.csv"))
 
 ##Merge SpatialPolygonsDataFrame with population information
 lor_pop <- merge(lor, pop, by.x="PLR",by.y="RAUMID")
-
+```
+````{r,echo=FALSE,results='hide'}
 #Make more adequate names for the PGRs -> extended PGR name
 lor_pop$EXTPGRNAME <- as.character(lor_pop$PGRNAME)
 lor_pop$EXTPGRNAME <- gsub("Region ","Steglitz-Zehlendorf ",lor_pop$EXTPGRNAME)
@@ -126,9 +129,14 @@ pgrs <- aggregate(lor_pop[,grep("^E_|^area|^EXTPGRNAME",colnames(as.data.frame(l
 pgrs$density <- pgrs$E_E / pgrs$area
 ```
 
+```{r,echo=FALSE}
+##check the area computation:
+#sum(lor$area) ##should be approx equal to 891,8 km^2 according to https://en.wikipedia.org/wiki/Berlin)
+```
+
 Plotting the result of the `pgrs` object which is an instance of `SpatialPolygonsDataFrame`.
 
-```{r}
+```{r,message=FALSE}
 ######################################################################
 ## Plotting the result, see nice tutorial by
 ## http://www.nickeubank.com/wp-content/uploads/2015/10/RGIS3_MakingMaps_part1_mappingVectorData.html
@@ -141,6 +149,7 @@ my.palette <- brewer.pal(n = 6, name = "Purples")
 sp.label <- function(x, label) {list("sp.text", coordinates(x), label,cex=0.5)}
 borderCol <- "white"
 
+#Plot choropleth map
 spplot(pgrs, "density", col.regions = my.palette, cuts = length(my.palette)-1, col = borderCol,main="Choropleth map of Population density",sp.layout=sp.label(pgrs, pgrs$EXTPGRNAME))
 require(grid)
 grid.text("Population density", x=unit(0.95, "npc"), y=unit(0.50, "npc"), rot=-90)
@@ -167,7 +176,7 @@ devtools::install_github('chrisbrunsdon/getcartr',subdir='getcartr')
 We are now ready to compute our first cartogram using the
 `getcartr::quick.carto` function.
 
-```{r}
+```{r,message=FALSE}
 library(Rcartogram)
 library(getcartr)
 
@@ -178,16 +187,17 @@ pgrs_carto <- quick.carto(spdf=pgrs,v=pgrs$E_E,res=256)
 spplot(pgrs_carto, "area", col.regions = my.palette, cuts = length(my.palette)-1, col = borderCol,main="Population Cartogram as Choropleth of Area",sp.layout=sp.label(pgrs_carto, label=pgrs_carto$EXTPGRNAME))
 grid::grid.text(expression("Area (km"^2*")"), x=unit(0.95, "npc"), y=unit(0.50, "npc"), rot=-90)
 ```
-With the functionality now being directly available through R allows
-one to embedd operations in a full R pipeline. For example by gathering
-a sequence of cartograms into an animated GIF file using the
-`animation` package. The figure below shows a cartogram for the
-population size for all available age groups. One observes that the 25-45
-year old tend to live in the city centre, while the
-95-110 year old seem to concentrate in the wealthy regions in the
-south west.
 
-```{r,echo=FALSE}
+With the cartogram functionality now being directly available through
+R allows one to embedd cartogram making in a full R pipeline. This is
+illustrated here by gathering a sequence of cartograms into an
+animated GIF file using the `animation` package. The figure below
+shows a cartogram for the population size for each available age group
+in the Berlin data set. One observes that the 25-45 year old tend to live in
+the city centre, while the 95-110 year old seem to concentrate in the
+wealthy regions in the south west.
+
+```{r,echo=FALSE,cache=TRUE}
 ##Find the selection of col names to do the operation on. These are the different age groups
 cols <- grep("E_E[0-9]",colnames(as.data.frame(pgrs)),val=TRUE)
 cols <- cols[!grepl("U",cols)]
@@ -219,7 +229,7 @@ saveGIF({
     plot(pgrs_carto,
          xlim=bbox(cartos[[1]])[1, ], ylim = bbox(cartos[[1]])[2, ],
          main=paste0(agename, " Cartogram"),col="#DADAEB",border="white",lwd=2)
-    text(coordinates(pgrs_carto)[,1],coordinates(pgrs_carto)[,2],pgrs_name$EXTPGRNAME,cex=.45,col="darkgray")
+    text(coordinates(pgrs_carto)[,1],coordinates(pgrs_carto)[,2],pgrs$EXTPGRNAME,cex=.45,col="darkgray")
   }
 }, movie.name=file.path(filePath,"pop-cartograms.gif"),ani.width=700,ani.height=700,ani.dev=function(...) png(...,res=125))
 ```
@@ -227,7 +237,7 @@ saveGIF({
 ![]({{ site.baseurl }}/figure/source/2016-06-12-optimalChoice/pop-cartograms.gif)
 
 ```{r,echo=FALSE,results='hide',eval=FALSE}
-######################################################################
+#############≈ß#########################################################
 # Sandbox zone
 ######################################################################
 
@@ -239,7 +249,8 @@ proj4string(pgrs_carto)
 bbox(pgrs_carto)
 ```
 
-##Read
+```{r,eval=FALSE,echo=FALSE}
+##Sandbox zone
 tiffFiles <- list.files(path="~/Sandbox/OpenBerlin/Maps/DTK100_Color_EPSG25833/",pattern="*.tif")
 images <- lapply(tiffFiles, function(fileName) {
   i <- readGDAL(fname=file.path("~/Sandbox/OpenBerlin/Maps/DTK100_Color_EPSG25833",fileName))
