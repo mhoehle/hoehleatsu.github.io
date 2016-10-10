@@ -53,8 +53,8 @@ example @gastner_newman2004 for the methodological challenges of this
 task.
 
 In this post we show how such area cartograms can be created within R
-using the spatial packages `sp`, `rgeos` and `rgdal available from
-CRAN `. As well as the packages `Rcartogram` and `getcartr` from
+using the spatial packages `sp`, `rgeos` and `rgdal` available from
+CRAN. As well as the packages `Rcartogram` and `getcartr` from
 github. The later two packages are only available from github, because
 the license of the underlying
 [`Cart`](http://www-personal.umich.edu/~mejn/cart/) implementing the
@@ -67,7 +67,8 @@ We use population on the 447 planning regions of Berlin
 (Lebensweltlich orientierte Räume (LOR)) available as ESRI Shapefile
 through the
 [open data portal of Berlin](http://daten.berlin.de/datensaetze/rbs-lor-lebensweltlich-orientierte-r%C3%A4ume-dezember-2015)
-under the CC BY license. The 2015 population data are available as CSV through the same
+under the CC BY license. The 2015 population data are available as CSV
+file through the same
 [data portal](http://daten.berlin.de/datensaetze/einwohnerinnen-und-einwohner-berlin-lor-planungsr%C3%A4umen-am-31122015).
 
 ```{r}
@@ -77,14 +78,15 @@ unzip(tmpfile,exdir=file.path(filePath,"RBS_OD_LOR_2015_12"))
 download.file("https://www.statistik-berlin-brandenburg.de/opendata/EWR201512E_Matrix.csv",destfile=file.path(filePath,"EWR201512E_Matrix.csv"))
 ```
 
-Using the powerful `rgdal`, `sp` and the `rgeos` CRAN packages, R can
-be used as a
+With the help of the powerful `rgdal`, `sp` and the `rgeos` CRAN
+packages, R can be used as a
 [geograhic information system (GIS)](https://en.wikipedia.org/wiki/Geographic_information_system). This
 allows for easy merging of these two data sources together with a
 spatial aggregation to the **Prognoseräume** level, which is a
 slightly higher level of aggregation than the LORs (60 regions instead
 of 447). The output of these data wrangling steps will be a
-SpatialPolygonsDataFrame object names `pgrs` - see GitHub code for details.
+SpatialPolygonsDataFrame object names `pgrs` - see GitHub code for
+details.
 
 ```{r,message=FALSE}
 library(rgdal)
