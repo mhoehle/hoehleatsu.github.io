@@ -6,23 +6,7 @@ bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
 ---
 
-```{r,include=FALSE,echo=FALSE,message=FALSE}
-##If default fig.path, then set it.
-if (knitr::opts_chunk$get("fig.path") == "figure/") {
-  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
-  knitr::opts_chunk$set(fig.path="figure/source/2016-10-10-cartograms/")
-}
-fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
-filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2016-10-10-cartograms/"
 
-knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='')
-options(width=90)
-library("dplyr")
-library("ggplot2")
-library("tidyr")
-library("methods")
-theme_set(theme_bw())
-```
 
 ## Abstract
 
@@ -31,9 +15,7 @@ We show how to create
 illustrating the population and age-distribution of the planning
 regions of Berlin by static plots and animations.
 
-```{r,results='asis',echo=FALSE}
-cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"CARTOGRAM-1.png"),")")
-```
+![]({{ site.baseurl }}/figure/source/2016-10-10-cartograms/CARTOGRAM-1.png )
 
 {% include license.html %}
 
@@ -78,7 +60,8 @@ under the CC BY license. The 2015 population data of the LORs are
 available as CSV file through the same
 [data portal](http://daten.berlin.de/datensaetze/einwohnerinnen-und-einwohner-berlin-lor-planungsr%C3%A4umen-am-31122015).
 
-```{r,cache=TRUE}
+
+```r
 tmpfile <- paste0(tempfile(),".zip")
 download.file("https://www.statistik-berlin-brandenburg.de/opendata/RBS_OD_LOR_2015_12.zip",destfile=tmpfile)
 unzip(tmpfile,exdir=file.path(filePath,"RBS_OD_LOR_2015_12"))
@@ -93,15 +76,34 @@ slightly higher level of aggregation than the LORs (60 regions instead
 of 447). The output of these data wrangling steps will be a
 SpatialPolygonsDataFrame object `pgrs` - see GitHub code for details.
 
-```{r,message=FALSE}
+
+```r
 library(rgdal)
 library(sp)
 library(rgeos)
 ```
-```{r,message=FALSE,warning=FALSE}
+
+```r
 ##Read shapefile
 lor <- readOGR(dsn=file.path(filePath,"RBS_OD_LOR_2015_12"),layer="RBS_OD_LOR_2015_12")
+```
+
+```
+## OGR data source with driver: ESRI Shapefile 
+## Source: "/Users/hoehle/Sandbox/Blog/figure/source/2016-10-10-cartograms//RBS_OD_LOR_2015_12", layer: "RBS_OD_LOR_2015_12"
+## with 447 features
+## It has 8 fields
+```
+
+```r
 proj4string(lor)
+```
+
+```
+## [1] "+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs"
+```
+
+```r
 ##Compute area of each LOR in km^2 area (unit: meters -> convert to square km)
 lor$area <- gArea(lor, byid=TRUE) / (1e6)
 
@@ -111,42 +113,17 @@ pop <- readr::read_csv2(file=file.path(filePath, "EWR201512E_Matrix.csv"))
 ##Merge SpatialPolygonsDataFrame with population information
 lor_pop <- merge(lor, pop, by.x="PLR",by.y="RAUMID")
 ```
-````{r,echo=FALSE,results='hide'}
-#Make more adequate names for the PGRs -> extended PGR name
-lor_pop$EXTPGRNAME <- as.character(lor_pop$PGRNAME)
-lor_pop$EXTPGRNAME <- gsub("Region ","Steglitz-Zehlendorf ",lor_pop$EXTPGRNAME)
-lor_pop$EXTPGRNAME <- gsub("^SPA ","Spandau ",lor_pop$EXTPGRNAME)
-lor_pop$EXTPGRNAME <- gsub("^CW ","Charl.-Wilm. ",lor_pop$EXTPGRNAME)
 
-## Aggregate to level of Prognoseräume (there are 60 of them)
-## Population numbers and area is aggregated using sum, extended PGR
-## name will be the same in each area and hence one can take the first
-aggr_fun <- function(x) {
-  if (is.numeric(x)) {
-    return(sum(x,na.rm=TRUE))
-  } else {
-    return(x[1])
-  }
-}
 
-##Do the aggregation
-pgrs <- aggregate(lor_pop[,grep("^E_|^area|^EXTPGRNAME",colnames(as.data.frame(lor_pop)))], by=list(PGR=lor_pop$PGR.x), FUN=aggr_fun)
 
-##Add a population density variable
-pgrs$density <- pgrs$E_E / pgrs$area
-```
-
-```{r,echo=FALSE}
-##check the area computation:
-#sum(lor$area) ##should be approx equal to 891,8 km^2 according to https://en.wikipedia.org/wiki/Berlin)
-```
 
 Plotting the result of the `pgrs` object as an instance of
 `SpatialPolygonsDataFrame` can be done using the standard `Spatial*`
 plotting routines documented extensively in, e.g, @bivand_etal2008 and
 its comprehensive [webpage](http://www.asdar-book.org/).
 
-```{r,CHOROPLETH,message=FALSE,dpi=200}
+
+```r
 ######################################################################
 ## Plotting the result, see nice tutorial by
 ## http://www.nickeubank.com/wp-content/uploads/2015/10/RGIS3_MakingMaps_part1_mappingVectorData.html
@@ -166,6 +143,8 @@ require(grid)
 grid.text(expression("Population density (Persons / "~km^2~")"), x=unit(0.95, "npc"), y=unit(0.50, "npc"), rot=-90)
 ```
 
+![](http://staff.math.su.se/hoehle/blog/figure/source/2016-10-10-cartograms/CHOROPLETH-1.png)
+
 ## Installing the Cartogram R packages
 
 Two packages `Rcartogram` and `getcartr` make the functionality of the
@@ -175,7 +154,8 @@ objects of class `Spatial*`. Installing `Rcartogram` requires the
 that depends on your system, for Mac OS X the
 [homebrew package system](http://brew.sh/) makes this installation easy.
 
-```{r,eval=FALSE}
+
+```r
 ##On command line in OS/X with homebrew. Wrapped in FALSE statement to not run system() unintentionally
 if (FALSE) {
   system("brew install fftw")
@@ -187,7 +167,8 @@ devtools::install_github('chrisbrunsdon/getcartr',subdir='getcartr')
 We are now ready to compute our first cartogram using the
 `getcartr::quick.carto` function.
 
-```{r,CARTOGRAM,message=FALSE,dpi=200}
+
+```r
 library(Rcartogram)
 library(getcartr)
 
@@ -199,67 +180,25 @@ spplot(pgrs_carto, "area", col.regions = my.palette, cuts = length(my.palette)-1
 grid::grid.text(expression("Area (km"^2*")"), x=unit(0.95, "npc"), y=unit(0.50, "npc"), rot=-90)
 ```
 
-```{r,echo=FALSE}
-##Find the selection of col names to do the operation on. These are the different age groups
-cols <- grep("E_E[0-9]",colnames(as.data.frame(pgrs)),val=TRUE)
-cols <- cols[!grepl("U",cols)]
-```
+![](http://staff.math.su.se/hoehle/blog/figure/source/2016-10-10-cartograms/CARTOGRAM-1.png)
+
+
 
 With the cartogram functionality now being directly available through
 R allows one to embedd cartogram making in a full R pipeline. We
 illustrate this by generating a sequence of cartograms into an
 animated GIF file using the `animation` package. The animation below
-shows a cartogram for the population size for each of the `r length(cols)`
+shows a cartogram for the population size for each of the 32
 age group in the Berlin data set. One observes that the
 25-45 year old tend to live in the city centre, while the 95-110 year
 old seem to concentrate in the wealthy regions in the south west.
 
-```{r,echo=FALSE,cache=TRUE}
-##Warp based on each age strata
-cartos <- pbapply::pblapply(cols, function(agegrp) {
-  ##Zero population maps don't work
-  pgrs[[agegrp]] <- ifelse(pgrs[[agegrp]] > 0, pgrs[[agegrp]], 0.1)
-  ##Warp
-  pgrs_warp <- quick.carto(pgrs,pgrs[[agegrp]])
-  return(pgrs_warp)
-})
-```
-
-```{r,echo=FALSE,results='hide',message=FALSE}
-##Animate the warp
-library(animation)
-ani.options(interval=0.6)
-
-##For some wicked reason writing movie.name =
-##file.path(filePath,"pop-cartograms.gif") doesn't work. So we instead
-##produce the file in the same directory and move it to the right
-##place
-
-theAnimation <- "pop-cartograms.gif"
 
 
-## Make an animation by looping over all age groups.
-saveGIF({
-  for (i in 1:length(cartos)) {
-    agegrp <- cols[i]
-    cat(agegrp,"\n")
-    pgrs_carto <- cartos[[i]]
-    agename <- paste0("Population age ",gsub("_","-",gsub("E_E","",agegrp)),"y")
-
-    par(mar=c(0, 0, 3, 0) + 0.1)
-    plot(pgrs_carto,
-         xlim=bbox(cartos[[1]])[1, ], ylim = bbox(cartos[[1]])[2, ],
-         main=paste0(agename, " Cartogram"),col="#DADAEB",border="white",lwd=2)
-    text(coordinates(pgrs_carto)[,1],coordinates(pgrs_carto)[,2],pgrs$EXTPGRNAME,cex=.45,col="darkgray")
-  }
-}, movie.name=theAnimation,ani.width=700,ani.height=700,ani.dev=function(...) png(...,res=125))
-```
 
 
-```{r,results='asis',echo=FALSE}
-invisible(file.rename(theAnimation,file.path(fullFigPath,theAnimation)))
-cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),theAnimation),")")
-```
+
+![]({{ site.baseurl }}/figure/source/2016-10-10-cartograms/pop-cartograms.gif )
 
 # Outlook
 
