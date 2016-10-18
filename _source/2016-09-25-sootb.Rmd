@@ -279,7 +279,7 @@ Below we show how the `#zombieattack` series developed after the post was made p
 ```{r,ZOMBIEATTACK_UPDATED,echo=FALSE}
 #The one used for the latest post
 tw <- readRDS(file=paste0(filePath,"Tweets-Database-",safe_query,"-","2016-10-02",".RDS"))
-#tw <- readRDS(file=paste0(filePath,"Tweets-Database-",safe_query,"-","2016-10-09",".RDS"))
+#tw <- readRDS(file=paste0(filePath,"Tweets-Database-",safe_query,"-","2016-10-18",".RDS"))
 
 
 #Work the zombie attack series

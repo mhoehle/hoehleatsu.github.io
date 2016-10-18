@@ -210,7 +210,7 @@ R allows one to embedd cartogram making in a full R pipeline. We
 illustrate this by generating a sequence of cartograms into an
 animated GIF file using the `animation` package. The animation below
 shows a cartogram for the population size for each of the `r length(cols)`
-age group in the Berlin data set. One observes that the
+age groups in the Berlin data set. One observes that the
 25-45 year old tend to live in the city centre, while the 95-110 year
 old seem to concentrate in the wealthy regions in the south west.
 
