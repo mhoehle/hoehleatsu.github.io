@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Confidence Intervals for Population Quantiles with R"
+title: "Confidence Intervals for Quantiles with R"
 tags: [dataviz, rstats, stats]
 bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
@@ -23,10 +23,15 @@ library("tidyr")
 library("methods")
 theme_set(theme_bw())
 ```
+$$
+\newcommand{\bm}[1]{\boldsymbol{\mathbf{#1}}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+$$
 
 ## Abstract
 
-R code is provided to compute confidence intervals for the median or any other quantile based on the suggestions by @hettmansperger_sheather1986 and @nyblom199X. These intervals are computed such that they have a good coverage even in the small sample setting. 
+R code is provided to compute confidence intervals for the median or any other quantile based on the suggestions by @hettmansperger_sheather1986 and @nyblom1992. These intervals are computed such that they have a good coverage even in the small sample setting.
 
 
 ```{r,results='asis',echo=FALSE}
@@ -37,19 +42,19 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"CARTOGRA
 
 ## Introduction
 
-Statistics 101 tells that for a distribution, possibly contaminated with outliers, a robust measure of the central tendency is the median. Not knowing this fact can even make your analysis worthy to report in the [newspaper](http://www.sueddeutsche.de/wirtschaft/heilbronn-dieser-mann-ist-so-reich-dass-statistiken-seines-wohnorts-wertlos-sind-1.2705044) (link in German). 
+Statistics 101 tells that for a distribution, possibly contaminated with outliers, a robust measure of the central tendency is the median. Not knowing this fact can even make your analysis worthy to report in the [newspaper](http://www.sueddeutsche.de/wirtschaft/heilbronn-dieser-mann-ist-so-reich-dass-statistiken-seines-wohnorts-wertlos-sind-1.2705044) (link in German).
 
-Quantiles of a distribution also have a long history for when to declare an observation an outlier. For example, growth curves for children show how the quantiles of, e.g., [the BMI distribution develops by age](http://www.cdc.gov/growthcharts/data/set1clinical/cj41l024.pdf). Obesity in children is then defined as, e.g., exceedance of the [97.7% quantile](http://www.who.int/growthref/bmifa_girls_z_5_19_labels.pdf?ua=1). Quantile regression is a non-parametric method to compute such curves and the statistical community has been very busy lately in investigating new ways to compute such regressions and adequately handle uncertainty in this context.
+Higher quantiles of a distribution also have a long history for when to declare an observation an outlier. For example, growth curves for children show how the quantiles of, e.g., [the BMI distribution develops by age](http://www.cdc.gov/growthcharts/data/set1clinical/cj41l024.pdf). Obesity in children is then defined as, e.g., exceedance of the [97.7% quantile](http://www.who.int/growthref/bmifa_girls_z_5_19_labels.pdf?ua=1) of the distribution at a particular age. Quantile regression is a non-parametric method to compute such curves and the statistical community has been quite busy lately investigating new ways to compute such regressions models.
 
-However, the focus of this blog post is the simple setting: Given an iid. sample $x$ of size $n$ from the univariate and absolutely continuous distribution $F$, how does one compute an estimate for the $p$-Quantile of $F$ together with an associated confidence interval? 
+The focus of this blog post is, however, the simple setting: Given an iid. sample $\bm{x}$ of size $n$ from the univariate and absolutely continuous distribution $F$, how does one compute an estimate for the $p$-Quantile of $F$ together with an associated confidence interval?
 
 ### The Point Estimate
 
-How to compute the point-estimate using statistical software packages is discussed in the excellent survey of @hyndman_fan1996. It is interesting to notice that [20 years after](http://robjhyndman.com/hyndsight/sample-quantiles-20-years-later/), there still appears to be a multitude of ways to compute quantiles and the `type` argument has been a friend when comparing results with SPSS or Stata users. The simplest estimator is based on the [order statistic](https://en.wikipedia.org/wiki/Order_statistic) $x_{(1)} < x_{(2)} < \cdots < x_{(n)}$ of $x$.
+How to compute the point-estimate using statistical software packages is discussed in the excellent survey of @hyndman_fan1996. It is interesting to notice that [20 years after](http://robjhyndman.com/hyndsight/sample-quantiles-20-years-later/), there still appears to be a multitude of ways to compute quantiles and the `type` argument has been a friend when comparing results with SPSS or Stata users. The simplest estimator is based on the [order statistic](https://en.wikipedia.org/wiki/Order_statistic) of the sample, i.e. $x_{(1)} < x_{(2)} < \cdots < x_{(n)}$.
 $$
-x_p = \min_{k} \left\{\hat{F}(x_{(k)}) \geq p\right\},
+x_p = \min_{k} \left\{\hat{F}(x_{(k)}) \geq p\right\} = x_{(\lceil n \cdot p\rceil)},
 $$
-where $\hat{F}$ is the (empirical distribution)[https://en.wikipedia.org/wiki/Empirical_distribution_function] function of the sample. Since $\hat{F}$ has jumps of size $1/n$ the actual value of $\hat{F}(x_{(k)})$ can actually be somewhat larger than the desired $p$. Therefore, 
+where $\hat{F}$ is the (empirical distribution)[https://en.wikipedia.org/wiki/Empirical_distribution_function] function of the sample. Since $\hat{F}$ has jumps of size $1/n$ the actual value of $\hat{F}(x_{(k)})$ can actually be somewhat larger than the desired $p$. Therefore,
  @hyndman_fan1996 prefers estimators interpolating between the two values of the order statistic with $\hat{F}$ just below and just above $p$. In what follows we will, however, stick with this simple procedure.
 
 
@@ -72,14 +77,48 @@ quantile(x, type=3, prob=p)
 
 ### Confidence interval for the quantile
 
+Besides the point estimate $\hat{x}_p$ we would also like to report a $(1-\alpha)\cdot 100\%$ confidence interval $(x_p^{\text{l}}, x_p^{\text{u}})$ for the population quantile. We thus would like the interval to fulfill the following condition:
+$$
+P( (x_p^{\text{l}}, x_p^{\text{u}}) \ni x_p) = 1 - \alpha,
+$$
+where we have used the "backwards" $\in$ to stress the fact that it is the interval which is random and, hence, should cover the true quantile value. Restricting the limits of this confidence intervals to be one of the realisations from the order statistics means that we need to find indices $d$ and $e$ s.t.
+$$
+P( x_{(d)} \leq x_p \leq x_{(e)}) \geq 1 - \alpha.
+$$
+Note that it may not be possible to achieve the desired coverage exactly in this case. For now we prefer the conservative choice of having to attain **at least** the desired coverage. Later, we will relax this criterion. Note that for $1\leq r \leq n$ we have
+$$
+\begin{align*}
+P( x_{r} \leq x_p) &= P(\text{at least $r$ observations are smaller than or equal to $x_p$}) \\
+      &= \sum_{k=r}^{n} P(\text{exactly $k$ observations are smaller than or equal to $x_p$}) \\
+      &= \sum_{k=r}^{n} {n \choose k} P(X \leq x_p)^k (1-P(X \leq x_p))^{n-k} \\
+      &= \sum_{k=r}^{n} {n \choose k} p^k (1-p)^{n-k} \\
+      &= 1 - \sum_{k=0}^{r-1} {n \choose k} p^k (1-p)^{n-k} 
+\end{align*}
+$$
+We now compute the confidence interval by finding two one-sided $1-\alpha/2$ intervals, i.e. we find $d$ and $e$ s.t.
+
+1. $P(x_{(d)} \leq x_p) = 1-\alpha/2$ and
+2. $P(x_p \geq x_{(e)}) = 1-\alpha/2$
+
+In other words
+
+$$
+\begin{align*}
+d &= \argmax P(x_{(r)} \leq x_p) \geq 1 - \frac{\alpha}{2} \\
+  &= \texttt{qbinom(alpha/2, size=n, prob=p)} \\
+e &= \argmin P(x_p \geq x_{(r)}) \geq 1 - \frac{\alpha}{2} \\
+  &= \texttt{qbinom(1-alpha/2, size=n, prob=p) + 1}
+\end{align*}
+$$
+
+Note that the problem can arise, that the above solutions are zero or $n+1$, respectively. In this case one has to decide how to proceed.
+
 When it comes to confidence intervals for quantiles the set of alternatives is less extensive in R. Searching for this on CRAN,  I found the following:
 
 * [`MKMisc::quantileCI`](http://finzi.psych.upenn.edu/R/library/MKmisc/html/quantileCI.html) implements and exact but very slow $O(n^2)$ search as well as an asymptotic method
-* the exact binomial method in [`jmuOutlier::quantileCI`](http://finzi.psych.upenn.edu/R/library/jmuOutlier/html/quantileCI.html) 
+* the exact binomial method in [`jmuOutlier::quantileCI`](http://finzi.psych.upenn.edu/R/library/jmuOutlier/html/quantileCI.html)
 * the [`envStats::eqnpar`] function, which also computes the exact as well as the asymptotic method
-* the $Qtools::confint.midquantile` (which I don't understand). 
-
-The easy solution isto use the ordinary bootstrap to compute a confidence interval for the quantile:
+* the $Qtools::confint.midquantile` (which I don't understand).
 
 ```{r}
 as.numeric(MKmisc::quantileCI(x=x, prob=p, method="exact",conf.level=0.95)$CI)
@@ -87,16 +126,10 @@ as.numeric(MKmisc::quantileCI(x=x, prob=p, method="asymptotic",conf.level=0.95)$
 as.numeric(jmuOutlier::quantileCI(x=x, probs=p, conf.level=0.95)[1,c("lower","upper")])
 as.numeric(EnvStats::eqnpar(x=x, p=p, ci=TRUE, ci.method="exact",approx.conf.level=0.95)$interval$limits)
 as.numeric(EnvStats::eqnpar(x=x, p=p, ci=TRUE, ci.method="normal.approx",approx.conf.level=0.95)$interval$limits)
-
-quantile_confint_boot <- function(x, p, conf.level=0.95, R=999) {
-  b <- boot::boot(x, statistic=function(data, idx) quantile(x[idx],prob=q,type=3), R=R)
-  boot::boot.ci(b, conf=conf.level, type="perc")$percent[4:5]
-}
-
-quantile_confint_boot(x, p=p, conf.level=0.95,R=999)
 ```
 
-Lot's of suggestions. Here is my own take at this:
+An impressive number of similar, but yet different results. Here is
+our take at this as developed in the `quantileCI` package:
 
 ```{r,eval=FALSE}
 devtools::install_github("hoehleatsu/quantileCI")
@@ -105,22 +138,31 @@ devtools::install_github("hoehleatsu/quantileCI")
 ```{r}
 quantileCI::quantile_confint_nyblom(x=x, p=p, conf.level=0.95,interpolate=FALSE)
 quantileCI::quantile_confint_nyblom(x=x, p=p, conf.level=0.95,interpolate=TRUE)
+quantileCI::quantile_confint_boot(x, p=p, conf.level=0.95,R=999)
+
 ```
+
+The first procedure should match the exact computations already known from the other package, when the `interpolate` argument is set to true, additional interpolation between the two neighbouring order statistics is performed as suggested in the work of @nyblom1992, which extends work for the median by @hettmansperger_sheather1986. The last call is to a basic bootstrap procedure, which resamples the data with replacement, computes the quantile using `type=3` and then reports the 2.5% and 97.5% percentiles of this bootstrapped distribution. Such percentiles of the basic bootstrap are a popular way to get confidence intervals for the quantile, e.g., this is what we have used in @hoehle_hoehle2008. However, the procedure is
+not without problems (@someref).
 
 ## Small Simulation Study to Determine Coverage
 
-```{r}
+```{r,echo=FALSE}
 ##Function to compare the different methods. quantile_confint3 is different in many cases!
 quantile_confints <- function(x, p, conf.level, x_is_sorted=FALSE) {
   if (!x_is_sorted) { x <- sort(x)}
 
+  ##Compute the various confidence intervals as above
   res <- data.frame(jmuOutlier_exact=as.numeric(jmuOutlier::quantileCI(x=x, probs=p, conf.level=conf.level)[1,c("lower","upper")]),
                     EnvStats_Exact=as.numeric(EnvStats::eqnpar(x=x, p=p, ci=TRUE, ci.method="exact",approx.conf.level=conf.level)$interval$limits),
                     EnvStats_Asymptotic=as.numeric(EnvStats::eqnpar(x=x, p=p, ci=TRUE, ci.method="normal.approx",approx.conf.level=0.95)$interval$limits),
                     nyblom_exact=quantileCI::quantile_confint_nyblom(x=x, p=p, conf.level=conf.level,x_is_sorted=TRUE,interpolate=FALSE),
-                    nyblom=quantileCI::quantile_confint_nyblom(x=x, p=p, conf.level=conf.level,x_is_sorted=TRUE,interpolate=TRUE),
-                    boot=quantile_confint_boot(x, p=p, conf.level=conf.level,R=999)
-                    )
+                    nyblom_interp=quantileCI::quantile_confint_nyblom(x=x, p=p, conf.level=conf.level,x_is_sorted=TRUE,interpolate=TRUE),
+                    boot=quantileCI::quantile_confint_boot(x, p=p, conf.level=conf.level,R=999)
+  )
+  if (p == 0.5) {
+    res$hs_interp = quantileCI::median_confint_hs(x=x,  conf.level=conf.level,x_is_sorted=TRUE,interpolate=TRUE)
+  }
   return(res)
 }
 ```
@@ -130,9 +172,8 @@ quantile_confints(x, p=p, conf.level=0.95)
 ```
 
 ```{r,SIMSTUDY,cache=TRUE}
-######################################################################
-## Simulation study with all methods
-######################################################################
+#' Simulation study comparing the confidence interval method by their coverage
+
 one_sim <- function(n, rfunc=rnorm, qfunc=qnorm, p=0.5, conf.level=0.95) {
   ##Draw the sample and check the truth
   x <- sort(rfunc(n))
@@ -146,16 +187,28 @@ one_sim <- function(n, rfunc=rnorm, qfunc=qnorm, p=0.5, conf.level=0.95) {
   covers
 }
 
-y <- pbapply::pbreplicate(1e3,one_sim(n=25,p=0.8,conf.level=0.95))
-apply(y,c(1,2),mean)
+# Perform simulation studies for different n and p's
+y <- apply(pbapply::pbreplicate(1e3,one_sim(n=11,p=0.5,conf.level=0.95)),c(1,2),mean)
+y
+#apply(pbapply::pbreplicate(1e3,one_sim(n=25,p=0.8,conf.level=0.95)),c(1,2),mean)
 
+#y <- apply(pbapply::pbreplicate(1e3,one_sim(n=39,p=0.9,conf.level=0.95)),c(1,2),mean)
+#y <- apply(pbapply::pbreplicate(1e3,one_sim(n=11,p=0.5,conf.level=0.95)),c(1,2),mean)
+
+
+```
+```{r}
+library(formattable)
+formattable(data.frame(coverage=as.numeric(t(y))), list(
+area(col = c(coverage) ~ normalize_bar("pink", max(coverage)))
+))
 ```
 
 
-# Outlook
+# Conclusion and Future Work
 
-While writing this posts some other useRs have posted on how to create
-[interactive cartograms](https://twitter.com/Victpir/status/785852075129315333).
+Altogether, it was a little surprising to see little surprised 
+Which function to pick?
 
 # References
 

@@ -6,9 +6,211 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 11 Oct 2016 23:27:43 +0200</pubDate>
-    <lastBuildDate>Tue, 11 Oct 2016 23:27:43 +0200</lastBuildDate>
+    <pubDate>Fri, 21 Oct 2016 00:17:13 +0200</pubDate>
+    <lastBuildDate>Fri, 21 Oct 2016 00:17:13 +0200</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
+    
+      <item>
+        <title>Confidence Intervals for Quantiles with R</title>
+        <description>&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+\newcommand{\bm}[1]{\boldsymbol{\mathbf{#1}}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
+&lt;p&gt;R code is provided to compute confidence intervals for the median or any other quantile based on the suggestions by &lt;span class=&quot;citation&quot; data-cites=&quot;hettmansperger_sheather1986&quot;&gt;Hettmansperger and Sheather (1986)&lt;/span&gt; and &lt;span class=&quot;citation&quot; data-cites=&quot;nyblom1992&quot;&gt;Nyblom (1992)&lt;/span&gt;. These intervals are computed such that they have a good coverage even in the small sample setting.&lt;/p&gt;
+&lt;figure&gt;
+&lt;img src=&quot;/hoehle/blog/figure/source/2016-10-17-quantileCI/CARTOGRAM-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
+href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
+&lt;p&gt;Statistics 101 tells that for a distribution, possibly contaminated with outliers, a robust measure of the central tendency is the median. Not knowing this fact can even make your analysis worthy to report in the &lt;a href=&quot;http://www.sueddeutsche.de/wirtschaft/heilbronn-dieser-mann-ist-so-reich-dass-statistiken-seines-wohnorts-wertlos-sind-1.2705044&quot;&gt;newspaper&lt;/a&gt; (link in German).&lt;/p&gt;
+&lt;p&gt;Higher quantiles of a distribution also have a long history for when to declare an observation an outlier. For example, growth curves for children show how the quantiles of, e.g., &lt;a href=&quot;http://www.cdc.gov/growthcharts/data/set1clinical/cj41l024.pdf&quot;&gt;the BMI distribution develops by age&lt;/a&gt;. Obesity in children is then defined as, e.g., exceedance of the &lt;a href=&quot;http://www.who.int/growthref/bmifa_girls_z_5_19_labels.pdf?ua=1&quot;&gt;97.7% quantile&lt;/a&gt; of the distribution at a particular age. Quantile regression is a non-parametric method to compute such curves and the statistical community has been quite busy lately investigating new ways to compute such regressions models.&lt;/p&gt;
+&lt;p&gt;The focus of this blog post is, however, the simple setting: Given an iid. sample &lt;span class=&quot;math inline&quot;&gt;\(\bm{x}\)&lt;/span&gt; of size &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; from the univariate and absolutely continuous distribution &lt;span class=&quot;math inline&quot;&gt;\(F\)&lt;/span&gt;, how does one compute an estimate for the &lt;span class=&quot;math inline&quot;&gt;\(p\)&lt;/span&gt;-Quantile of &lt;span class=&quot;math inline&quot;&gt;\(F\)&lt;/span&gt; together with an associated confidence interval?&lt;/p&gt;
+&lt;h3 id=&quot;the-point-estimate&quot;&gt;The Point Estimate&lt;/h3&gt;
+&lt;p&gt;How to compute the point-estimate using statistical software packages is discussed in the excellent survey of &lt;span class=&quot;citation&quot; data-cites=&quot;hyndman_fan1996&quot;&gt;Hyndman and Fan (1996)&lt;/span&gt;. It is interesting to notice that &lt;a href=&quot;http://robjhyndman.com/hyndsight/sample-quantiles-20-years-later/&quot;&gt;20 years after&lt;/a&gt;, there still appears to be a multitude of ways to compute quantiles and the &lt;code&gt;type&lt;/code&gt; argument has been a friend when comparing results with SPSS or Stata users. The simplest estimator is based on the &lt;a href=&quot;https://en.wikipedia.org/wiki/Order_statistic&quot;&gt;order statistic&lt;/a&gt; of the sample, i.e. &lt;span class=&quot;math inline&quot;&gt;\(x_{(1)} &amp;lt; x_{(2)} &amp;lt; \cdots &amp;lt; x_{(n)}\)&lt;/span&gt;. &lt;span class=&quot;math display&quot;&gt;\[
+x_p = \min_{k} \left\{\hat{F}(x_{(k)}) \geq p\right\} = x_{(\lceil n \cdot p\rceil)},
+\]&lt;/span&gt; where &lt;span class=&quot;math inline&quot;&gt;\(\hat{F}\)&lt;/span&gt; is the (empirical distribution)[https://en.wikipedia.org/wiki/Empirical_distribution_function] function of the sample. Since &lt;span class=&quot;math inline&quot;&gt;\(\hat{F}\)&lt;/span&gt; has jumps of size &lt;span class=&quot;math inline&quot;&gt;\(1/n\)&lt;/span&gt; the actual value of &lt;span class=&quot;math inline&quot;&gt;\(\hat{F}(x_{(k)})\)&lt;/span&gt; can actually be somewhat larger than the desired &lt;span class=&quot;math inline&quot;&gt;\(p\)&lt;/span&gt;. Therefore, &lt;span class=&quot;citation&quot; data-cites=&quot;hyndman_fan1996&quot;&gt;Hyndman and Fan (1996)&lt;/span&gt; prefers estimators interpolating between the two values of the order statistic with &lt;span class=&quot;math inline&quot;&gt;\(\hat{F}\)&lt;/span&gt; just below and just above &lt;span class=&quot;math inline&quot;&gt;\(p\)&lt;/span&gt;. In what follows we will, however, stick with this simple procedure.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;##Make a tiny artificial dataset.
+&lt;span class=&quot;kw&quot;&gt;set.seed&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;as.integer&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;charToRaw&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;R&amp;quot;&lt;/span&gt;)))
+##z-score of 25 artifical children
+x &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rnorm&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;25&lt;/span&gt;)
+
+##Define the quantile we want to consider
+p &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.8&lt;/span&gt;
+##Since we know the true distribution we can easily find the true quantile
+(x_p &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;qnorm&lt;/span&gt;(p))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] 0.8416212&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We can now compute an estimate for the &lt;span class=&quot;math inline&quot;&gt;\(p\)&lt;/span&gt;-quantile in the population&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;quantile&lt;/span&gt;(x, &lt;span class=&quot;dt&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;prob=&lt;/span&gt;p)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##       80% 
+## 0.4743505&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&quot;confidence-interval-for-the-quantile&quot;&gt;Confidence interval for the quantile&lt;/h3&gt;
+&lt;p&gt;Besides the point estimate &lt;span class=&quot;math inline&quot;&gt;\(\hat{x}_p\)&lt;/span&gt; we would also like to report a &lt;span class=&quot;math inline&quot;&gt;\((1-\alpha)\cdot 100\%\)&lt;/span&gt; confidence interval &lt;span class=&quot;math inline&quot;&gt;\((x_p^{\text{l}}, x_p^{\text{u}})\)&lt;/span&gt; for the population quantile. We thus would like the interval to fulfill the following condition: &lt;span class=&quot;math display&quot;&gt;\[
+P( (x_p^{\text{l}}, x_p^{\text{u}}) \ni x_p) = 1 - \alpha,
+\]&lt;/span&gt; where we have used the &amp;quot;backwards&amp;quot; &lt;span class=&quot;math inline&quot;&gt;\(\in\)&lt;/span&gt; to stress the fact that it is the interval which is random and, hence, should cover the true quantile value. Restricting the limits of this confidence intervals to be one of the realisations from the order statistics means that we need to find indices &lt;span class=&quot;math inline&quot;&gt;\(d\)&lt;/span&gt; and &lt;span class=&quot;math inline&quot;&gt;\(e\)&lt;/span&gt; s.t. &lt;span class=&quot;math display&quot;&gt;\[
+P( x_{(d)} \leq x_p \leq x_{(e)}) \geq 1 - \alpha.
+\]&lt;/span&gt; Note that it may not be possible to achieve the desired coverage exactly in this case. For now we prefer the conservative choice of having to attain &lt;strong&gt;at least&lt;/strong&gt; the desired coverage. Later, we will relax this criterion. Note that for &lt;span class=&quot;math inline&quot;&gt;\(1\leq r \leq n\)&lt;/span&gt; we have &lt;span class=&quot;math display&quot;&gt;\[
+\begin{align*}
+P( x_{r} \leq x_p) &amp;amp;= P(\text{at least $r$ observations are smaller than or equal to $x_p$}) \\
+      &amp;amp;= \sum_{k=r}^{n} P(\text{exactly $k$ observations are smaller than or equal to $x_p$}) \\
+      &amp;amp;= \sum_{k=r}^{n} {n \choose k} P(X \leq x_p)^k (1-P(X \leq x_p))^{n-k} \\
+      &amp;amp;= \sum_{k=r}^{n} {n \choose k} p^k (1-p)^{n-k} \\
+      &amp;amp;= 1 - \sum_{k=0}^{r-1} {n \choose k} p^k (1-p)^{n-k} 
+\end{align*}
+\]&lt;/span&gt; We now compute the confidence interval by finding two one-sided &lt;span class=&quot;math inline&quot;&gt;\(1-\alpha/2\)&lt;/span&gt; intervals, i.e. we find &lt;span class=&quot;math inline&quot;&gt;\(d\)&lt;/span&gt; and &lt;span class=&quot;math inline&quot;&gt;\(e\)&lt;/span&gt; s.t.&lt;/p&gt;
+&lt;ol type=&quot;1&quot;&gt;
+&lt;li&gt;&lt;span class=&quot;math inline&quot;&gt;\(P(x_{(d)} \leq x_p) = 1-\alpha/2\)&lt;/span&gt; and&lt;/li&gt;
+&lt;li&gt;&lt;span class=&quot;math inline&quot;&gt;\(P(x_p \geq x_{(e)}) = 1-\alpha/2\)&lt;/span&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;In other words&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+\begin{align*}
+d &amp;amp;= \argmax_{1\leq r \leq n} P(x_{(r)} \leq x_p) \geq 1 - \frac{\alpha}{2} \\
+  &amp;amp;= \texttt{max(1,qbinom(alpha/2, size=n, prob=p))} \\
+e &amp;amp;= \argmin_{1\leq r \leq n} P(x_p \geq x_{(r)}) \geq 1 - \frac{\alpha}{2} \\
+  &amp;amp;= \texttt{min(n,qbinom(1-alpha/2, size=n, prob=p) + 1)}
+\end{align*}
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;Usually, there is a bit of fiddling around to ensure that the above also stays within the limits.&lt;/p&gt;
+&lt;p&gt;When it comes to confidence intervals for quantiles the set of alternatives is less extensive in R. Searching for this on CRAN, I found the following:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://finzi.psych.upenn.edu/R/library/MKmisc/html/quantileCI.html&quot;&gt;&lt;code&gt;MKMisc::quantileCI&lt;/code&gt;&lt;/a&gt; implements and exact but very slow &lt;span class=&quot;math inline&quot;&gt;\(O(n^2)\)&lt;/span&gt; search as well as an asymptotic method&lt;/li&gt;
+&lt;li&gt;the exact binomial method in &lt;a href=&quot;http://finzi.psych.upenn.edu/R/library/jmuOutlier/html/quantileCI.html&quot;&gt;&lt;code&gt;jmuOutlier::quantileCI&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;the [&lt;code&gt;envStats::eqnpar&lt;/code&gt;] function, which also computes the exact as well as the asymptotic method&lt;/li&gt;
+&lt;li&gt;the $Qtools::confint.midquantile` (which I don&#39;t understand).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;as.numeric&lt;/span&gt;(MKmisc::&lt;span class=&quot;kw&quot;&gt;quantileCI&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;x, &lt;span class=&quot;dt&quot;&gt;prob=&lt;/span&gt;p, &lt;span class=&quot;dt&quot;&gt;method=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;exact&amp;quot;&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;conf.level=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.95&lt;/span&gt;)$CI)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] -0.03377687  1.52483138&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;as.numeric&lt;/span&gt;(MKmisc::&lt;span class=&quot;kw&quot;&gt;quantileCI&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;x, &lt;span class=&quot;dt&quot;&gt;prob=&lt;/span&gt;p, &lt;span class=&quot;dt&quot;&gt;method=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;asymptotic&amp;quot;&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;conf.level=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.95&lt;/span&gt;)$CI)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] -0.03377687  1.52483138&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;as.numeric&lt;/span&gt;(jmuOutlier::&lt;span class=&quot;kw&quot;&gt;quantileCI&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;x, &lt;span class=&quot;dt&quot;&gt;probs=&lt;/span&gt;p, &lt;span class=&quot;dt&quot;&gt;conf.level=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.95&lt;/span&gt;)[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;lower&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;upper&amp;quot;&lt;/span&gt;)])&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] -0.03377687  1.52483138&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;as.numeric&lt;/span&gt;(EnvStats::&lt;span class=&quot;kw&quot;&gt;eqnpar&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;x, &lt;span class=&quot;dt&quot;&gt;p=&lt;/span&gt;p, &lt;span class=&quot;dt&quot;&gt;ci=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;TRUE&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;ci.method=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;exact&amp;quot;&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;approx.conf.level=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.95&lt;/span&gt;)$interval$limits)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] 0.2212113 2.6786278&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;as.numeric&lt;/span&gt;(EnvStats::&lt;span class=&quot;kw&quot;&gt;eqnpar&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;x, &lt;span class=&quot;dt&quot;&gt;p=&lt;/span&gt;p, &lt;span class=&quot;dt&quot;&gt;ci=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;TRUE&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;ci.method=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;normal.approx&amp;quot;&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;approx.conf.level=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.95&lt;/span&gt;)$interval$limits)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] -0.03377687  1.52483138&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;An impressive number of similar, but yet different results. Here is our take at this as developed in the &lt;code&gt;quantileCI&lt;/code&gt; package:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;devtools::&lt;span class=&quot;kw&quot;&gt;install_github&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;hoehleatsu/quantileCI&amp;quot;&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;quantileCI::&lt;span class=&quot;kw&quot;&gt;quantile_confint_nyblom&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;x, &lt;span class=&quot;dt&quot;&gt;p=&lt;/span&gt;p, &lt;span class=&quot;dt&quot;&gt;conf.level=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.95&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;interpolate=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;FALSE&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] -0.03377687  2.67862782&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;quantileCI::&lt;span class=&quot;kw&quot;&gt;quantile_confint_nyblom&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;x, &lt;span class=&quot;dt&quot;&gt;p=&lt;/span&gt;p, &lt;span class=&quot;dt&quot;&gt;conf.level=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.95&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;interpolate=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;TRUE&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] 0.1880843 2.6786278&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;quantileCI::&lt;span class=&quot;kw&quot;&gt;quantile_confint_boot&lt;/span&gt;(x, &lt;span class=&quot;dt&quot;&gt;p=&lt;/span&gt;p, &lt;span class=&quot;dt&quot;&gt;conf.level=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.95&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;R=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;999&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## [1] -0.0376499  1.2008637&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The first procedure should match the exact computations already known from the other package, when the &lt;code&gt;interpolate&lt;/code&gt; argument is set to true, additional interpolation between the two neighbouring order statistics is performed as suggested in the work of &lt;span class=&quot;citation&quot; data-cites=&quot;nyblom1992&quot;&gt;Nyblom (1992)&lt;/span&gt;, which extends work for the median by &lt;span class=&quot;citation&quot; data-cites=&quot;hettmansperger_sheather1986&quot;&gt;Hettmansperger and Sheather (1986)&lt;/span&gt;. The last call is to a basic bootstrap procedure, which resamples the data with replacement, computes the quantile using &lt;code&gt;type=3&lt;/code&gt; and then reports the 2.5% and 97.5% percentiles of this bootstrapped distribution. Such percentiles of the basic bootstrap are a popular way to get confidence intervals for the quantile, e.g., this is what we have used in &lt;span class=&quot;citation&quot; data-cites=&quot;hoehle_hoehle2008&quot;&gt;(&lt;span class=&quot;citeproc-not-found&quot; data-reference-id=&quot;hoehle_hoehle2008&quot;&gt;&lt;strong&gt;???&lt;/strong&gt;&lt;/span&gt;)&lt;/span&gt;. However, the procedure is not without problems (&lt;span class=&quot;citation&quot; data-cites=&quot;someref&quot;&gt;(&lt;span class=&quot;citeproc-not-found&quot; data-reference-id=&quot;someref&quot;&gt;&lt;strong&gt;???&lt;/strong&gt;&lt;/span&gt;)&lt;/span&gt;).&lt;/p&gt;
+&lt;h2 id=&quot;small-simulation-study-to-determine-coverage&quot;&gt;Small Simulation Study to Determine Coverage&lt;/h2&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;quantile_confints&lt;/span&gt;(x, &lt;span class=&quot;dt&quot;&gt;p=&lt;/span&gt;p, &lt;span class=&quot;dt&quot;&gt;conf.level=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.95&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##   jmuOutlier_exact EnvStats_Exact EnvStats_Asymptotic nyblom_exact nyblom_interp
+## 1      -0.03377687      0.2212113         -0.03377687  -0.03377687     0.1880843
+## 2       1.52483138      2.6786278          1.52483138   2.67862782     2.6786278
+##         boot
+## 1 -0.0376499
+## 2  1.2008637&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;co&quot;&gt;#&amp;#39; Simulation study comparing the confidence interval method by their coverage&lt;/span&gt;
+
+one_sim &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(n, &lt;span class=&quot;dt&quot;&gt;rfunc=&lt;/span&gt;rnorm, &lt;span class=&quot;dt&quot;&gt;qfunc=&lt;/span&gt;qnorm, &lt;span class=&quot;dt&quot;&gt;p=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.5&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;conf.level=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.95&lt;/span&gt;) {
+  ##Draw the sample and check the truth
+  x &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;sort&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;rfunc&lt;/span&gt;(n))
+  truth &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;qfunc&lt;/span&gt;(p)
+
+  ##Compute confidence intervals for all methods
+  cis &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;quantile_confints&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;x=&lt;/span&gt;x, &lt;span class=&quot;dt&quot;&gt;p=&lt;/span&gt;p, &lt;span class=&quot;dt&quot;&gt;conf.level=&lt;/span&gt;conf.level, &lt;span class=&quot;dt&quot;&gt;x_is_sorted=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;TRUE&lt;/span&gt;)
+
+  ##Check if intervals cover the true value
+  covers &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(cis[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,] &amp;lt;=&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;truth) &amp;amp;&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(cis[&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;,] &amp;gt;=&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;truth)
+  covers
+}
+
+&lt;span class=&quot;co&quot;&gt;# Perform simulation studies for different n and p&amp;#39;s&lt;/span&gt;
+y &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;apply&lt;/span&gt;(pbapply::&lt;span class=&quot;kw&quot;&gt;pbreplicate&lt;/span&gt;(&lt;span class=&quot;fl&quot;&gt;1e3&lt;/span&gt;,&lt;span class=&quot;kw&quot;&gt;one_sim&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;11&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;p=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.5&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;conf.level=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.95&lt;/span&gt;)),&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;),mean)
+y&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##   jmuOutlier_exact EnvStats_Exact EnvStats_Asymptotic nyblom_exact nyblom_interp boot
+## 1            0.988           0.93               0.961        0.988         0.952 0.93
+##   hs_interp
+## 1     0.951&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;co&quot;&gt;#apply(pbapply::pbreplicate(1e3,one_sim(n=25,p=0.8,conf.level=0.95)),c(1,2),mean)&lt;/span&gt;
+
+&lt;span class=&quot;co&quot;&gt;#y &amp;lt;- apply(pbapply::pbreplicate(1e3,one_sim(n=39,p=0.9,conf.level=0.95)),c(1,2),mean)&lt;/span&gt;
+&lt;span class=&quot;co&quot;&gt;#y &amp;lt;- apply(pbapply::pbreplicate(1e3,one_sim(n=11,p=0.5,conf.level=0.95)),c(1,2),mean)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;library&lt;/span&gt;(formattable)
+&lt;span class=&quot;kw&quot;&gt;formattable&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;data.frame&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;coverage=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;as.numeric&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;t&lt;/span&gt;(y))), &lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(
+&lt;span class=&quot;kw&quot;&gt;area&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;col =&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(coverage) ~&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;normalize_bar&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;pink&amp;quot;&lt;/span&gt;, &lt;span class=&quot;kw&quot;&gt;max&lt;/span&gt;(coverage)))
+))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;table class=&quot;table table-condensed&quot;&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&quot;text-align:right;&quot;&gt;
+coverage
+&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align:right;&quot;&gt;
+0.988
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align:right;&quot;&gt;
+0.930
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align:right;&quot;&gt;
+0.961
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align:right;&quot;&gt;
+0.988
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align:right;&quot;&gt;
+0.952
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align:right;&quot;&gt;
+0.930
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align:right;&quot;&gt;
+0.951
+&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h1 id=&quot;conclusion-and-future-work&quot;&gt;Conclusion and Future Work&lt;/h1&gt;
+&lt;p&gt;Altogether, it was a little surprising to see little surprised Which function to pick?&lt;/p&gt;
+&lt;h1 id=&quot;references&quot; class=&quot;unnumbered&quot;&gt;References&lt;/h1&gt;
+&lt;div id=&quot;refs&quot; class=&quot;references&quot;&gt;
+&lt;div id=&quot;ref-hettmansperger_sheather1986&quot;&gt;
+&lt;p&gt;Hettmansperger, T. P., and S. J Sheather. 1986. “Confidence Intervals Based on Interpolated Order Statistics.” &lt;em&gt;Statistics and Probability Letters&lt;/em&gt; 4: 75–79.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-hyndman_fan1996&quot;&gt;
+&lt;p&gt;Hyndman, R. J., and Y. Fan. 1996. “Sample Quantiles in Statistical Packages.” &lt;em&gt;American Statistician&lt;/em&gt; 50 (4): 361–65.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-nyblom1992&quot;&gt;
+&lt;p&gt;Nyblom, J. 1992. “Note in Interpolated Order Statistics.” &lt;em&gt;Statistics and Probability Letters&lt;/em&gt; 14: 129–31.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Mon, 17 Oct 2016 00:00:00 +0200</pubDate>
+        <link>http://staff.math.su.se/hoehle/blog/2016/10/17/quantileCI.html</link>
+        <guid isPermaLink="true">http://staff.math.su.se/hoehle/blog/2016/10/17/quantileCI.html</guid>
+        
+        <category>dataviz</category>
+        
+        <category>rstats</category>
+        
+        <category>stats</category>
+        
+        
+      </item>
     
       <item>
         <title>Cartograms with R</title>
@@ -91,7 +293,7 @@ grid::&lt;span class=&quot;kw&quot;&gt;grid.text&lt;/span&gt;(&lt;span class=&qu
 &lt;figure&gt;
 &lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-10-10-cartograms/CARTOGRAM-1.png&quot; /&gt;
 &lt;/figure&gt;
-&lt;p&gt;With the cartogram functionality now being directly available through R allows one to embedd cartogram making in a full R pipeline. We illustrate this by generating a sequence of cartograms into an animated GIF file using the &lt;code&gt;animation&lt;/code&gt; package. The animation below shows a cartogram for the population size for each of the 32 age group in the Berlin data set. One observes that the 25-45 year old tend to live in the city centre, while the 95-110 year old seem to concentrate in the wealthy regions in the south west.&lt;/p&gt;
+&lt;p&gt;With the cartogram functionality now being directly available through R allows one to embedd cartogram making in a full R pipeline. We illustrate this by generating a sequence of cartograms into an animated GIF file using the &lt;code&gt;animation&lt;/code&gt; package. The animation below shows a cartogram for the population size for each of the 32 age groups in the Berlin data set. One observes that the 25-45 year old tend to live in the city centre, while the 95-110 year old seem to concentrate in the wealthy regions in the south west.&lt;/p&gt;
 &lt;figure&gt;
 &lt;img src=&quot;/hoehle/blog/figure/source/2016-10-10-cartograms/pop-cartograms.gif&quot; /&gt;
 &lt;/figure&gt;
@@ -128,7 +330,7 @@ grid::&lt;span class=&quot;kw&quot;&gt;grid.text&lt;/span&gt;(&lt;span class=&qu
       <item>
         <title>Surveillance Out of the Box - The #Zombie Experiment</title>
         <description>&lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
-&lt;p&gt;We perform a social experiment to investigate, if zombie related twitter posts can be used as a reliable indicator for an early warning system. We show how such a system can be set up almost out-of-the-box using R - a free software environment for statistical computing and graphics. &lt;strong&gt;Warning&lt;/strong&gt;: This blog entry contains toxic doses of Danish irony and sarcasm as well as disturbing graphs. &lt;strong&gt;Update&lt;/strong&gt;: The blog post was extended with additional data, graphs and text at 2016-10-09 23:24:01. Scroll to the end of the post for details.&lt;/p&gt;
+&lt;p&gt;We perform a social experiment to investigate, if zombie related twitter posts can be used as a reliable indicator for an early warning system. We show how such a system can be set up almost out-of-the-box using R - a free software environment for statistical computing and graphics. &lt;strong&gt;Warning&lt;/strong&gt;: This blog entry contains toxic doses of Danish irony and sarcasm as well as disturbing graphs. &lt;strong&gt;Update&lt;/strong&gt;: The blog post was extended with additional data, graphs and text at 2016-10-20 22:59:33. Scroll to the end of the post for details.&lt;/p&gt;
 &lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
 href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
@@ -163,7 +365,7 @@ safe_query &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;stringr::&lt;
 &lt;li&gt;each tweet is extended with a time stamp of the query-time&lt;/li&gt;
 &lt;li&gt;the entire result of each query us stored into a separate RDS-files using &lt;code&gt;saveRDS&lt;/code&gt;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;In a next step, all stored queries are loaded from the RDS files and put together. Subsequently, only the newest time stamped entry about each tweet is kept - this ensures that the re-tweeted counts are up-to-date and no post is counted twice. All these data wrangling operations are easily conducted using &lt;code&gt;dplyr&lt;/code&gt;. Of course a full database solution would have been more elegant, but R does the job just as well as long it&#39;s not millions of queries. Actually, in the example I&#39;m going to use the results of a single query. No matter the data backend, at the end of this pipeline we have a database of tweets.&lt;/p&gt;
+&lt;p&gt;In a next step, all stored queries are loaded from the RDS files and put together. Subsequently, only the newest time stamped entry about each tweet is kept - this ensures that the re-tweeted counts are up-to-date and no post is counted twice. All these data wrangling operations are easily conducted using &lt;code&gt;dplyr&lt;/code&gt;. Of course a full database solution would have been more elegant, but R does the job just as well as long it&#39;s not millions of queries. Actually, in the example we are going to use the results of a single query. No matter the data backend, at the end of this pipeline we have a database of tweets.&lt;/p&gt;
 &lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;co&quot;&gt;#Read the tweet database&lt;/span&gt;
 tw &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;readRDS&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;file=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;paste0&lt;/span&gt;(filePath,&lt;span class=&quot;st&quot;&gt;&amp;quot;Tweets-Database-&amp;quot;&lt;/span&gt;,safe_query,&lt;span class=&quot;st&quot;&gt;&amp;quot;-&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;2016-09-26&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;.RDS&amp;quot;&lt;/span&gt;))
 &lt;span class=&quot;kw&quot;&gt;options&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;width=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;300&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;tibble.width =&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;Inf&lt;/span&gt;)
@@ -249,12 +451,12 @@ New blog entry: Please RT to help me evaluate my &lt;a href=&quot;https://twitte
 &lt;/center&gt;
 &lt;p&gt;
 &lt;p&gt;
-&lt;h3 id=&quot;update-at-2016-10-09-232405&quot;&gt;Update at 2016-10-09 23:24:05&lt;/h3&gt;
+&lt;h3 id=&quot;update-at-2016-10-20-225937&quot;&gt;Update at 2016-10-20 22:59:37&lt;/h3&gt;
 &lt;p&gt;Below we show how the &lt;code&gt;#zombieattack&lt;/code&gt; series developed after the post was made public:&lt;/p&gt;
 &lt;figure&gt;
 &lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-09-25-sootb/ZOMBIEATTACK_UPDATED-1.png&quot; /&gt;
 &lt;/figure&gt;
-&lt;p&gt;The orange part of the bars indicates the fake outbreak tweet (1) as well as its retweets (10). It is obvious that despite the increased activity due to the fake outbreak tweets, no alarm was generated, because of them. In parts this is explained by the high activity during 20-21 Sep. A previous outbreak? No, advertisements of &lt;a href=&quot;https://www.etsy.com/listing/480088383/zombie-pin-up-badges-zombie-themed-gifts?ref=shop_home_feat_4&quot;&gt;zombie pinup badges on etsy&lt;/a&gt;. Since the EARS algorithm sequentially estimates the variance of the baseline counts, the peak on 20-21 Sep inflates the mean and variance and thus results in a high upperbound as long as it enters the baseline. Despite some extra activity 25-27 Sep due to the fake outbreak tweets, none of the days are above this bound. However, once the 20-21 Sep peak is out of the previous 7 days baseline, the alarm threshold decreases noticeably. We thus get an alarm for the peak on 30 September, even though it&#39;s not higher than the previous peak on 20-21 Sep and it appears to be caused by other phenomena not related to our fake outbreak. A more careful analysis of the tweets reveals that they are caused by a &lt;a href=&quot;http://charityfunrun2016.tumblr.com/post/149930159797/charity-fun-run-2016&quot;&gt;charity fun run&lt;/a&gt; near Kuala Lumpur with a &lt;a href=&quot;https://www.instagram.com/p/BK-_l8oDD38/&quot;&gt;zombie attack theme&lt;/a&gt;!&lt;/p&gt;
+&lt;p&gt;The orange part of the bars indicates the fake outbreak tweet (1) as well as its retweets (10). It is obvious that despite the increased activity due to the fake outbreak tweets, no alarm was generated because of them. In parts this is explained by the high activity during 20-21 Sep. A previous outbreak? No, advertisements of &lt;a href=&quot;https://www.etsy.com/listing/480088383/zombie-pin-up-badges-zombie-themed-gifts?ref=shop_home_feat_4&quot;&gt;zombie pinup badges on etsy&lt;/a&gt;. Since the EARS algorithm sequentially estimates the variance of the baseline counts, the peak on 20-21 Sep inflates the mean and variance and thus results in a high upperbound as long as it enters the baseline. Despite some extra activity 25-27 Sep due to the fake outbreak tweets, none of the days are above this bound. However, once the 20-21 Sep peak is out of the previous 7 days baseline, the alarm threshold decreases noticeably. We thus get an alarm for the peak on 30 September, even though it&#39;s not higher than the previous peak on 20-21 Sep and it appears to be caused by other phenomena not related to our fake outbreak. A more careful analysis of the tweets reveals that they are caused by a &lt;a href=&quot;http://charityfunrun2016.tumblr.com/post/149930159797/charity-fun-run-2016&quot;&gt;charity fun run&lt;/a&gt; near Kuala Lumpur with a &lt;a href=&quot;https://www.instagram.com/p/BK-_l8oDD38/&quot;&gt;zombie attack theme&lt;/a&gt;!&lt;/p&gt;
 &lt;p&gt;
 &lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;en&quot;&gt;
 &lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;
