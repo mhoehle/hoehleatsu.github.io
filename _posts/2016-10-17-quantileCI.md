@@ -6,23 +6,7 @@ bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
 ---
 
-```{r,include=FALSE,echo=FALSE,message=FALSE}
-##If default fig.path, then set it.
-if (knitr::opts_chunk$get("fig.path") == "figure/") {
-  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
-  knitr::opts_chunk$set(fig.path="figure/source/2016-10-17-quantileCI/")
-}
-fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
-filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2016-10-17-quantileCI/"
 
-knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='')
-options(width=90)
-library("dplyr")
-library("ggplot2")
-library("tidyr")
-library("methods")
-theme_set(theme_bw())
-```
 $$
 \newcommand{\bm}[1]{\boldsymbol{\mathbf{#1}}}
 \DeclareMathOperator*{\argmin}{arg\,min}
@@ -34,9 +18,7 @@ $$
 We discuss how to compute compute intervals for the median or any other quantile in R. In particular we are interested in the interpolated order statistic approach as suggested by @hettmansperger_sheather1986 and @nyblom1992. These suggestions compute intervals that have good coverage even in the small sample setting. A tiny R package `quantileCI` is written implementing them in order to make the methods available to a greater audience. A small simulation study is conducted to show the advantages of these suggestions.
 
 
-```{r,results='asis',echo=FALSE}
-cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"CARTOGRAM-1.png"),")")
-```
+![]({{ site.baseurl }}/figure/source/2016-10-17-quantileCI/CARTOGRAM-1.png )
 
 {% include license.html %}
 
@@ -58,20 +40,39 @@ where $\hat{F}$ is the (empirical cumulative distribution)[https://en.wikipedia.
  @hyndman_fan1996 prefers estimators interpolating between the two values of the order statistic with $\hat{F}$ just below and just above $p$. It is interesting that even [20 years after](http://robjhyndman.com/hyndsight/sample-quantiles-20-years-later/), there still is no universally accepted way to do this in different statistical software and the `type` argument of the `quantile` function in R has been a close friend when comparing results with SPSS or Stata users. In what follows we will, however, stick with the simple $x_{(\lceil n \cdot p\rceil)}$ estimator stated above. 
  
 Below is illustrated how one would use R to compute the empirical, say, 80% quantile of a sample: 
-```{r,FIX_SEED_VALUE,echo=FALSE}
-set.seed(as.integer(charToRaw("R")))
-```
-```{r}
+
+
+```r
 ##Make a tiny artificial dataset, say, it's the BMI z-score of 25 children
 sort(x <- rnorm(25))
+```
+
+```
+##  [1] -1.44090165 -1.40318433 -1.21953433 -0.95029549 -0.90398754 -0.66095890 -0.47801787
+##  [8] -0.43976149 -0.36174823 -0.34116984 -0.33047704 -0.31576897 -0.28904542 -0.03789851
+## [15] -0.03764990 -0.03377687  0.22121130  0.30331291  0.43716773  0.47435054  0.60897987
+## [22]  0.64611097  1.20086374  1.52483138  2.67862782
+```
+
+```r
 ##Define the quantile we want to consider
 p <- 0.8
 ##Since we know the true distribution we can easily find the true quantile
 (x_p <- qnorm(p))
 ```
+
+```
+## [1] 0.8416212
+```
 We can now compute the estimate for the $p$-quantile in the population either manually or using the `quantile` function with `type=1`:
-```{r}
+
+```r
 c(quantile=quantile(x, type=1, prob=p), manual=sort(x)[ceiling(length(x)*p)])
+```
+
+```
+## quantile.80%       manual 
+##    0.4743505    0.4743505
 ```
 
 ### Confidence interval for the quantile
@@ -116,7 +117,8 @@ When it comes to confidence interval for quantiles the set of alternative implem
 * the [`Qtools::confint.midquantile`](http://finzi.psych.upenn.edu/R/library/Qtools/html/confint.midquantile.html) procedure, which operates on the mid-quantile (whatever that is).
 * the [`asht::quantileTest`](http://finzi.psych.upenn.edu/R/library/asht/html/quantileTest.html) function
 
-```{r,results='hold'}
+
+```r
 as.numeric(MKmisc::quantileCI(x=x, prob=p, method="exact",conf.level=0.95)$CI)
 as.numeric(MKmisc::quantileCI(x=x, prob=p, method="asymptotic",conf.level=0.95)$CI)
 as.numeric(jmuOutlier::quantileCI(x=x, probs=p, conf.level=0.95)[1,c("lower","upper")])
@@ -125,18 +127,35 @@ as.numeric(EnvStats::eqnpar(x=x, p=p, ci=TRUE, ci.method="normal.approx",approx.
 as.numeric(asht::quantileTest(x=x,p=p,conf.level=0.95)$conf.int)
 ```
 
+```
+## [1] -0.03377687  1.52483138
+## [1] -0.03377687  1.52483138
+## [1] -0.03377687  1.52483138
+## [1] 0.2212113 2.6786278
+## [1] -0.03377687  1.52483138
+## [1] -0.03377687  2.67862782
+```
+
 An impressive number of similar, but yet, different results! To add to the confusion here is
 our take at this as developed in the `quantileCI` package available from github:
 
-```{r,eval=FALSE}
+
+```r
 devtools::install_github("hoehleatsu/quantileCI")
 ```
 
 The package provides three methods for computing confidence intervals for quantiles:
-```{r, results='hold'}
+
+```r
 quantileCI::quantile_confint_nyblom(x=x, p=p, conf.level=0.95,interpolate=FALSE)
 quantileCI::quantile_confint_nyblom(x=x, p=p, conf.level=0.95,interpolate=TRUE)
 quantileCI::quantile_confint_boot(x, p=p, conf.level=0.95,R=999, type=1)
+```
+
+```
+## [1] -0.03377687  2.67862782
+## [1] 0.07894831 1.54608644
+## [1] -0.0376499  1.2008637
 ```
 
 The first procedure with `interpolate=FALSE` implements the previously explained exact approach, which is also implemented in some of the other packages. However, when the `interpolate` argument is set to `TRUE`, an additional interpolation step between the two neighbouring order statistics is performed as suggested in the work of @nyblom1992, which extends work for the median by @hettmansperger_sheather1986. The last call in the above is to a basic bootstrap procedure, which resamples the data with replacement, computes the quantile using `type=1` and then reports the 2.5% and 97.5% percentiles of this bootstrapped distribution. Such percentiles of the basic bootstrap are a popular way to get confidence intervals for the quantile, e.g., this is what we have used in @hoehle_hoehle2009 for reporting robust accuracy measures of digital elevation models (DEMs). However, the bootstrap procedure is
@@ -144,33 +163,25 @@ not without problems (@someref).
 
 ## Small Simulation Study to Determine Coverage
 
-```{r,echo=FALSE}
-##Function to compare the different methods. quantile_confint3 is different in many cases!
-quantile_confints <- function(x, p, conf.level, x_is_sorted=FALSE) {
-  if (!x_is_sorted) { x <- sort(x)}
 
-  ##Compute the various confidence intervals as above
-  res <- data.frame(jmuOutlier_exact=as.numeric(jmuOutlier::quantileCI(x=x, probs=p, conf.level=conf.level)[1,c("lower","upper")]),
-                    EnvStats_exact=as.numeric(EnvStats::eqnpar(x=x, p=p, ci=TRUE, ci.method="exact",approx.conf.level=conf.level)$interval$limits),
-                    EnvStats_asymp=as.numeric(EnvStats::eqnpar(x=x, p=p, ci=TRUE, ci.method="normal.approx",approx.conf.level=conf.level)$interval$limits),
-                    asht_quantTest=as.numeric(asht::quantileTest(x=x,p=p,conf.level=conf.level)$conf.int),
-                    nyblom_exact=quantileCI::quantile_confint_nyblom(x=x, p=p, conf.level=conf.level,x_is_sorted=TRUE,interpolate=FALSE),
-                    nyblom_interp=quantileCI::quantile_confint_nyblom(x=x, p=p, conf.level=conf.level,x_is_sorted=TRUE,interpolate=TRUE),
-                    boot=quantileCI::quantile_confint_boot(x, p=p, conf.level=conf.level,R=999)
-  )
-  if (p == 0.5) {
-    res$hs_interp = quantileCI::median_confint_hs(x=x,  conf.level=conf.level,x_is_sorted=TRUE,interpolate=TRUE)
-  }
-  return(res)
-}
-```
 
 We implement a function, which for a given sample `x` computes confidence intervals using a selection of the above described procedures: 
-```{r}
+
+```r
 quantile_confints(x, p=p, conf.level=0.95)
 ```
 
-```{r,SIMSTUDY}
+```
+##   jmuOutlier_exact EnvStats_exact EnvStats_asymp asht_quantTest nyblom_exact
+## 1      -0.03377687      0.2212113    -0.03377687    -0.03377687  -0.03377687
+## 2       1.52483138      2.6786278     1.52483138     2.67862782   2.67862782
+##   nyblom_interp        boot
+## 1    0.07894831 -0.03377687
+## 2    1.54608644  1.26565726
+```
+
+
+```r
 #' Computing the coverage of different confidence interval methods by Monte Carlo integration.
 #' @param n Size of the sample to generate in the simulation
 #' @param rfunc Function for generating the samples
@@ -192,33 +203,58 @@ one_sim <- function(n, rfunc=rnorm, qfunc=qnorm, p=0.5, conf.level=0.95, ...) {
 }
 ```
 
-We can now compare the coverage of the different implementation for the particular `n`=25 and `p`=`r p` setting.
-```{r, SIMSTUDY_N25_p80}
+We can now compare the coverage of the different implementation for the particular `n`=25` and `p` = 0.8 setting.
+
+```r
 nSim <- 1e3
 apply(pbapply::pbreplicate(nSim,one_sim(n=25,p=p,conf.level=0.95)),c(1,2),mean)
 ```
 
+```
+##   jmuOutlier_exact EnvStats_exact EnvStats_asymp asht_quantTest nyblom_exact
+## 1            0.943          0.951          0.943          0.972        0.972
+##   nyblom_interp boot
+## 1         0.936 0.92
+```
+
 We note that the `EnvStats_exact` procedure has a lower coverage than the nominal required level, it must thus implement a slightly different procedure than described above. Note that the `nyblom_interp` procedure is closer to the nominal coverage than it's exact cousin and the worst results are obtained by the bootstrap percentile method. 
 
-```{r, SIMSTUDY_N11_MEDIAN, cache=TRUE}
+
+```r
 #Median in a sample of size 11, but
 apply(pbapply::pbreplicate(nSim,
                            one_sim(n=11,p=0.5,
                                    conf.level=0.95)),c(1,2),mean)
 ```
 
-In this study for the median, the original @hettmansperger_sheather1986 procedure implemented as `quantileCI::median_confint_hs` and shown as `hs_interp` is also included in the comparison. Note that the @nyblom1992 procedure for  `nyblom_interp`, which in this setting should boil down to the same procedure. 
+```
+##   jmuOutlier_exact EnvStats_exact EnvStats_asymp asht_quantTest nyblom_exact
+## 1            0.986          0.933          0.963          0.986        0.986
+##   nyblom_interp  boot hs_interp
+## 1         0.948 0.933     0.948
+```
+
+In this study for the median, the @hettmansperger_sheather1986 procedure (`hs_interp`) is also compared with. We are somewhat suprised by the difference between this value and `nyblom_interp`, which in this setting should boil down to the same procedure. 
 
 From the @nyblom1992 paper:
-```{r, SIMSTUDY_N11_p25, cache=TRUE}
+
+```r
 apply(pbapply::pbreplicate(nSim,
                            one_sim(n=11,p=0.25,
                                    conf.level=0.9)),c(1,2),mean)
 ```
 
+```
+##   jmuOutlier_exact EnvStats_exact EnvStats_asymp asht_quantTest nyblom_exact
+## 1            0.914          0.761           0.84          0.914        0.914
+##   nyblom_interp  boot
+## 1         0.891 0.878
+```
+
 Finally, a setup with a large sample:
 
-```{r, SIMSTUDY_N101_MEDIAN, cache=TRUE}
+
+```r
 #Median in a sample of size 101, but now using the t-distribution
 apply(pbapply::pbreplicate(nSim,
                            one_sim(n=101,p=0.5,
@@ -227,16 +263,16 @@ apply(pbapply::pbreplicate(nSim,
                                    conf.level=0.95)),c(1,2),mean)
 ```
 
+```
+##   jmuOutlier_exact EnvStats_exact EnvStats_asymp asht_quantTest nyblom_exact
+## 1            0.953          0.939          0.939          0.953        0.953
+##   nyblom_interp  boot hs_interp
+## 1         0.948 0.948     0.948
+```
+
 One recognizes that the bootstrap procedure works just fine here. 
 
-```{r,eval=FALSE,echo=FALSE}
-#y <- apply(pbapply::pbreplicate(1e3,one_sim(n=39,p=0.9,conf.level=0.95)),c(1,2),mean)
-#y <- apply(pbapply::pbreplicate(1e3,one_sim(n=11,p=0.5,conf.level=0.95)),c(1,2),mean)
-library(formattable)
-formattable(data.frame(coverage=as.numeric(t(y))), list(
-area(col = c(coverage) ~ normalize_bar("pink", max(coverage)))
-))
-```
+
 
 # Conclusion and Future Work
 
