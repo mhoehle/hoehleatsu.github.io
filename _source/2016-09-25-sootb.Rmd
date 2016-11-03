@@ -111,7 +111,7 @@ saveRDS(tw, file=paste0(filePath,"Tweets-Database-",safe_query,"-",Sys.Date(),".
 
 ```{r}
 #Read the tweet database
-tw <- readRDS(file=paste0(filePath,"Tweets-Database-",safe_query,"-","2016-09-26",".RDS"))
+tw <- readRDS(file=paste0(filePath,"Tweets-Database-",safe_query,"-","2016-09-25",".RDS"))
 options(width=300,tibble.width = Inf)
 tw %>% select(created_at, retweet_count,screen_name,text,hashtags,query_at)
 ```
@@ -190,7 +190,7 @@ We are now ready to apply a surveillance algorithm to the pre-processed time ser
 $$
 \begin{align*}
 \bar{y}_s             &= \frac{1}{7} \sum_{t=s-8}^{s-1} y_t, \\
-\operatorname{sd}_s   &= \frac{1}{7-1} \sum_{t=s-8}^{s-1} (y_t - \bar{y}_s)^2.
+\operatorname{sd}_s^2   &= \frac{1}{7-1} \sum_{t=s-8}^{s-1} (y_t - \bar{y}_s)^2.
 \end{align*}
 $$
 The algorithm then computes the z-statistic $\operatorname{C1}_s = (y_s - \bar{y}_s)/\operatorname{sd}_s$ for each time point to monitor. Once the value of this statistic is above 3 an alarm is flagged. This means that we assume that the previous 7 observations are what is to be expected when no unusual activity is going on. One can interpret the statistic as a transformation to (standard) normality: once the current observation is too extreme under this model an alarm is sounded. Such normal-approximations are justified given the large number of daily counts in the zombie series we consider, but does not take secular trends or day of the week effects into account. Note also that the calculations can also be reversed in order to determine how large the number of observations needs to be in order to generate an alarm (shown as a red line in the graph). 
@@ -280,7 +280,7 @@ Below we show how the `#zombieattack` series developed after the post was made p
 #The one used for the latest post
 tw <- readRDS(file=paste0(filePath,"Tweets-Database-",safe_query,"-","2016-10-02",".RDS"))
 #tw <- readRDS(file=paste0(filePath,"Tweets-Database-",safe_query,"-","2016-10-18",".RDS"))
-
+#tw <- readRDS(file=paste0(filePath,"Tweets-Database-",safe_query,"-","2016-10-29",".RDS"))
 
 #Work the zombie attack series
 zombieattack_updated <- df_2_timeseries(tw, the_query_subset = "#zombieattack") %>% scale_up_last_day
