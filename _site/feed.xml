@@ -6,9 +6,86 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 03 Nov 2016 00:08:34 +0100</pubDate>
-    <lastBuildDate>Thu, 03 Nov 2016 00:08:34 +0100</lastBuildDate>
+    <pubDate>Sun, 11 Dec 2016 01:00:15 +0100</pubDate>
+    <lastBuildDate>Sun, 11 Dec 2016 01:00:15 +0100</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
+    
+      <item>
+        <title>R-Hackathoning - The finisher&#39;s guide</title>
+        <description>&lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
+&lt;p&gt;We present experiences from organizing a small R hackathon aimed at advancing knowledge and documentation of the R package &lt;code&gt;surveillance&lt;/code&gt;. The hackathon was piggybacked on a conference visited by current and potential package users in the area of infectious disease epidemiology.. The output of the hackathon can be found at &lt;a href=&quot;https://surveillancer.github.io/tutorials/&quot; class=&quot;uri&quot;&gt;https://surveillancer.github.io/tutorials/&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
+&lt;p&gt;A &lt;strong&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Hackathon&quot;&gt;hackathon&lt;/a&gt;&lt;/strong&gt; is a extreme-programming sprint-like event where people involved in software development and beyond meet for a short period of time with the purpose of collaboriative programming, typically in &lt;strong&gt;open-source&lt;/strong&gt;. The word hackathon is a merger of &lt;strong&gt;hack&lt;/strong&gt; and &lt;strong&gt;marathon&lt;/strong&gt;, where &lt;a href=&quot;http://www.dictionary.com/browse/hack&quot;&gt;&lt;em&gt;hacking&lt;/em&gt;&lt;/a&gt; is to be understood as the skilfull modification of computer programs (and not the malicious circumvention of security measures). Lots of good guides have been written on &lt;a href=&quot;https://hackathon.guide/&quot;&gt;how to run a successful Hackathon&lt;/a&gt;. In our area of application &lt;strong&gt;infectious disease epidemiology&lt;/strong&gt; - the standard for hackathons are the &lt;a href=&quot;https://sites.google.com/site/hackoutwiki/home&quot;&gt;hackout&lt;/a&gt;, &lt;a href=&quot;https://sites.google.com/site/hackout2/&quot;&gt;hackout2&lt;/a&gt;, &lt;a href=&quot;http://hackout3.ropensci.org/&quot;&gt;hackout3&lt;/a&gt; events organized by &lt;a href=&quot;http://www.imperial.ac.uk/people/t.jombart&quot;&gt;Thibaut Jombart&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;This blog post reports our experiences from organising a small &lt;strong&gt;4x3 hackathon&lt;/strong&gt; (4 people, 3 days) for the surveillance R-package in connection with the &lt;a href=&quot;http://ecdc.europa.eu/en/escaide/Pages/ESCAIDE.aspx&quot;&gt;ESCAIDE2016&lt;/a&gt; conference.&lt;/p&gt;
+&lt;h2 id=&quot;organizing-and-running-the-hackathon&quot;&gt;Organizing and Running the Hackathon&lt;/h2&gt;
+&lt;h3 id=&quot;why&quot;&gt;Why?&lt;/h3&gt;
+&lt;p&gt;Over the last several years we worked on a package for the visualization, modelling and monitoring of routine collected surveillance time series. As most of us are busy with other tasks now, it felt like a good idea to meet in person to work a little on the package and network with potential users in order to increase awareness of the package. The 10&#39;th European Scientific Conference on Applied Infectious Disease Epidemiology (&lt;a href=&quot;http://ecdc.europa.eu/en/escaide/Pages/ESCAIDE.aspx&quot;&gt;ESCAIDE2016&lt;/a&gt;) organized by the &lt;a href=&quot;http://ecdc.europa.eu&quot;&gt;European Centre for Disease Prevention and Control&lt;/a&gt; in Stockholm 28-30 Nov 2016 in Stockholm Sweden with its about 600 participants, felt like the right place to be.&lt;/p&gt;
+&lt;h3 id=&quot;a-cool-name&quot;&gt;A Cool Name?&lt;/h3&gt;
+&lt;p&gt;Stockholm is placed on the 59th parallel north, hence, during November daylight is limited to about &lt;a href=&quot;http://www.timeanddate.com/sun/sweden/stockholm&quot;&gt;6:30 hours&lt;/a&gt;. In other words: Perfect hacking conditions and to honour this &lt;strong&gt;Hack in the Dark&lt;/strong&gt; became our internal handle for the hackathon.&lt;/p&gt;
+&lt;h3 id=&quot;what-to-do&quot;&gt;What to do?&lt;/h3&gt;
+&lt;p&gt;We started about 8 weeks before the hackathon to brainstorm using &lt;a href=&quot;https://slack.com/&quot;&gt;slack&lt;/a&gt; as a messaging system. We then created a priority matrix in &lt;a href=&quot;http://docs.google.com&quot;&gt;google docs&lt;/a&gt; allowing each of the participants to prioritize the ideas. This gave us an initial idea of what we wanted to do. Unfortunately, most of us then got pretty busy with other activities so we never managed to revisit the matrix until a couple of days before the start of the hackathon and recapitulated matters in an &amp;quot;indian buffet process&amp;quot; meeting in Stockholm at the night before the hackathon:&lt;/p&gt;
+&lt;ol type=&quot;1&quot;&gt;
+&lt;li&gt;Write a couple of i/o tutorials promoting how to get data into the package format and use various package functions on them&lt;/li&gt;
+&lt;li&gt;Use Open European Data for the tutorials - the theme of the ESCAIDE2016 conference was after all: &lt;strong&gt;Data for action&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;Make a shiny app to visualize the effect of chosing various parameters choices for the surveillance algorithms. The best choice of configuration parameters has been the main question throughout the years and unfortunately, the answer is mostly: it depends...&lt;/li&gt;
+&lt;li&gt;Demo twitter surveillance by monitoring the conference hashtag.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&quot;venue&quot;&gt;Venue?&lt;/h3&gt;
+&lt;p&gt;Piggybacking on an existing conference in a conference centre meant we had to worry little about WLAN, food and seating.&lt;/p&gt;
+&lt;h3 id=&quot;source-code-management&quot;&gt;Source Code Management&lt;/h3&gt;
+&lt;p&gt;We chose to create an organization &lt;strong&gt;surveillancer&lt;/strong&gt; on &lt;a href=&quot;http://www.github.com&quot;&gt;github&lt;/a&gt;, which we then all joined with our individual github accounts. All new projects were then conducted by initiating new repositories. The &lt;code&gt;surveillance&lt;/code&gt; package itself is still developed on &lt;a href=&quot;http://www.r-forge.r-project.org&quot;&gt;R-Forge&lt;/a&gt; using &lt;code&gt;svn&lt;/code&gt;, but since we knew most of our work would be &lt;em&gt;using&lt;/em&gt; the package and less &lt;em&gt;developing&lt;/em&gt; the package, we decided to keep the existing infrastructure for the package and develop the planned tutorials and visualizations in a new github project. This worked ok, but switching between &lt;code&gt;svn&lt;/code&gt; and &lt;code&gt;git&lt;/code&gt; for commits on different projects was not always helpful: &lt;code&gt;git commit -a&lt;/code&gt; is a useful friend if you don&#39;t know the git staging area...&lt;/p&gt;
+&lt;h3 id=&quot;project-output-format&quot;&gt;Project Output Format?&lt;/h3&gt;
+&lt;p&gt;We decided to use an R package structure together with &lt;a href=&quot;https://hadley.github.io/pkgdown/&quot;&gt;pkgdown&lt;/a&gt; in order to create a website containing all hackathon output. The tutorials were then created as vignettes of this package - an immediate consequence of having this on github was that all code was then directly available for the interested user.&lt;/p&gt;
+&lt;h3 id=&quot;demo-demo-demo&quot;&gt;Demo, demo, demo!&lt;/h3&gt;
+&lt;p&gt;Inspired by the extreme programming paradigm and because we wanted to interact with the conference, we decided to demo at least once a day by posting some output of the hackathon on twitter. Besides the outgoing publicity we also frequently demo&#39;ed internally in order to get input and suggestions. This worked pretty well - there is nothing as motivating as getting input and suggestions frequently!&lt;/p&gt;
+&lt;p&gt;Interaction with the other conference participants was only moderate. In hindsights we maybe should have aimed for a poster presentation or a related activitity in order to generate a more IRL awareness at the hackathon outside the virtual world of twitter.&lt;/p&gt;
+&lt;h2 id=&quot;summary&quot;&gt;Summary&lt;/h2&gt;
+&lt;p&gt;Altogether, the three days passed quickly and we managed to get the four formulated goals of the hackathon done. Such intense software sprints are hard work, so towards the end the motivation and concentration decreased slightly. However, phases of intense coding are perfectly supplemented by listening to scientifc talks to boost motivation, talk to former colleagues or share the passion of R with others working in the field.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Advertisement: RECON. More R in the field.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Thus, it is important to have breaks from being a team, focus on social aspects and do not ignore fresh air &amp;amp; sunlight completely. Actually, to our surprise the 6:30 hours of daylight were actually quite sunny in Stockholm!&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Recommendation: Put a code session as part of conferences. The hacking session?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The output of our hackathon can be found here:&lt;/p&gt;
+&lt;center&gt;
+&lt;a href=&quot;https://surveillancer.github.io/tutorials/&quot; class=&quot;uri&quot;&gt;https://surveillancer.github.io/tutorials/&lt;/a&gt;
+&lt;/center&gt;
+&lt;p&gt;
+&lt;p&gt;As an appetizer to actually check out the site, here are two of our tweets:&lt;/p&gt;
+&lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;en&quot;&gt;
+&lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;
+First draft output of the &lt;a href=&quot;https://twitter.com/hashtag/ESCAIDE2016?src=hash&quot;&gt;#ESCAIDE2016&lt;/a&gt; surveillance &lt;a href=&quot;https://twitter.com/hashtag/rstats?src=hash&quot;&gt;#rstats&lt;/a&gt; hackathon: Visualizing &lt;a href=&quot;https://twitter.com/hashtag/opendata?src=hash&quot;&gt;#opendata&lt;/a&gt; by &lt;a href=&quot;https://twitter.com/ECDC_EU&quot;&gt;&lt;span class=&quot;citation&quot; data-cites=&quot;ECDC_EU&quot;&gt;(&lt;span class=&quot;citeproc-not-found&quot; data-reference-id=&quot;ECDC_EU&quot;&gt;&lt;strong&gt;???&lt;/strong&gt;&lt;/span&gt;)&lt;/span&gt;&lt;/a&gt; on Salmonella Agona. &lt;a href=&quot;https://twitter.com/hashtag/data4action?src=hash&quot;&gt;#data4action&lt;/a&gt; &lt;a href=&quot;https://t.co/8ApaDNF07L&quot;&gt;pic.twitter.com/8ApaDNF07L&lt;/a&gt;
+&lt;/p&gt;
+— Michael Höhle (@m_hoehle) &lt;a href=&quot;https://twitter.com/m_hoehle/status/803270577150631937&quot;&gt;November 28, 2016&lt;/a&gt;
+&lt;/blockquote&gt;
+&lt;script async src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+&lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;en&quot;&gt;
+&lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;
+Interactive illustration of monitoring algorithms for infectious disease surveillance &lt;a href=&quot;https://twitter.com/hashtag/escaide2016?src=hash&quot;&gt;#escaide2016&lt;/a&gt; &lt;a href=&quot;https://twitter.com/hashtag/rstats?src=hash&quot;&gt;#rstats&lt;/a&gt; &lt;a href=&quot;https://t.co/qizcqqMbEJ&quot;&gt;https://t.co/qizcqqMbEJ&lt;/a&gt; &lt;a href=&quot;https://t.co/LyZujDLsF2&quot;&gt;pic.twitter.com/LyZujDLsF2&lt;/a&gt;
+&lt;/p&gt;
+— Dirk Schumacher (@dirk_sch) &lt;a href=&quot;https://twitter.com/dirk_sch/status/803573405660286976&quot;&gt;November 29, 2016&lt;/a&gt;
+&lt;/blockquote&gt;
+&lt;script async src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+&lt;h2 id=&quot;acknowledgements&quot;&gt;Acknowledgements&lt;/h2&gt;
+&lt;p&gt;Thanks to &lt;a href=&quot;http://www.masalmon.eu/&quot;&gt;Maëlle Salmon&lt;/a&gt;, &lt;a href=&quot;https://www.dirk-schumacher.net/&quot;&gt;Dirk Schumacher&lt;/a&gt; and &lt;a href=&quot;http://www.imbe.med.uni-erlangen.de/cms/sebastian_meyer.html&quot;&gt;Sebastian Meyer&lt;/a&gt; for all their great work and the creative atmosphere during the hackathon! The event was implicitly supported by the Swedish Research Council as part of the project Statistical Modelling, Monitoring and Predictive Analytics against Infectious Disease Outbreaks (grant number 2015-05182_VR).&lt;/p&gt;
+&lt;div id=&quot;refs&quot; class=&quot;references&quot;&gt;
+
+&lt;/div&gt;
+</description>
+        <pubDate>Sun, 11 Dec 2016 00:00:00 +0100</pubDate>
+        <link>http://staff.math.su.se/hoehle/blog/2016/12/11/hackinthedark.html</link>
+        <guid isPermaLink="true">http://staff.math.su.se/hoehle/blog/2016/12/11/hackinthedark.html</guid>
+        
+        <category>rstats</category>
+        
+        <category>stats</category>
+        
+        <category>programming</category>
+        
+        
+      </item>
     
       <item>
         <title>Better Confidence Intervals for Quantiles</title>
@@ -1818,126 +1895,6 @@ df &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;
         <pubDate>Sun, 22 May 2016 00:00:00 +0200</pubDate>
         <link>http://staff.math.su.se/hoehle/blog/2016/05/22/proofCalculation.html</link>
         <guid isPermaLink="true">http://staff.math.su.se/hoehle/blog/2016/05/22/proofCalculation.html</guid>
-        
-        <category>datascience</category>
-        
-        <category>rstats</category>
-        
-        <category>debugging</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>When Should One Stop Testing Software?</title>
-        <description>&lt;h1 id=&quot;abstract&quot;&gt;Abstract&lt;/h1&gt;
-&lt;p&gt;This is a small note rediscovering a gem published by S. R. Dalal and C. L. Mallows on treating the test of software in a statistical context (Dalal and Mallows, 1988). In their paper they answer the question on how long to continue testing your software before shipping. The problem is translated into a sequential decision problem, where an optimal stopping rule has to be found minimizing expected loss. We sketch the main result of their paper and apply their stopping rule to an example using R code.&lt;/p&gt;
-&lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
-href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
-&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
-&lt;p&gt;Imagine that a team of developers of a new R package needs to structure a test plan before the release of the package to CRAN. Let &lt;span class=&quot;math inline&quot;&gt;\(N\)&lt;/span&gt; be the (unknown) number of bugs in the package. The team starts their testing at time zero and subsequently find an increasing number of bugs as the test period passes by. The figure below shows such a testing process mimicking the example of Dalal and Mallows (1988) from the testing of a large software system at a telecommunications research company.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-05-06-when2stop/unnamed-chunk-1-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
-&lt;p&gt;We see that the number of bugs appears to level off. The question is now &lt;em&gt;how long should we continue testing before releasing&lt;/em&gt;? Dalal and Mallows (1988) give an intriguing statistical answer to this problem.&lt;/p&gt;
-&lt;h1 id=&quot;methodology&quot;&gt;Methodology&lt;/h1&gt;
-&lt;p&gt;In order to answer the above question the following notation and assumptions are introduced:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;The total number of bugs is assumed to be Poisson distributed &lt;span class=&quot;math display&quot;&gt;\[N \sim \text{Po}(\lambda).\]&lt;/span&gt; However, practice shows that the number of bugs in different modules has more variation that given by the Poisson distribution. Hence, let &lt;span class=&quot;math inline&quot;&gt;\(\lambda \sim \text{Ga}(\alpha,\beta)\)&lt;/span&gt; and thus the marginal distribution of &lt;span class=&quot;math inline&quot;&gt;\(N\)&lt;/span&gt; is negative binomial.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;The amount of time until discovery of each bug during the testing period is distributed according to the known distribution &lt;span class=&quot;math inline&quot;&gt;\(G\)&lt;/span&gt; with density &lt;span class=&quot;math inline&quot;&gt;\(g\)&lt;/span&gt;. Furthermore, it can be assumed that the discoveries times are independent of each other. Example : The simplest example is to assume that the discovery distribution is exponential, i.e. &lt;span class=&quot;math inline&quot;&gt;\(g(t)=\mu\exp(-\mu t)\)&lt;/span&gt;, where we measure time in number of person-days spent on the testing. Thus, &lt;span class=&quot;math inline&quot;&gt;\(1/\mu\)&lt;/span&gt; is the expected time until discovery of a bug.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Let &lt;span class=&quot;math inline&quot;&gt;\(K(t)\)&lt;/span&gt; be the total number of bugs found up to time &lt;span class=&quot;math inline&quot;&gt;\(t\)&lt;/span&gt;. In other words, if &lt;span class=&quot;math inline&quot;&gt;\(t_1,\ldots,t_N\)&lt;/span&gt; denote the discovery times of the &lt;span class=&quot;math inline&quot;&gt;\(N\)&lt;/span&gt; bugs then&lt;/p&gt;
-&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[K(t)=\sum_{i=1}^N I(t_i \leq t),\]&lt;/span&gt;&lt;/p&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;where &lt;span class=&quot;math inline&quot;&gt;\(I(\cdot)\)&lt;/span&gt; is the indicator function. However, note that at time point &lt;span class=&quot;math inline&quot;&gt;\(t\)&lt;/span&gt;, only bugs with a discovery time smaller or equal to &lt;span class=&quot;math inline&quot;&gt;\(t\)&lt;/span&gt; would already have been observed and, hence, would be known to exist (right-truncation). Thus, even though &lt;span class=&quot;math inline&quot;&gt;\(K(t)\)&lt;/span&gt; is proportional to the empirical cumulative distribution function of the discovery distribution &lt;span class=&quot;math inline&quot;&gt;\(\hat{G}(t)\)&lt;/span&gt;, the factor of proportionality is &lt;span class=&quot;math inline&quot;&gt;\(N\)&lt;/span&gt;, which is unknown at the time &lt;span class=&quot;math inline&quot;&gt;\(t\)&lt;/span&gt;.&lt;/p&gt;
-&lt;p&gt;Note: The paper actually showns that the Poisson-Gamma distribution assumption for &lt;span class=&quot;math inline&quot;&gt;\(N\)&lt;/span&gt; is not crucial. An asymptotic argument is given that as long as the process does not terminate quickly (i.e. the number of bugs is relatively large) the results hold for more general distributions of &lt;span class=&quot;math inline&quot;&gt;\(N\)&lt;/span&gt;. Hence, in the analysis that follows, the parameter &lt;span class=&quot;math inline&quot;&gt;\(\lambda\)&lt;/span&gt; is not needed as we only proceed with the asymptotic approach of the paper.&lt;/p&gt;
-&lt;h3 id=&quot;loss-function&quot;&gt;Loss function&lt;/h3&gt;
-&lt;p&gt;In order to make a decision about when to stop testing based on expected loss/gain we need two further assumptions:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;Let &lt;span class=&quot;math inline&quot;&gt;\(c\)&lt;/span&gt; be the net cost of fixing a bug &lt;em&gt;after&lt;/em&gt; release of the software instead of &lt;em&gt;before&lt;/em&gt; the release. Hence, &lt;span class=&quot;math inline&quot;&gt;\(c\)&lt;/span&gt; is the price of fixing a bug after release minus the price of fixing a bug before release. The practice of software development tells us that &lt;span class=&quot;math inline&quot;&gt;\(c&amp;gt;0\)&lt;/span&gt;.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Let &lt;span class=&quot;math inline&quot;&gt;\(f(t)\)&lt;/span&gt; be a known non-negative and monotone increasing function reflecting the cost of testing plus the opportunity cost of not releasing the software up to time &lt;span class=&quot;math inline&quot;&gt;\(t\)&lt;/span&gt;. Note that the cost of testing does not contain the costs of fixing bugs, once they are found. A simple example for &lt;span class=&quot;math inline&quot;&gt;\(f\)&lt;/span&gt; is the linear loss function, i.e. &lt;span class=&quot;math inline&quot;&gt;\(f(t) = f \cdot t\)&lt;/span&gt;, where &lt;span class=&quot;math inline&quot;&gt;\(f&amp;gt;0\)&lt;/span&gt; is a known constant.&lt;/p&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;The above assumptions in summary imply the analysis of the following loss function:&lt;/p&gt;
-&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[L(t,K(t),N) = f(t) - c K(t) + b\cdot N.\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;As time passes, one obtains information about the number of bugs found through &lt;span class=&quot;math inline&quot;&gt;\(K(t)\)&lt;/span&gt;. At each time point the following decision has to be made: stop testing &amp;amp; ship the package or continue to test. Seen in a statistical context this can be rephrased into formulating a stopping rule such that the above loss function is minimized.&lt;/p&gt;
-&lt;h3 id=&quot;optimal-stopping-time&quot;&gt;Optimal Stopping Time&lt;/h3&gt;
-&lt;p&gt;In the simple model with exponential discovery times having rate &lt;span class=&quot;math inline&quot;&gt;\(\mu\)&lt;/span&gt;, the stopping rule stated as equation (4.6) of Dalal and Mallows (1988) is to stop as soon as the number, &lt;span class=&quot;math inline&quot;&gt;\(k\)&lt;/span&gt;, of bugs found at time &lt;span class=&quot;math inline&quot;&gt;\(t\)&lt;/span&gt;, i.e. &lt;span class=&quot;math inline&quot;&gt;\(K(t)=k\)&lt;/span&gt;, is such that:&lt;/p&gt;
-&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
-\frac{f}{c}\cdot \frac{\exp(\mu t) -1}{\mu} \geq k.
-\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;At this time point, the estimated number of bugs left is Poisson with mean &lt;span class=&quot;math inline&quot;&gt;\(f/(c\mu)\)&lt;/span&gt;.&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;##########################################################################
-&lt;span class=&quot;co&quot;&gt;# Function describing the LHS of (4.6) in the Delal and Mallows article&lt;/span&gt;
-&lt;span class=&quot;co&quot;&gt;#&lt;/span&gt;
-&lt;span class=&quot;co&quot;&gt;# Parameters:&lt;/span&gt;
-&lt;span class=&quot;co&quot;&gt;#  fdivc - the quotient f/c&lt;/span&gt;
-&lt;span class=&quot;co&quot;&gt;#  mu    - the value of mu, this typically needs to be estimated from data&lt;/span&gt;
-&lt;span class=&quot;co&quot;&gt;#  testProcess - a data_frame containing the decision time points and the&lt;/span&gt;
-&lt;span class=&quot;co&quot;&gt;#               observed number of events&lt;/span&gt;
-##########################################################################
-lhs &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(fdivc,mu,testProcess) {
-  fdivc*(&lt;span class=&quot;kw&quot;&gt;exp&lt;/span&gt;(mu*testProcess$t)-&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;)/mu
-}&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;In the above, the quantity &lt;span class=&quot;math inline&quot;&gt;\(c/f\)&lt;/span&gt; measures the amount saved by finding a bug (and hence fixing it before release) measured in units of testing days. As an example: if &lt;span class=&quot;math inline&quot;&gt;\(c/f=0.2 \Leftrightarrow f/c=5\)&lt;/span&gt; then the gain in detecting a bug before release corresponds to 0.2 testing days. Throughout the subsequent example we shall work with both &lt;span class=&quot;math inline&quot;&gt;\(c/f=0.2\)&lt;/span&gt; (ship early and fix later is acceptable) and &lt;span class=&quot;math inline&quot;&gt;\(c/f=1\)&lt;/span&gt; (high costs of fixing bugs afte r the release).&lt;/p&gt;
-&lt;h1 id=&quot;example&quot;&gt;Example&lt;/h1&gt;
-&lt;p&gt;Taking the testing data from the above figure, the first step consists of estimating &lt;span class=&quot;math inline&quot;&gt;\(\mu\)&lt;/span&gt; from the available data. It is important to realize that the available data are a right-truncated sample, because only errors with a discovery time smaller than the current observation time are observed. Furthermore, if only data on the daily number of bug discoveries are available, then the data are also interval censored. We set up the loglikelihood function accordingly.&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;#######################################################
-&lt;span class=&quot;co&quot;&gt;#Log-likelihood function to maximize, which handles the&lt;/span&gt;
-&lt;span class=&quot;co&quot;&gt;#right truncation and interval censoring.&lt;/span&gt;
-&lt;span class=&quot;co&quot;&gt;# Paramers:&lt;/span&gt;
-&lt;span class=&quot;co&quot;&gt;#  theta - \log(\mu).&lt;/span&gt;
-&lt;span class=&quot;co&quot;&gt;#  testProcess - data_frame containing the observed data&lt;/span&gt;
-&lt;span class=&quot;co&quot;&gt;#  tC - the right-censoring time.&lt;/span&gt;
-########################################################
-ll &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(theta, testProcess, &lt;span class=&quot;dt&quot;&gt;tC=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;max&lt;/span&gt;(testProcess$t)) {
-  mu &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;exp&lt;/span&gt;(theta)
-  &lt;span class=&quot;co&quot;&gt;#Daily number of *new* bug discoveries. .&lt;/span&gt;
-  DeltaK &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;,&lt;span class=&quot;kw&quot;&gt;diff&lt;/span&gt;(testProcess$K))
-  &lt;span class=&quot;co&quot;&gt;#CDF function taking the right-truncation into account&lt;/span&gt;
-  CDF &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(x) &lt;span class=&quot;kw&quot;&gt;pexp&lt;/span&gt;(x,&lt;span class=&quot;dt&quot;&gt;rate=&lt;/span&gt;mu)/&lt;span class=&quot;kw&quot;&gt;pexp&lt;/span&gt;(tC,&lt;span class=&quot;dt&quot;&gt;rate=&lt;/span&gt;mu)
-  &lt;span class=&quot;co&quot;&gt;#Log-likelihood is equivalent to multinomial sampling with p being a func of mu.&lt;/span&gt;
-  p &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;CDF&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;:(&lt;span class=&quot;kw&quot;&gt;max&lt;/span&gt;(testProcess$t)+&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;)) -&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;CDF&lt;/span&gt;(testProcess$t)
-  &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;sum&lt;/span&gt;(DeltaK *&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;log&lt;/span&gt;(p)))
-}
-&lt;span class=&quot;co&quot;&gt;#Find MLE&lt;/span&gt;
-mle &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;optim&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;log&lt;/span&gt;(&lt;span class=&quot;fl&quot;&gt;0.01&lt;/span&gt;),ll, &lt;span class=&quot;dt&quot;&gt;testProcess=&lt;/span&gt;testProcess, &lt;span class=&quot;dt&quot;&gt;control=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;list&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;fnscale=&lt;/span&gt;-&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;),&lt;span class=&quot;dt&quot;&gt;method=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;BFGS&amp;quot;&lt;/span&gt;)
-mu.hat &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;exp&lt;/span&gt;(mle$par)
-&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;mu=&lt;/span&gt;mu, &lt;span class=&quot;dt&quot;&gt;mu.hat=&lt;/span&gt;mu.hat)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;pre&gt;&lt;code&gt;##         mu     mu.hat 
-## 0.02000000 0.01916257&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Note that we in the above used all data obtained over the entire testing period. In practice, one would instead sequentially update the &lt;span class=&quot;math inline&quot;&gt;\(\mu\)&lt;/span&gt; estimate each day as the information arrives -- see the animated sequential procedure in the next section.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-05-06-when2stop/unnamed-chunk-4-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;## Source: local data frame [1 x 5]
-## 
-##       t     K K_estimate     sol5     sol1
-##   (int) (dbl)      (dbl)    (dbl)    (dbl)
-## 1    82   989   990.8676 994.9211 198.9842&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The optimal stopping time in the example, in the case of &lt;span class=&quot;math inline&quot;&gt;\(f/c=5\)&lt;/span&gt;, is to stop the testing after 82 testing days. An estimate of the expected number of remaining bugs at this stopping time would be 260.9, which appears to agree quite well with the empirical data -- actually, they were simulated with &lt;span class=&quot;math inline&quot;&gt;\(N=1250\)&lt;/span&gt;.&lt;/p&gt;
-&lt;h1 id=&quot;animation&quot;&gt;Animation&lt;/h1&gt;
-&lt;p&gt;The animation belows shows the above computations in sequential fashion:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;At a given time &lt;span class=&quot;math inline&quot;&gt;\(t\)&lt;/span&gt; of the testing process, &lt;span class=&quot;math inline&quot;&gt;\(\hat{\mu}\)&lt;/span&gt; is determined from the curve of cumulative bugs found up to time &lt;span class=&quot;math inline&quot;&gt;\(t\)&lt;/span&gt;.&lt;/li&gt;
-&lt;li&gt;This &lt;span class=&quot;math inline&quot;&gt;\(\hat{\mu}\)&lt;/span&gt; estimate is then use to determine the intersecting curves as described above.&lt;/li&gt;
-&lt;li&gt;Once the &lt;span class=&quot;math inline&quot;&gt;\(K(t)\)&lt;/span&gt; curve and the curve for a given &lt;span class=&quot;math inline&quot;&gt;\(f/c\)&lt;/span&gt; ratio intersect, we would stop the testing.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;figure&gt;
-&lt;img src=&quot;/hoehle/blog/downloads/animation.gif&quot; /&gt;
-&lt;/figure&gt;
-&lt;h1 id=&quot;discussion&quot;&gt;Discussion&lt;/h1&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;Assuming that the time periods until discovery of the bugs are independently distributed appears convenient, butnot so realistic. The paper has a section about analysing the situation in case of different classes of bugs. However, fixing a bug often spawns new bugs. Hence, the bug-process could instead be more realistically modelled by a self-exiciting process such as the Hawkes&#39; process (Hawkes, 1971).&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;For Open Source Software and in particular R packages, which nobody might ever use, is &lt;span class=&quot;math inline&quot;&gt;\(c\)&lt;/span&gt; really bigger than zero? Ship and fix might be a good way to test, if a package actually addresses any kind of need?&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;How to extract the daily number of bugs found from your bug tracking ticket system?&lt;/p&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h1 id=&quot;literature&quot;&gt;Literature&lt;/h1&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;Dalal, S. R. and C. L. Mallows. “&lt;a href=&quot;http://www.jstor.org/stable/2289319&quot;&gt;When Should One Stop Testing Software?&lt;/a&gt;”. Journal of the American Statistical Association (1988), 83(403):872–879.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Hawkes, A. G. &amp;quot;&lt;a href=&quot;http://biomet.oxfordjournals.org/content/58/1/83.abstract&quot;&gt;Spectra of some self-exciting and mutually exciting point processes&lt;/a&gt;&amp;quot;. Biometrika (1971), 58(1):83-90.&lt;/p&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div id=&quot;refs&quot; class=&quot;references&quot;&gt;
-
-&lt;/div&gt;
-</description>
-        <pubDate>Fri, 06 May 2016 00:00:00 +0200</pubDate>
-        <link>http://staff.math.su.se/hoehle/blog/2016/05/06/when2stop.html</link>
-        <guid isPermaLink="true">http://staff.math.su.se/hoehle/blog/2016/05/06/when2stop.html</guid>
         
         <category>datascience</category>
         
