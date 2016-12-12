@@ -169,35 +169,37 @@ Intense software sprints are hard work, thus, it was natural that
 towards the end of the hackathon the concentration decreased
 slightly. However, phases of intense coding are perfectly supplemented
 by listening to scientific talks, talking to former colleagues or
-share the passion of R with others working in the field.  In
+sharing the passion of R with others working in the field.  In
 particular it was nice to exchange ideas with
-[Thibaut Jombart](http://www.imperial.ac.uk/people/t.jombart) who's
-[ R Epidemics Consortium (RECON)](http://www.repidemicsconsortium.org/)
+[Thibaut Jombart](http://www.imperial.ac.uk/people/t.jombart), whose
+[R Epidemics Consortium (RECON)](http://www.repidemicsconsortium.org/)
 project hopefully is able to bundle the R initiatives in infectious
-disease epidemiology a little more. Besides the availability of
-software, the training aspect of new users (e.g. ongoing
-epidemiologists) is also crucial.  Finally, the aftermath of the
-hackathon is as important as the pre-event planning: One or more
-dedicated coordinators have to ensure that loose ends are wrapped
-up. Here, the participants' enthusiasm declines quickly as other
-activities become higher priorities. Again, it's valuable to have a
-clear goal of what needs to be done (e.g. a blog entry...).
+disease epidemiology a little. Besides the availability of software,
+the training aspect of new users (e.g. trainee epidemiologists) is
+also crucial. Finally, the aftermath of the hackathon is as important
+as the pre-event planning: dedicated coordinators have to ensure that
+loose ends are wrapped up. Here, the participants' enthusiasm declines
+quickly as other activities become higher priorities. Again, it's
+valuable to have a clear goal of what needs to be done (e.g. a blog
+entry...).
 
 Altogether, code sessions such as a
 [reproducibility session](http://staff.math.su.se/hoehle/blog/2016/08/04/outbreakEnd.html)
 or a **toolbox session** could be components for spicing up scientific
 conferences. For example the toolbox event could consist of a set of
-interested people, who meet up on conference day one to implement a
+interested people, who decide on conference day 1 to implement a
 particular method useful in practice and then demo it on the last
-day. Of course this all takes time away from other conference content
-and might be more work than dozing of in the plenary sessions...
+day. Obviously, all these suggestions takes time away from other
+conference content and might be more work than dozing of in the
+plenary sessions...
 
 No matter what, focus of a hackathon should also be on social
 aspects. It also proves wise not to ignore fresh air & sunlight
 completely. Actually, to our surprise, the 6:30 hours of daylight were
-actually quite sunny in Stockholm!
+at times actually quite sunny in Stockholm!
 
 ## Visit the Hack in the Dark Output
+
 The output of the hackathon can be found here:
 
 <center>
@@ -209,16 +211,16 @@ In order to run the accompanying code (available from
 github by clicking on the "fork me on github" icons), version 1.12.3
 of the `surveillance` package is needed. Currently, this development
 version of the package is not on CRAN, but can be installed from
-R-Forge as
+R-Forge by running:
 
 ```r
 install.packages("surveillance", repos="http://R-Forge.R-project.org")
 ```
 
-As an appetizer to actually check out the
+As an appetizer to check out the hackathon
 [site](https://surveillancer.github.io/tutorials/) or the
 [code](https://github.com/surveillancer/tutorials), here are two of
-our tweets demoing the output:
+our tweets demoing output during the event:
 
 <blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">First draft output of the <a href="https://twitter.com/hashtag/ESCAIDE2016?src=hash">#ESCAIDE2016</a> surveillance <a href="https://twitter.com/hashtag/rstats?src=hash">#rstats</a> hackathon: Visualizing <a href="https://twitter.com/hashtag/opendata?src=hash">#opendata</a> by <a href="https://twitter.com/ECDC_EU">@ECDC_EU</a> on Salmonella Agona. <a href="https://twitter.com/hashtag/data4action?src=hash">#data4action</a> <a href="https://t.co/8ApaDNF07L">pic.twitter.com/8ApaDNF07L</a></p>&mdash; Michael Höhle (\@m_hoehle) <a href="https://twitter.com/m_hoehle/status/803270577150631937">November 28, 2016</a></blockquote>
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
@@ -228,7 +230,7 @@ our tweets demoing the output:
 
 ## The Future
 
-We wish you all the best for your hackathon event. Put software on the
+We wish you all the best for your own hackathon event. Put software on the
 scientific agenda!
 
 ## Acknowledgments
