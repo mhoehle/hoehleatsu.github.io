@@ -28,12 +28,13 @@ epidemiology. The output of the hackathon is available at
 A **[hackathon](https://en.wikipedia.org/wiki/Hackathon)** is a
 extreme-programming sprint-like event where people involved in
 software development (and beyond) meet for a short period of time with
-the purpose of collaborative programming, typically in
-**open-source**.  The word hackathon is a merger of **hack** and
-**marathon**, where [*hacking*](http://www.dictionary.com/browse/hack)
-is to be understood as the skillful modification of computer programs
-(and not the malicious circumvention of security measures). Lots of
-good guides have been written on
+the purpose of collaborative programming, typically in the context of
+**[open-source software](https://en.wikipedia.org/wiki/Open-source_software)**.
+The word hackathon is a merger of **hack** and **marathon**, where
+[*hacking*](http://www.dictionary.com/browse/hack) is to be understood
+as the skillful modification of computer programs (and not the
+malicious circumvention of security measures). Lots of good guides
+have been written on
 [how to run a successful Hackathon](https://hackathon.guide/).  In the
 area of **infectious disease epidemiology**, which has been the main
 area of motivation for our statistical developments and
@@ -41,15 +42,15 @@ implementations, very successful events
 ([hackout](https://sites.google.com/site/hackoutwiki/home),
 [hackout2](https://sites.google.com/site/hackout2/),
 [hackout3](http://hackout3.ropensci.org/)) have previously been
-organized. At a much smaller scale we wanted to ignite some of the
+organized. At a much smaller scale we wanted to ignite the
 energy and enthusiasm such an event spawns.
 
 As a consequence, this blog post gathers our experiences from
 organising a small **4x3 hackathon** (4 people, 3 days) for the
 surveillance R-package in connection with the
 [ESCAIDE2016](http://ecdc.europa.eu/en/escaide/Pages/ESCAIDE.aspx)
-conference. Our hope is that these might be useful for others -
-possibly working in very different contexts.
+conference. Our hope is that these experiences might be useful for
+others - even if working in very different contexts.
 
 ## Organizing and Running the Hackathon
 
@@ -67,7 +68,7 @@ Infectious Disease Epidemiology
 ([ESCAIDE2016](http://ecdc.europa.eu/en/escaide/Pages/ESCAIDE.aspx))
 organized by the
 [European Centre for Disease Prevention and Control](http://ecdc.europa.eu)
-(ECDC) in Stockholm 28-30 Nov 2016 in Stockholm Sweden with its about
+(ECDC) in Stockholm, Sweden, 28-30 Nov 2016, with its about
 600 participants, felt like the right place to be.
 
 ### A Cool Name?
@@ -75,8 +76,8 @@ organized by the
 Stockholm is placed on the 59th parallel north, hence, during end of
 November daylight is limited to approximately
 [6:30 hours](http://www.timeanddate.com/sun/sweden/stockholm). In
-other words: Perfect hacking conditions. To honour this **Hack in the
-Dark** became our internal handle for the hackathon.
+other words: Perfect hacking conditions. In order to honour this,
+**Hack in the Dark** became our internal handle for the hackathon.
 
 ### Who?
 
@@ -85,10 +86,10 @@ hackathon of experienced R users, who all knew the package well: two
 former Ph.D. students who had used the package as the implementational
 repository for their methodological developments (one of them now
 being the package maintainer), a former power-user of the package and
-the package creator. It might have been good to involve new persons in
-order to expand awareness of the package and increase diversity of the
-hackathonians, but we decided to go for the small team in
-order to maximize efficiency.
+the package creator. Alternatively, we could have involved new
+persons in order to expand awareness of the package and increase
+diversity of the hackathonians, but we decided to go for the small
+team in order to maximize efficiency.
 
 ### Venue?
 
@@ -108,7 +109,7 @@ hackathon. Instead, we recapitulated matters in an "indian buffet process"
 meeting in Stockholm at the night before the hackathon:
 
 1. Write i/o tutorials explaining how to get data into the
-package and then use package functions for visualization on them
+package and then use package functions for cool visualizations of the data
 2. Use open European data for the tutorials - the theme of ESCAIDE2016
    was after all: **Data for action**
 3. Make a [shiny app](https://shiny.rstudio.com/) to visualize the
@@ -136,11 +137,12 @@ is a useful friend if you don't know the
 
 ### Project Output Format?
 
-We decided to create R package structure and use Hadley
-Wickham's new [pkgdown](https://hadley.github.io/pkgdown/) package to
-create website containing all hackathon output. The tutorials were
-then created as vignettes. An immediate advantage of this approach was
-that all vignette code was then directly available for the interested user.
+We decided to create an R package and then use Hadley Wickham's new
+[pkgdown](https://hadley.github.io/pkgdown/) package to create a
+website containing all hackathon output. The above specified tutorials
+were then created as vignettes. An immediate advantage of this
+approach was that all hackathon output was bundled and that vignette
+code was directly available for the interested user.
 
 ### Demo, demo, demo!
 
@@ -168,35 +170,35 @@ four formulated outputs done.
 Intense software sprints are hard work, thus, it was natural that
 towards the end of the hackathon the concentration decreased
 slightly. However, phases of intense coding are perfectly supplemented
-by listening to scientific talks, talking to former colleagues or
-sharing the passion of R with others working in the field.  In
-particular it was nice to exchange ideas with
+by listening to scientific talks, talking to former colleagues visting
+the conference or sharing the passion of R with others working in the
+field.  In particular it was nice to exchange ideas with
 [Thibaut Jombart](http://www.imperial.ac.uk/people/t.jombart), whose
 [R Epidemics Consortium (RECON)](http://www.repidemicsconsortium.org/)
 project hopefully is able to bundle the R initiatives in infectious
 disease epidemiology a little. Besides the availability of software,
 the training aspect of new users (e.g. trainee epidemiologists) is
-also crucial. Finally, the aftermath of the hackathon is as important
-as the pre-event planning: dedicated coordinators have to ensure that
-loose ends are wrapped up. Here, the participants' enthusiasm declines
-quickly as other activities become higher priorities. Again, it's
-valuable to have a clear goal of what needs to be done (e.g. a blog
-entry...).
+also crucial. Finally, the **aftermath** of the hackathon is as
+important as the pre-event planning: dedicated coordinators have to
+ensure that loose ends are wrapped up. Here, the participants'
+enthusiasm declines quickly as other activities become higher
+priorities. Again, it's essential to have a clear goal of what needs
+to be done (e.g. a blog entry...).
 
 Altogether, code sessions such as a
 [reproducibility session](http://staff.math.su.se/hoehle/blog/2016/08/04/outbreakEnd.html)
 or a **toolbox session** could be components for spicing up scientific
 conferences. For example the toolbox event could consist of a set of
-interested people, who decide on conference day 1 to implement a
-particular method useful in practice and then demo it on the last
-day. Obviously, all these suggestions takes time away from other
-conference content and might be more work than dozing of in the
-plenary sessions...
+interested people, who on conference day 1 decide to implement a
+particular method useful in practice, and then demo it on the last
+day. Obviously, all these suggestions take time away from other
+conference content and certainly are more stressful than dozing of in
+the plenary sessions...
 
 No matter what, focus of a hackathon should also be on social
 aspects. It also proves wise not to ignore fresh air & sunlight
-completely. Actually, to our surprise, the 6:30 hours of daylight were
-at times actually quite sunny in Stockholm!
+completely. To our surprise, the 6:30 hours of daylight were at times
+actually quite sunny in Stockholm!
 
 ## Visit the Hack in the Dark Output
 
