@@ -6,9 +6,169 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 17 Dec 2016 15:44:28 +0100</pubDate>
-    <lastBuildDate>Sat, 17 Dec 2016 15:44:28 +0100</lastBuildDate>
+    <pubDate>Sat, 24 Dec 2016 00:19:18 +0100</pubDate>
+    <lastBuildDate>Sat, 24 Dec 2016 00:19:18 +0100</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
+    
+      <item>
+        <title>suRprise! - Classifying Kinder Eggs by Boosting</title>
+        <description>&lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
+&lt;p&gt;Carrying the Danish tradition of Juleforsøg to the realm of statistics, we use R to classify the figure content of Kinder Eggs using boosted regression trees for the egg&#39;s weight and possible rattling noises.&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&quot;/hoehle/blog/figure/source/2016-12-23-surprise/pics/figures.jpg&quot; /&gt;
+&lt;/center&gt;
+&lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
+href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
+&lt;p&gt;A &lt;strong&gt;juleforsøg&lt;/strong&gt; is the kind of &lt;a href=&quot;https://www.youtube.com/watch?v=sinQ06YzbJI8&quot;&gt;exploding experiment&lt;/a&gt; happening in the last physics or chemistry class before the Christmas vacation. Frequently the teacher, with a look of secrecy, initializes the class by locking the door mumbling something like &amp;quot;the headmaster better not see this...&amp;quot;. With Christmas approaching fast, here is an attempt to create a statistical juleforsøg concluding the &lt;em&gt;Theory meets practice&lt;/em&gt; 2016 posting season:&lt;/p&gt;
+&lt;p&gt;The advertisement campaign of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Kinder_Surprise&quot;&gt;Kinder Surprise Eggs&lt;/a&gt; aka. &lt;a href=&quot;https://en.wikipedia.org/wiki/Kinder_Joy&quot;&gt;Kinder Joy&lt;/a&gt; claims that the content of every 7th egg is a figure (see &lt;a href=&quot;https://blog.kalaydo.de/blog/wp-content/uploads/2016/05/Biene-Maja.jpg&quot;&gt;example&lt;/a&gt;) - otherwise they contain toys or puzzles, which positively can be described as junk. Figures, in particular completed series, on the other hand, can achieve high &lt;a href=&quot;https://translate.google.com/translate?sl=de&amp;amp;tl=en&amp;amp;js=y&amp;amp;prev=_t&amp;amp;hl=en&amp;amp;ie=UTF-8&amp;amp;u=https%3A%2F%2Fwww.kalaydo.de%2Fblog%2Fwertvolle-ue-ei-figuren%2F&amp;amp;edit-text=&amp;amp;act=url&quot;&gt;trading values&lt;/a&gt;. The clear goal is thus to optimize your egg hunting strategy in order to maximize figure content.&lt;/p&gt;
+&lt;h2 id=&quot;the-problem&quot;&gt;The problem&lt;/h2&gt;
+&lt;p&gt;Your budget is limited, so the question is which egg to select when standing in the supermarket?&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&quot;/hoehle/blog/figure/source/2016-12-23-surprise/pics/inshopwithprice.jpg&quot; /&gt;
+&lt;/center&gt;
+&lt;p&gt;
+&lt;h3 id=&quot;various-egg-selection-strategies&quot;&gt;Various egg selection strategies&lt;/h3&gt;
+&lt;p&gt;It goes without saying that brute force purchasing strategies would be insane. Hence, a number of egg selection strategies can be observed in real life:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;The no clue egg enthusiast: Selects an egg at random. With a certain probability (determined by the producer and the cleverness of the previous supermarked visitors) the egg contains a figure&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;The egg junkie: knows a good &lt;a href=&quot;https://www.radiologycafe.com/blog/easter-egg-xray&quot;&gt;radiologist&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;The egg nerd: using &lt;a href=&quot;https://translate.google.com/translate?sl=de&amp;amp;tl=en&amp;amp;js=y&amp;amp;prev=_t&amp;amp;hl=en&amp;amp;ie=UTF-8&amp;amp;u=http%3A%2F%2Fwww.eierwiki.de%2Findex.php%3Ftitle%3DTipps_%2526_Tricks_beim_Eierkauf&amp;amp;edit-text=&amp;amp;act=url&quot;&gt;scale, rattling noises and the barcode&lt;/a&gt; he/she quickly determines whether there is a figure in the egg&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;We shall in this post be interested in &lt;strong&gt;the statistician&#39;s egg selection approach&lt;/strong&gt;: Egg classification based on weight and rattling noise using &#39;top-notch&#39; machine learning algorithms - in our case based on boosted classification trees.&lt;/p&gt;
+&lt;h2 id=&quot;data-collection&quot;&gt;Data Collection&lt;/h2&gt;
+&lt;p&gt;We collected n=79 eggs of which 43.0% were figures - the data are available under a GPL v3.0 license from github. For each egg, we determined its &lt;strong&gt;weight&lt;/strong&gt; as well as the sound it produced when being shaken. If the sounds could be characterized as &lt;strong&gt;rattling&lt;/strong&gt; (aka. clattering) this was indicative of the content consisting of many parts and, hence, unlikely to be a figure.&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&quot;/hoehle/blog/figure/source/2016-12-23-surprise/pics/weightandrattle.jpg&quot; /&gt;
+&lt;/center&gt;
+&lt;p&gt;
+&lt;p&gt;Altogether, the first couple of rows of the dataset look as follows.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;head&lt;/span&gt;(surprise, &lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##   weight rattles_like_figure figure rattles rattles_fac figure_fac
+## 1     32                   1      0       0          no         no
+## 2     34                   0      1       1         yes        yes
+## 3     34                   1      1       0          no        yes
+## 4     30                   1      0       0          no         no
+## 5     34                   1      1       0          no        yes&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&quot;descriptive-data-analysis&quot;&gt;Descriptive Data Analysis&lt;/h3&gt;
+&lt;p&gt;The fraction of figures in the dataset was 34/79, which is way higher than the proclaimed 1/7; possibly, because professionals egg collectors were at work...&lt;/p&gt;
+&lt;p&gt;Of the 79 analysed eggs, 54 were categorized as non-rattling. The probability of such a non-rattling egg really containing a figure was 51.9%. This proportion is not impressive, but could be due to the data collector&#39;s having a different understanding of exactly how the variable &lt;em&gt;rattling&lt;/em&gt; was to be interpreted: Does it &lt;em&gt;rattle&lt;/em&gt;, or does it &lt;em&gt;rattle like a figure&lt;/em&gt;? In hindsight, a clearer definition and communication of this variable would have prevented ambiguity in the collection.&lt;/p&gt;
+&lt;p&gt;A descriptive plot of the weight distribution of eggs with and without figure content shows, that eggs with figures tend to be slightly heavier:&lt;/p&gt;
+&lt;figure&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-12-23-surprise/WEIGHTPLOT-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;p&gt;Below the proportion (in %) of eggs with figure content per observed weight:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;tabw &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;with&lt;/span&gt;(surprise, &lt;span class=&quot;kw&quot;&gt;table&lt;/span&gt;(weight, figure_fac))
+tabw &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;tabw /&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rowSums&lt;/span&gt;(tabw)
+&lt;span class=&quot;kw&quot;&gt;print&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;t&lt;/span&gt;(tabw*&lt;span class=&quot;dv&quot;&gt;100&lt;/span&gt;),&lt;span class=&quot;dt&quot;&gt;digits=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##           weight
+## figure_fac    26    28    29    30    31    32    33    34    35    36    40
+##        no  100.0  50.0  66.7  53.3  71.4  72.7  75.0  25.0 100.0  33.3   0.0
+##        yes   0.0  50.0  33.3  46.7  28.6  27.3  25.0  75.0   0.0  66.7 100.0&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A simple selection rule based on weight would be to weigh eggs until you hit a 40g egg. A slightly less certain stopping rule would be to pick 34g eggs. However, modern statistics is more than counting and analysing proportions!&lt;/p&gt;
+&lt;h2 id=&quot;machine-learning-the-egg-content&quot;&gt;Machine Learning the Egg Content&lt;/h2&gt;
+&lt;p&gt;We use machine learning algorithms to solve the binary classification problem at hand. In particular, we use the &lt;code&gt;caret&lt;/code&gt; package &lt;span class=&quot;citation&quot; data-cites=&quot;caret&quot;&gt;(Kuhn 2016)&lt;/span&gt; and classify figure content using boosted regression trees as implemented in the &lt;a href=&quot;https://en.wikipedia.org/wiki/Xgboost&quot;&gt;&lt;code&gt;xgboost&lt;/code&gt;&lt;/a&gt; package &lt;span class=&quot;citation&quot; data-cites=&quot;xgboost&quot;&gt;(Chen et al. 2016)&lt;/span&gt;. Details on how to use the &lt;code&gt;caret&lt;/code&gt; package can, e.g., be found in the following &lt;a href=&quot;https://topepo.github.io/caret/index.html&quot;&gt;tutorial&lt;/a&gt;.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;library&lt;/span&gt;(caret)
+
+##Grid with xgboost hyperparameters
+xgb_hyperparam_grid =&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;expand.grid&lt;/span&gt;(
+  &lt;span class=&quot;dt&quot;&gt;nrounds =&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;25&lt;/span&gt;, &lt;span class=&quot;dv&quot;&gt;100&lt;/span&gt;, &lt;span class=&quot;dv&quot;&gt;1000&lt;/span&gt;),
+  &lt;span class=&quot;dt&quot;&gt;eta =&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;fl&quot;&gt;0.01&lt;/span&gt;, &lt;span class=&quot;fl&quot;&gt;0.001&lt;/span&gt;, &lt;span class=&quot;fl&quot;&gt;0.0001&lt;/span&gt;),
+  &lt;span class=&quot;dt&quot;&gt;max_depth =&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;, &lt;span class=&quot;dv&quot;&gt;4&lt;/span&gt;, &lt;span class=&quot;dv&quot;&gt;8&lt;/span&gt;, &lt;span class=&quot;dv&quot;&gt;10&lt;/span&gt;, &lt;span class=&quot;dv&quot;&gt;16&lt;/span&gt;, &lt;span class=&quot;dv&quot;&gt;32&lt;/span&gt;),
+  &lt;span class=&quot;dt&quot;&gt;gamma =&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;,
+  &lt;span class=&quot;dt&quot;&gt;colsample_bytree =&lt;/span&gt; &lt;span class=&quot;fl&quot;&gt;0.8&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;min_child_weight =&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;subsample =&lt;/span&gt; &lt;span class=&quot;fl&quot;&gt;0.5&lt;/span&gt;
+)
+##caret training control object
+control &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;trainControl&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;method=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;repeatedcv&amp;quot;&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;number=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;8&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;repeats=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;8&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;classProbs=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;TRUE&lt;/span&gt;,
+                        &lt;span class=&quot;dt&quot;&gt;summaryFunction =&lt;/span&gt; twoClassSummary, &lt;span class=&quot;dt&quot;&gt;allowParallel=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;TRUE&lt;/span&gt;)
+##train away and do it parallelized...
+&lt;span class=&quot;kw&quot;&gt;library&lt;/span&gt;(doMC)
+&lt;span class=&quot;kw&quot;&gt;registerDoMC&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;cores =&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;)
+m_xgb &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;train&lt;/span&gt;( figure_fac ~&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;weight *&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;rattles_fac, &lt;span class=&quot;dt&quot;&gt;data=&lt;/span&gt;surprise, &lt;span class=&quot;dt&quot;&gt;method=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;xgbTree&amp;quot;&lt;/span&gt;,
+               &lt;span class=&quot;dt&quot;&gt;trControl=&lt;/span&gt;control, &lt;span class=&quot;dt&quot;&gt;verbose=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;FALSE&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;metric=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;ROC&amp;quot;&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;tuneGrid=&lt;/span&gt;xgb_hyperparam_grid)
+##look at the result
+m_xgb&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## eXtreme Gradient Boosting  
+##   
+##  79 samples 
+##   2 predictor 
+##   2 classes: &amp;#39;no&amp;#39;, &amp;#39;yes&amp;#39;  
+##   
+##  No pre-processing 
+##  Resampling: Cross-Validated (8 fold, repeated 8 times)  
+##  Summary of sample sizes: 69, 70, 69, 69, 69, 68, ...  
+##  Resampling results across tuning parameters: 
+##   
+##    eta    max_depth  nrounds  ROC        Sens       Spec      
+##    1e-04   2           25     0.6507292  0.8661458  0.4359375 
+##    1e-04   2          100     0.6706510  0.8661458  0.4398437 
+##    1e-04   2         1000     0.6777865  0.8661458  0.4398437 
+##    ...  ...        ... 
+##    1e-02  32          100     0.6788802  0.8479167  0.4367187 
+##    1e-02  32         1000     0.6573828  0.7395833  0.4304688 
+##   
+##  Tuning parameter &amp;#39;gamma&amp;#39; was held constant at a value of 1 
+##  Tuning 
+##   parameter &amp;#39;min_child_weight&amp;#39; was held constant at a value of 1 
+##  Tuning 
+##   parameter &amp;#39;subsample&amp;#39; was held constant at a value of 0.5 
+##  ROC was used to select the optimal model using  the largest value. 
+##  The final values used for the model were nrounds = 100, max_depth = 2, eta = 0.01, 
+##   gamma = 1, colsample_bytree = 0.8, min_child_weight = 1 and subsample = 0.5.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;m_xgb$bestTune
+&lt;span class=&quot;kw&quot;&gt;sprintf&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;%.2f&amp;quot;&lt;/span&gt;,&lt;span class=&quot;kw&quot;&gt;mean&lt;/span&gt;(m_xgb$resample$ROC))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The average AUC for the 64 resamples is 0.68. Average sensitivity and specificity are 86.6% and 43.3%, respectively. This shows that predicting figure content with the available data is better than simply picking an egg at random, but no figure-guaranteeing strategy appears possible on a per-egg basis.&lt;/p&gt;
+&lt;h3 id=&quot;predicting-the-content-of-a-particular-egg&quot;&gt;Predicting the Content of a Particular Egg&lt;/h3&gt;
+&lt;p&gt;Suppose the egg you look at weighs 36g and when shaken it sounds like a lot of small parts being moved. In other words:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;predict&lt;/span&gt;(m_xgb, &lt;span class=&quot;dt&quot;&gt;newdata =&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;data.frame&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;weight=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;36&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;rattles_fac=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;yes&amp;quot;&lt;/span&gt;),&lt;span class=&quot;dt&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;prob&amp;quot;&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##          no       yes
+## 1 0.4695328 0.5304672&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Hence, despite the rattling noises, the classifier is of the opinion that it&#39;s slightly more likely than 50% that there is a figure inside. However, when we opened this particular egg:&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&quot;/hoehle/blog/figure/source/2016-12-23-surprise/pics/car.jpg&quot; /&gt;
+&lt;/center&gt;
+&lt;p&gt;
+&lt;p&gt;...a car. Definitely not a figure! The proof of concept disappointment was, however, quickly counteracted by the surrounding chocolate...&lt;/p&gt;
+&lt;p&gt;As a standard operating procedure for your optimized future supermarket hunt, below are shown the classifier&#39;s predicted probabilities for figure content as a function of egg weight and the &lt;code&gt;rattles_fac&lt;/code&gt; variable.&lt;/p&gt;
+&lt;figure&gt;
+&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-12-23-surprise/CLASSIFIEROUTPUT-1.png&quot; /&gt;
+&lt;/figure&gt;
+&lt;h2 id=&quot;discussion&quot;&gt;Discussion&lt;/h2&gt;
+&lt;p&gt;The above post only discusses the optimal selection on a per-egg basis. One could weight &amp;amp; shake several eggs and then select the one with the highest predicted probability for containing a figure. Future research is needed to solve this sequential decision making problem in an &lt;a href=&quot;http://staff.math.su.se/hoehle/blog/2016/06/12/optimalChoice.html&quot;&gt;optimal way&lt;/a&gt;.&lt;/p&gt;
+&lt;h3 id=&quot;outlook&quot;&gt;Outlook&lt;/h3&gt;
+&lt;p&gt;We have retained a validation sample of 10 eggs and are willing to send an unconsumed 11th element of the sample to whoever obtains the best score on this validation sample. Anyone who knows how to upload this to &lt;a href=&quot;https://www.kaggle.com&quot;&gt;kaggle&lt;/a&gt;?&lt;/p&gt;
+&lt;center&gt;
+We wish all readers &lt;em&gt;God jul&lt;/em&gt; and a happy new year!
+&lt;/center&gt;
+&lt;p&gt;
+&lt;h2 id=&quot;acknowledgments&quot;&gt;Acknowledgments&lt;/h2&gt;
+&lt;p&gt;Thanks to former colleagues at the Department of Statistics, University of Munich, as well as numerous statistics students in Munich and Stockholm, for contributing to the data collection. In particular we thank Alexander Jerak for his idea of optimizing figure hunting in a data driven way more than 10 years ago.&lt;/p&gt;
+&lt;h2 id=&quot;literature&quot; class=&quot;unnumbered&quot;&gt;Literature&lt;/h2&gt;
+&lt;div id=&quot;refs&quot; class=&quot;references&quot;&gt;
+&lt;div id=&quot;ref-xgboost&quot;&gt;
+&lt;p&gt;Chen, Tianqi, Tong He, Michael Benesty, Vadim Khotilovich, and Yuan Tang. 2016. &lt;em&gt;Xgboost: Extreme Gradient Boosting&lt;/em&gt;. &lt;a href=&quot;https://CRAN.R-project.org/package=xgboost&quot; class=&quot;uri&quot;&gt;https://CRAN.R-project.org/package=xgboost&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-caret&quot;&gt;
+&lt;p&gt;Kuhn, Max. 2016. &lt;em&gt;Caret: Classification and Regression Training&lt;/em&gt;. &lt;a href=&quot;https://CRAN.R-project.org/package=caret&quot; class=&quot;uri&quot;&gt;https://CRAN.R-project.org/package=caret&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Fri, 23 Dec 2016 00:00:00 +0100</pubDate>
+        <link>http://staff.math.su.se/hoehle/blog/2016/12/23/surprise.html</link>
+        <guid isPermaLink="true">http://staff.math.su.se/hoehle/blog/2016/12/23/surprise.html</guid>
+        
+        <category>rstats</category>
+        
+        <category>stats</category>
+        
+        <category>programming</category>
+        
+        <category>juleforsøg</category>
+        
+        <category>classification</category>
+        
+        
+      </item>
     
       <item>
         <title>4x3 R-Hackathoning - The Finisher&#39;s Guide</title>
@@ -21,7 +181,7 @@
 href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
 &lt;p&gt;A &lt;strong&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Hackathon&quot;&gt;hackathon&lt;/a&gt;&lt;/strong&gt; is a extreme-programming sprint-like event where people involved in software development (and beyond) meet for a short period of time with the purpose of collaborative programming, typically in the context of &lt;strong&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Open-source_software&quot;&gt;open-source software&lt;/a&gt;&lt;/strong&gt;. The word hackathon is a merger of &lt;strong&gt;hack&lt;/strong&gt; and &lt;strong&gt;marathon&lt;/strong&gt;, where &lt;a href=&quot;http://www.dictionary.com/browse/hack&quot;&gt;&lt;em&gt;hacking&lt;/em&gt;&lt;/a&gt; is to be understood as the skillful modification of computer programs (and not the malicious circumvention of security measures). Lots of good guides have been written on &lt;a href=&quot;https://hackathon.guide/&quot;&gt;how to run a successful Hackathon&lt;/a&gt;. In the area of &lt;strong&gt;infectious disease epidemiology&lt;/strong&gt;, which has been the main area of motivation for our statistical developments and implementations, very successful events (&lt;a href=&quot;https://sites.google.com/site/hackoutwiki/home&quot;&gt;hackout&lt;/a&gt;, &lt;a href=&quot;https://sites.google.com/site/hackout2/&quot;&gt;hackout2&lt;/a&gt;, &lt;a href=&quot;http://hackout3.ropensci.org/&quot;&gt;hackout3&lt;/a&gt;) have previously been organized. At a much smaller scale we wanted to ignite the energy and enthusiasm such an event spawns.&lt;/p&gt;
-&lt;p&gt;As a consequence, this blog post gathers our experiences from organising a small &lt;strong&gt;4x3 hackathon&lt;/strong&gt; (4 people, 3 days) for the surveillance R-package in connection with the &lt;a href=&quot;http://ecdc.europa.eu/en/escaide/Pages/ESCAIDE.aspx&quot;&gt;ESCAIDE2016&lt;/a&gt; conference. Our hope is that these experiences might be useful for others - even if working in very different contexts.&lt;/p&gt;
+&lt;p&gt;As a consequence, this blog post gathers our experiences from organising a small &lt;strong&gt;4x3 hackathon&lt;/strong&gt; (4 people, 3 days) for the surveillance R-package in connection with the &lt;a href=&quot;http://ecdc.europa.eu/en/escaide/Pages/ESCAIDE.aspx&quot;&gt;ESCAIDE2016&lt;/a&gt; conference in November 2016. Our hope is that these experiences might be useful for others - even if working in very different contexts.&lt;/p&gt;
 &lt;h2 id=&quot;organizing-and-running-the-hackathon&quot;&gt;Organizing and Running the Hackathon&lt;/h2&gt;
 &lt;p&gt;We report on a number of practical &amp;quot;?&amp;quot; and &amp;quot;!&amp;quot; below.&lt;/p&gt;
 &lt;h3 id=&quot;why&quot;&gt;Why?&lt;/h3&gt;
@@ -49,19 +209,16 @@ href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Comm
 &lt;p&gt;Interaction with the other conference participants, on the other hand, was moderate. We showed parts and pieces to interested people, but in hindsight we should have aimed for a poster presentation or a related activity in order to generate more real-life awareness of the hackathon outside the virtual world of twitter.&lt;/p&gt;
 &lt;h2 id=&quot;summing-up&quot;&gt;Summing Up&lt;/h2&gt;
 &lt;p&gt;The three days of hackathon passed quickly, but we managed to get the four formulated outputs done.&lt;/p&gt;
-&lt;h2 id=&quot;reflections&quot;&gt;Reflections&lt;/h2&gt;
 &lt;p&gt;Intense software sprints are hard work, thus, it was natural that towards the end of the hackathon the concentration decreased slightly. However, phases of intense coding are perfectly supplemented by listening to scientific talks, talking to former colleagues visting the conference or sharing the passion of R with others working in the field. In particular it was nice to exchange ideas with &lt;a href=&quot;http://www.imperial.ac.uk/people/t.jombart&quot;&gt;Thibaut Jombart&lt;/a&gt;, whose &lt;a href=&quot;http://www.repidemicsconsortium.org/&quot;&gt;R Epidemics Consortium (RECON)&lt;/a&gt; project hopefully is able to bundle the R initiatives in infectious disease epidemiology a little. Besides the availability of software, the training aspect of new users (e.g. trainee epidemiologists) is also crucial. Finally, the &lt;strong&gt;aftermath&lt;/strong&gt; of the hackathon is as important as the pre-event planning: dedicated coordinators have to ensure that loose ends are wrapped up. Here, the participants&#39; enthusiasm declines quickly as other activities become higher priorities. Again, it&#39;s essential to have a clear goal of what needs to be done (e.g. a blog entry...).&lt;/p&gt;
 &lt;p&gt;Altogether, code sessions such as a &lt;a href=&quot;http://staff.math.su.se/hoehle/blog/2016/08/04/outbreakEnd.html&quot;&gt;reproducibility session&lt;/a&gt; or a &lt;strong&gt;toolbox session&lt;/strong&gt; could be components for spicing up scientific conferences. For example the toolbox event could consist of a set of interested people, who on conference day 1 decide to implement a particular method useful in practice, and then demo it on the last day. Obviously, all these suggestions take time away from other conference content and certainly are more stressful than dozing of in the plenary sessions...&lt;/p&gt;
 &lt;p&gt;No matter what, focus of a hackathon should also be on social aspects. It also proves wise not to ignore fresh air &amp;amp; sunlight completely. To our surprise, the 6:30 hours of daylight were at times actually quite sunny in Stockholm!&lt;/p&gt;
-&lt;h2 id=&quot;visit-the-hack-in-the-dark-output&quot;&gt;Visit the Hack in the Dark Output&lt;/h2&gt;
+&lt;h3 id=&quot;visit-the-hack-in-the-dark-output&quot;&gt;Visit the Hack in the Dark Output&lt;/h3&gt;
 &lt;p&gt;The output of the hackathon can be found here:&lt;/p&gt;
 &lt;center&gt;
 &lt;a href=&quot;https://surveillancer.github.io/tutorials/&quot; class=&quot;uri&quot;&gt;https://surveillancer.github.io/tutorials/&lt;/a&gt;
 &lt;/center&gt;
 &lt;p&gt;
-&lt;p&gt;In order to run the accompanying code (available from github by clicking on the &amp;quot;fork me on github&amp;quot; icons), version 1.12.3 of the &lt;code&gt;surveillance&lt;/code&gt; package is needed. Currently, this development version of the package is not on CRAN, but can be installed from R-Forge by running:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;install.packages&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;surveillance&amp;quot;&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;repos=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;http://R-Forge.R-project.org&amp;quot;&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;As an appetizer to check out the hackathon &lt;a href=&quot;https://surveillancer.github.io/tutorials/&quot;&gt;site&lt;/a&gt; or the &lt;a href=&quot;https://github.com/surveillancer/tutorials&quot;&gt;code&lt;/a&gt;, here are two of our tweets demoing output during the event:&lt;/p&gt;
+&lt;p&gt;In order to run the accompanying code (available from github by clicking on the &amp;quot;fork me on github&amp;quot; icons), version 1.13.0 of the &lt;code&gt;surveillance&lt;/code&gt; package is needed (available from CRAN). As an appetizer to check out the hackathon &lt;a href=&quot;https://surveillancer.github.io/tutorials/&quot;&gt;site&lt;/a&gt; or the &lt;a href=&quot;https://github.com/surveillancer/tutorials&quot;&gt;code&lt;/a&gt;, here are two of our tweets demoing output during the event:&lt;/p&gt;
 &lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;en&quot;&gt;
 &lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;
 First draft output of the &lt;a href=&quot;https://twitter.com/hashtag/ESCAIDE2016?src=hash&quot;&gt;#ESCAIDE2016&lt;/a&gt; surveillance &lt;a href=&quot;https://twitter.com/hashtag/rstats?src=hash&quot;&gt;#rstats&lt;/a&gt; hackathon: Visualizing &lt;a href=&quot;https://twitter.com/hashtag/opendata?src=hash&quot;&gt;#opendata&lt;/a&gt; by &lt;a href=&quot;https://twitter.com/ECDC_EU&quot;&gt;&lt;span class=&quot;citation&quot; data-cites=&quot;ECDC_EU&quot;&gt;(&lt;span class=&quot;citeproc-not-found&quot; data-reference-id=&quot;ECDC_EU&quot;&gt;&lt;strong&gt;???&lt;/strong&gt;&lt;/span&gt;)&lt;/span&gt;&lt;/a&gt; on Salmonella Agona. &lt;a href=&quot;https://twitter.com/hashtag/data4action?src=hash&quot;&gt;#data4action&lt;/a&gt; &lt;a href=&quot;https://t.co/8ApaDNF07L&quot;&gt;pic.twitter.com/8ApaDNF07L&lt;/a&gt;
@@ -76,7 +233,7 @@ Interactive illustration of monitoring algorithms for infectious disease surveil
 — Dirk Schumacher (@dirk_sch) &lt;a href=&quot;https://twitter.com/dirk_sch/status/803573405660286976&quot;&gt;November 29, 2016&lt;/a&gt;
 &lt;/blockquote&gt;
 &lt;script async src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
-&lt;h2 id=&quot;the-future&quot;&gt;The Future&lt;/h2&gt;
+&lt;h3 id=&quot;the-future&quot;&gt;The Future&lt;/h3&gt;
 &lt;p&gt;We wish you all the best for your own hackathon event. Put software on the scientific agenda!&lt;/p&gt;
 &lt;h2 id=&quot;acknowledgments&quot;&gt;Acknowledgments&lt;/h2&gt;
 &lt;p&gt;Thanks to &lt;a href=&quot;http://www.masalmon.eu/&quot;&gt;Maëlle Salmon&lt;/a&gt;, &lt;a href=&quot;https://www.dirk-schumacher.net/&quot;&gt;Dirk Schumacher&lt;/a&gt; and &lt;a href=&quot;http://www.imbe.med.uni-erlangen.de/cms/sebastian_meyer.html&quot;&gt;Sebastian Meyer&lt;/a&gt; for all their great work and the creative atmosphere during the hackathon! The event was implicitly supported by the Swedish Research Council as part of the project Statistical Modelling, Monitoring and Predictive Analytics against Infectious Disease Outbreaks (grant number 2015-05182_VR).&lt;/p&gt;
@@ -176,7 +333,7 @@ e &amp;amp;= \argmin P(x_p \geq x_{(r)}) \geq 1 - \frac{\alpha}{2} \\
 &lt;tr class=&quot;odd&quot;&gt;
 &lt;td&gt;&lt;a href=&quot;http://finzi.psych.upenn.edu/R/library/MKmisc/html/quantileCI.html&quot;&gt;&lt;code&gt;MKMisc::quantileCI&lt;/code&gt;&lt;/a&gt;&lt;/td&gt;
 &lt;td style=&quot;text-align: center;&quot;&gt;0.993&lt;/td&gt;
-&lt;td&gt;Implements an exact but very slow &lt;span class=&quot;math inline&quot;&gt;\(O(n^2)\)&lt;/span&gt; search as well as an asymptotic method approximating the exact procedure. Do to the method being slow it is not investigated further, but looking at it an &lt;code&gt;Rcpp&lt;/code&gt; implementation of the nested loop might be able to speed up the performance substantially.&lt;/td&gt;
+&lt;td&gt;Implements an exact but very slow &lt;span class=&quot;math inline&quot;&gt;\(O(n^2)\)&lt;/span&gt; search as well as an asymptotic method approximating the exact procedure. Due to the method being slow it is not investigated further, but looking at it an &lt;code&gt;Rcpp&lt;/code&gt; implementation of the nested loop might be able to speed up the performance substantially.&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr class=&quot;even&quot;&gt;
 &lt;td&gt;&lt;/td&gt;
@@ -248,7 +405,7 @@ quantileCI::&lt;span class=&quot;kw&quot;&gt;quantile_confint_boot&lt;/span&gt;(
 &lt;pre&gt;&lt;code&gt;## [1] -0.03377687  2.67862782
 ## [1] 0.07894831 1.54608644
 ## [1] -0.0376499  1.2008637&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The first procedure with &lt;code&gt;interpolate=FALSE&lt;/code&gt; implements the previously explained exact approach, which is also implemented in some of the other packages. However, when the &lt;code&gt;interpolate&lt;/code&gt; argument is set to &lt;code&gt;TRUE&lt;/code&gt; (the default), an additional interpolation step between the two neighbouring order statistics is performed as suggested in the work of &lt;span class=&quot;citation&quot; data-cites=&quot;nyblom1992&quot;&gt;Nyblom (1992)&lt;/span&gt;, which extends work for the median by &lt;span class=&quot;citation&quot; data-cites=&quot;hettmansperger_sheather1986&quot;&gt;Hettmansperger and Sheather (1986)&lt;/span&gt; and generates intervals of the form.&lt;/p&gt;
+&lt;p&gt;The first procedure with &lt;code&gt;interpolate=FALSE&lt;/code&gt; implements the previously explained exact approach, which is also implemented in some of the other packages. However, when the &lt;code&gt;interpolate&lt;/code&gt; argument is set to &lt;code&gt;TRUE&lt;/code&gt; (the default), an additional interpolation step between the two neighbouring order statistics is performed as suggested in the work of &lt;span class=&quot;citation&quot; data-cites=&quot;nyblom1992&quot;&gt;Nyblom (1992)&lt;/span&gt;, which extends work for the median by &lt;span class=&quot;citation&quot; data-cites=&quot;hettmansperger_sheather1986&quot;&gt;Hettmansperger and Sheather (1986)&lt;/span&gt; to arbitrary quantiles. It generates intervals of the form:&lt;/p&gt;
 &lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
 \left( (1-\lambda_1) x_{(d)} + \lambda_1 x_{(d+1)}, (1-\lambda_2) x_{(e-1)} + \lambda_1 x_{(e)} \right)
 \]&lt;/span&gt;&lt;/p&gt;
@@ -291,7 +448,7 @@ quantileCI::&lt;span class=&quot;kw&quot;&gt;quantile_confint_boot&lt;/span&gt;(
 ## 1           0.9873         0.9352          0.961         0.9873       0.9873
 ##   nyblom_interp   boot hs_interp
 ## 1        0.9462 0.9352    0.9462&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;We note that the &lt;code&gt;EnvStats_exact&lt;/code&gt; procedure again has a lower coverage than the nominal required level, it must therefore implement a slightly different procedure than expected. That coverage is less than the nominal for an &lt;em&gt;exact&lt;/em&gt; method is, however, somewhat &lt;em&gt;surprising&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;We note that the &lt;code&gt;EnvStats_exact&lt;/code&gt; procedure again has a lower coverage than the nominal required level, it must therefore implement a slightly different procedure than expected. That coverage is less than the nominal for an &lt;em&gt;exact&lt;/em&gt; method is, however, still somewhat &lt;em&gt;surprising&lt;/em&gt;.&lt;/p&gt;
 &lt;p&gt;In this study for the median, the original &lt;span class=&quot;citation&quot; data-cites=&quot;hettmansperger_sheather1986&quot;&gt;Hettmansperger and Sheather (1986)&lt;/span&gt; procedure implemented in &lt;code&gt;quantileCI&lt;/code&gt; as function &lt;code&gt;median_confint_hs&lt;/code&gt; is also included in the comparison (&lt;code&gt;hs_interp&lt;/code&gt;). Note that the &lt;span class=&quot;citation&quot; data-cites=&quot;nyblom1992&quot;&gt;Nyblom (1992)&lt;/span&gt; procedure for &lt;span class=&quot;math inline&quot;&gt;\(p=\frac{1}{2}\)&lt;/span&gt; just boils down to this approach. Since the neighbouring order statistics are combined using a weighted mean, the actual level is just close to the nominal level. It can, as observed for the above setting, be slightly lower than the nominal level. The bootstrap method again doesn&#39;t look too impressive.&lt;/p&gt;
 &lt;h4 id=&quot;simulation-3&quot;&gt;Simulation 3&lt;/h4&gt;
 &lt;p&gt;We finally also add one of the scenarios from Table 1 of the &lt;span class=&quot;citation&quot; data-cites=&quot;nyblom1992&quot;&gt;Nyblom (1992)&lt;/span&gt; paper, which allows us to check our implementation against the numerical integration performed in the paper to assess coverage.&lt;/p&gt;
@@ -1737,174 +1894,6 @@ res &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot
         <pubDate>Sun, 12 Jun 2016 00:00:00 +0200</pubDate>
         <link>http://staff.math.su.se/hoehle/blog/2016/06/12/optimalChoice.html</link>
         <guid isPermaLink="true">http://staff.math.su.se/hoehle/blog/2016/06/12/optimalChoice.html</guid>
-        
-        <category>datascience</category>
-        
-        <category>rstats</category>
-        
-        <category>debugging</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Right or Wrong? - Validate Numbers Like a Boss</title>
-        <description>&lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
-&lt;p&gt;How does a statistician ensure that an analysis that comprises of outputting &lt;span class=&quot;math inline&quot;&gt;\(N\)&lt;/span&gt; results is correct? Can this be done without manually checking each of the results? Some statistical approaches for this task of &lt;strong&gt;proof-calculation&lt;/strong&gt; are described - e.g. capture-recapture estimation and sequential decision making.&lt;/p&gt;
-&lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
-href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
-&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
-&lt;p&gt;One activity the public associates with &lt;strong&gt;statistics&lt;/strong&gt; is the generation of large tables containing a multitude of numbers on a phenomena of interest. Below an example containing the summary of &lt;a href=&quot;https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/bulletins/uklabourmarket/april2016&quot;&gt;UK labour market statistics&lt;/a&gt; for the 3 months to February 2016 from the Office for National Statistics:&lt;/p&gt;
-&lt;figure&gt;
-&lt;img src=&quot;/hoehle/blog/figure/source/2016-05-22-proofCalculation/unemployment-apr2016.png&quot; title=&quot;Source: https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/bulletins/uklabourmarket/april2016&quot; /&gt;
-&lt;/figure&gt;
-&lt;p&gt;Another example is The German Federal Government’s &lt;a href=&quot;http://www.bmas.de/DE/Service/Medien/Publikationen/a334-4-armuts-reichtumsbericht-2013.html&quot;&gt;4th Report on Poverty and Wealth&lt;/a&gt;. The report consists of a total of 549 pages with the pure table appendix fun starting on p. 518 including, e.g., age-adjusted ORs obtained from logistic regression modelling (p.523).&lt;/p&gt;
-&lt;p&gt;Even though dynamic &amp;amp; web-based reporting coupled with graphical &amp;amp; interactive visualizations have developed to a point making such tables obsolete, this does not change the fact that the results still need to be &lt;strong&gt;correct&lt;/strong&gt;. As a consequence, the results need to be validated to ensure their correctness, occasionally even beyond any doubt! In what follow we will use the term &lt;strong&gt;result&lt;/strong&gt; to describe an output element of the statistical analysis. In most cases results are numbers, but we shall use the term number and result interchangeably. However, results could also denote higher level output elements, e.g., complete tables, a specific line in a graph or the complete output of a particular query.&lt;/p&gt;
-&lt;p&gt;Surprisingly, statistics students are taught very little about addressing such a task using what we do best: statistics. We teach about the median, censoring &amp;amp; truncation, complex modelling and computer intensive inference methods. Maybe we even tell them about &lt;code&gt;knitr&lt;/code&gt; as way to get the same results twice (a minimum requirement to ensure correctness). However, spraying out numbers (even from the most beautiful model) is &lt;strong&gt;not cool&lt;/strong&gt; if the initial data-munging went wrong or if your quotient is obtained by dividing with the wrong denominator.&lt;/p&gt;
-&lt;p&gt;The on-going discussion of &lt;strong&gt;reproducible research&lt;/strong&gt; aims at the core of this problem: How to ensure that your analysis re-producible and correct? As modern statistics becomes more and more programming oriented it appears natural to seek inspiration from the discipline of &lt;strong&gt;software testing&lt;/strong&gt;. Another entertaining source of inspiration is the concept of optimal &lt;strong&gt;proofreading&lt;/strong&gt;. This dates back to the 1970-1980s, where the problem is formulated as the search for an optimal stopping rules for the process of checking a text consisting of &lt;span class=&quot;math inline&quot;&gt;\(M\)&lt;/span&gt; words - see for example Yang et al. (1982). Periodically, the software development community re-visits these works - see for example Hayes (2010). Singpurwalla and Wilson (1999) give a thorough exposition of treating uncertainty in the context of software engineering by interfacing between statistics and software engineering.&lt;/p&gt;
-&lt;h1 id=&quot;proofcalculation&quot;&gt;Proofcalculation&lt;/h1&gt;
-&lt;p&gt;The scientific method of choice to address validity is &lt;strong&gt;peer review&lt;/strong&gt;. This can go as far as having the reviewer implement the analysis as a completely separate and independent process in order to check that results agree. Reporting the results of clinical trials have such independent implementations as part of the protocol. Such a co-pilot approach fits nicely to the fact that real-life statistical analysis rarely is a one-person activity anymore. In practice, there might neither be a need nor the resources to rebuild entire analyses, but critical parts need to be &lt;strong&gt;double-checked&lt;/strong&gt;. Pair programming is one technique from the agile programming world to accomodate this. However, single programmers coding independently and then compare results appears a better way to quality-control critical code &amp;amp; analysis segments.&lt;/p&gt;
-&lt;p&gt;Formalizing the validation task into mathematical notation, let&#39;s assume the report of interest consists of a total of &lt;span class=&quot;math inline&quot;&gt;\(N\)&lt;/span&gt; numbers. These numbers have a hierarchical structure, e.g., they relate to various parts of the analysis or are part of individual tables. Error search is performed along this hierarchical structure. Good proofcalculation strategies follow the principles of software testing - for example it may be worthwhile to remember &lt;strong&gt;Pareto&#39;s law&lt;/strong&gt;: 80 percent of the error are found in 20 percent of the modules to test. In other words: keep looking for errors at places where you already found some. Further hints on a well structured debugging process can be found in Zeller (2009) where the quote on Pareto&#39;s law is also from.&lt;/p&gt;
-&lt;p&gt;One crucial question is what exactly we mean by an &lt;strong&gt;error&lt;/strong&gt;? A result can be wrong, because of a bug in the code line computing it. Strictly speaking &lt;strong&gt;wrong&lt;/strong&gt; is just the (mathematical) black-and-white version of the complex phenomena describing a misalignment between what is perceived and what is desired by somebody. A more in-depth debate of what&#39;s &lt;em&gt;wrong&lt;/em&gt; is beyond the scope of this note, but certainly there are situations when a result is agreeably wrong, e.g., due to erroneous counting of the number of distinct elements in the denominator set. More complicated cases could be the use of a wrong regression model compared to what was described in the methodology section, e.g., use of an extra unintended covariate. Even worse are problems in the data-prepossessing step resulting in a wrong data foundation and, hence, invalidating a large part of the results. Altogether, a result be wrong in more than one way and one error can invalidate several results: the &lt;span class=&quot;math inline&quot;&gt;\(M\)&lt;/span&gt; results are just the final output - what matters is what happens along your &lt;strong&gt;analysis pipeline&lt;/strong&gt;. Detecting a wrong result is thus merely a symptom of a flawed pipeline. This also means that fixing the bug causing a number to be wrong does not necessarily ensure that the number is correct afterwards.&lt;/p&gt;
-&lt;p&gt;We summarise the above discussion by making the following simplifying abstractions:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;The number of results which is wrong is a function of the number of errors &lt;span class=&quot;math inline&quot;&gt;\(M\)&lt;/span&gt;. One error invalidates at least one result, but it can invalidate several jointly and errors can overlap thus invalidating the same number.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;We deliberately keep the definition of an error vague, but mean a mechanism which causes a result to be wrong. The simplest form of a result is a number. The simplest error is a number which is wrong.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;The hierarchical structure of the numbers and the intertwined code generating them is ignored. Instead, we simply assume there are &lt;span class=&quot;math inline&quot;&gt;\(M\)&lt;/span&gt; errors and assume that these errors are independent of each other.&lt;/p&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;We shall now describe an estimation approach a decision theoretic approach for the problem.&lt;/p&gt;
-&lt;h1 id=&quot;team-based-validation&quot;&gt;Team Based Validation&lt;/h1&gt;
-&lt;p&gt;Consider the situation where a team of two statisticians together validate the same report. Say the team use a fixed amount of time (e.g. one day) trying to find as many errors in the numbers as possible. During the test period no errors are fixed - this happens only after the end of the period. Let&#39;s assume that during the test period the two statistician found &lt;span class=&quot;math inline&quot;&gt;\(n_1\)&lt;/span&gt; and &lt;span class=&quot;math inline&quot;&gt;\(n_2\)&lt;/span&gt; wrong numbers, respectively. Let &lt;span class=&quot;math inline&quot;&gt;\(0 \leq n_{12} \leq \min(n_1,n_2)\)&lt;/span&gt; be the number of wrong numbers which were found by both statisticians.&lt;/p&gt;
-&lt;p&gt;The data in alternative representation: Denote by &lt;span class=&quot;math inline&quot;&gt;\(f_i, i=1,2\)&lt;/span&gt; the number of wrong numbers found by &lt;span class=&quot;math inline&quot;&gt;\(i\)&lt;/span&gt; of the testers, i.e.&lt;/p&gt;
-&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
-\begin{aligned}
-f_1 &amp;amp;=(n_1-n_{12})+(n_2-n_{12})\\
-f_2 &amp;amp;= n_{12}.
-\end{aligned}
-\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;These are the wrong numbers found by only one of the testers and by both testers, respectively. Let &lt;span class=&quot;math inline&quot;&gt;\(S=f_1+f_2=n_1+n_2-n_{12}\)&lt;/span&gt; be the total number of erroneous numbers found in the test phase. Assuming that we in the subsequent debugging phase are able to remove all these &lt;span class=&quot;math inline&quot;&gt;\(S\)&lt;/span&gt; errors, we are interested in estimating the number of remaining errors, i.e. &lt;span class=&quot;math inline&quot;&gt;\(f_0\)&lt;/span&gt; or, alternatively, the total number of errors &lt;span class=&quot;math inline&quot;&gt;\(M=S+f_0\)&lt;/span&gt;.&lt;/p&gt;
-&lt;p&gt;Assume that after the first day of proofcalculation the two statisticians obtain the following results:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;testP &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;data.frame&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;t&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;9&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;12&lt;/span&gt;,&lt;span class=&quot;dv&quot;&gt;6&lt;/span&gt;)))
-&lt;span class=&quot;kw&quot;&gt;colnames&lt;/span&gt;(testP) &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;01&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;10&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;11&amp;quot;&lt;/span&gt;)
-testP&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;pre&gt;&lt;code&gt;##   01 10 11
-## 1  9 12  6&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;i.e. &lt;span class=&quot;math inline&quot;&gt;\(n_1=9\)&lt;/span&gt;, &lt;span class=&quot;math inline&quot;&gt;\(n_2=12\)&lt;/span&gt; and &lt;span class=&quot;math inline&quot;&gt;\(n_{12}=6\)&lt;/span&gt;. The total number of errors found so far is &lt;span class=&quot;math inline&quot;&gt;\(S=27\)&lt;/span&gt;. In the above code we use index &lt;code&gt;01&lt;/code&gt;, &lt;code&gt;10&lt;/code&gt; and &lt;code&gt;11&lt;/code&gt; specifying the results in two binary variable bit-notation - this is necessary for the &lt;code&gt;CARE1&lt;/code&gt; package used in the next section.&lt;/p&gt;
-&lt;h2 id=&quot;estimating-the-total-number-of-wrong-numbers&quot;&gt;Estimating the total number of wrong numbers&lt;/h2&gt;
-&lt;p&gt;Estimating the total number of errors from the above data is a capture-recapture problem with two time points (=sampling occasions).&lt;/p&gt;
-&lt;h3 id=&quot;lincoln-petersen-estimator&quot;&gt;Lincoln-Petersen estimator&lt;/h3&gt;
-&lt;p&gt;Under the simple assumption that the two statisticians are equally good at finding errors and that the possible errors have the same probability to be found (unrealistic?) a simple capture-recapture estimate for the total number of errors is the so called &lt;a href=&quot;https://en.wikipedia.org/wiki/Mark_and_recapture#Lincoln.E2.80.93Petersen_estimator&quot;&gt;Lincoln-Petersen estimator&lt;/a&gt;):&lt;/p&gt;
-&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
-\hat{M} = \frac{n_1 \cdot n_2}{n_{12}}.
-\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;Note that this estimator puts no upper-bound on &lt;span class=&quot;math inline&quot;&gt;\(N\)&lt;/span&gt;. The estimator can be computed using, e.g., the &lt;a href=&quot;https://cran.r-project.org/web/packages/CARE1/index.html&quot;&gt;&lt;code&gt;CARE1&lt;/code&gt;&lt;/a&gt; package:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;(M.hat &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;CARE1::&lt;span class=&quot;kw&quot;&gt;estN.pair&lt;/span&gt;(testP))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;pre&gt;&lt;code&gt;##  Petersen   Chapman        se       cil       ciu 
-## 45.000000 42.428571  9.151781 32.259669 72.257758&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;In other words, the estimated total number of errors is 45. A 95% confidence interval (CI) for &lt;span class=&quot;math inline&quot;&gt;\(M\)&lt;/span&gt; is 32-72 - see the package documentation for details on the method for computing the (CI). To verify the computations one could alternatively compute the Lincoln-Petersen estimator manually:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;(Nhat &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(testP[&lt;span class=&quot;st&quot;&gt;&amp;quot;01&amp;quot;&lt;/span&gt;]+testP[&lt;span class=&quot;st&quot;&gt;&amp;quot;11&amp;quot;&lt;/span&gt;]) *&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;(testP[&lt;span class=&quot;st&quot;&gt;&amp;quot;10&amp;quot;&lt;/span&gt;]+testP[&lt;span class=&quot;st&quot;&gt;&amp;quot;11&amp;quot;&lt;/span&gt;]) /&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;testP[&lt;span class=&quot;st&quot;&gt;&amp;quot;11&amp;quot;&lt;/span&gt;])&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;pre&gt;&lt;code&gt;##   01
-## 1 45&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Finally, an estimate on the number of errors left to find is &lt;span class=&quot;math inline&quot;&gt;\(\hat{M}-S=18.0\)&lt;/span&gt;.&lt;/p&gt;
-&lt;h2 id=&quot;heterogeneous-sampling-probabilities&quot;&gt;Heterogeneous Sampling Probabilities&lt;/h2&gt;
-&lt;p&gt;If one does not want to assume the equal catch-probabilities of the errors, a range of alternatives exists. One of them is the procedure by Chao (1984, 1987). Here, a non-parametric estimate of the total number of errors is given as:&lt;/p&gt;
-&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
-\hat{M} = S + \frac{f_1^2}{2 f_2}.
-\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;The above estimator is based on the assumption that the two statisticians are equally good at spotting errors, but unlike for the Petersen-Lincoln estimator, errors can have heterogeneous detection probabilities. No specific parametric model for the detection is although required. An R implementation of the estimator is readily available as part of the &lt;a href=&quot;https://cran.r-project.org/web/packages/SPECIES/index.html&quot;&gt;&lt;code&gt;SPECIES&lt;/code&gt;&lt;/a&gt; package. For this, data first need to be stored as a &lt;code&gt;data.frame&lt;/code&gt; containing &lt;span class=&quot;math inline&quot;&gt;\(f_1, f_2\)&lt;/span&gt;:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;testPaggr &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;data.frame&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;j=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;:&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;f_j=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;as.numeric&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;sum&lt;/span&gt;(testP[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;:&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;]),testP[&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;])))
-testPaggr&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;pre&gt;&lt;code&gt;##   j f_j
-## 1 1  21
-## 2 2   6&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;(M_est &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;SPECIES::&lt;span class=&quot;kw&quot;&gt;chao1984&lt;/span&gt;(testPaggr, &lt;span class=&quot;dt&quot;&gt;conf=&lt;/span&gt;&lt;span class=&quot;fl&quot;&gt;0.95&lt;/span&gt;))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;pre&gt;&lt;code&gt;## $Nhat
-## [1] 64
-## 
-## $SE
-## [1] 22.78363
-## 
-## $CI
-##      lb  ub
-## [1,] 39 139&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;In this case the estimator for the total number of errors is &lt;span class=&quot;math inline&quot;&gt;\(\hat{M}\)&lt;/span&gt;=64 (95% CI: 39-139). Again see the package documentation for methodological details.&lt;/p&gt;
-&lt;!-- ### Manual computation --&gt;
-&lt;!-- Again, if the computation can of course also be done manually: --&gt;
-&lt;!-- ```{r} --&gt;
-&lt;!-- f &lt;- testPaggr$n_j --&gt;
-&lt;!-- S &lt;- sum(f) --&gt;
-&lt;!-- ceiling(S + f[1]^2/(2*f[2])) --&gt;
-&lt;!-- ``` --&gt;
-&lt;h1 id=&quot;knowing-when-to-stop&quot;&gt;Knowing when to Stop&lt;/h1&gt;
-&lt;p&gt;Whereas the above estimates are nice to know, they give little guidance on how, after the first day of testing, to decide between the following two alternatives: continue validating numbers for another day or stop the testing process and ship the report. We address this sequential decision making problem by casting it into a decision theoretic framework. Following the work of Ferguson and Hardwick (1989): let&#39;s assume that each futher round of proofcalculation costs an amount of &lt;span class=&quot;math inline&quot;&gt;\(C_p&amp;gt;0\)&lt;/span&gt; units and that each error undetected after additional &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; rounds of proofcalculation costs &lt;span class=&quot;math inline&quot;&gt;\(c_n&amp;gt;0\)&lt;/span&gt; units. Treating the total number of wrong results &lt;span class=&quot;math inline&quot;&gt;\(M\)&lt;/span&gt; as a random variable and letting &lt;span class=&quot;math inline&quot;&gt;\(X_1,\ldots,X_n\)&lt;/span&gt;, be the number of wrong results found in each of the additional proofcalculation rounds &lt;span class=&quot;math inline&quot;&gt;\(1,\ldots,n\)&lt;/span&gt;, we know that &lt;span class=&quot;math inline&quot;&gt;\(X_i\in \mathbb{N}_0\)&lt;/span&gt; and &lt;span class=&quot;math inline&quot;&gt;\(\sum_{j=1}^n X_j \leq N\)&lt;/span&gt;. One then formulates the conditional expected loss after &lt;span class=&quot;math inline&quot;&gt;\(n, n=0, 1, 2, \ldots,\)&lt;/span&gt; additional rounds of proofcalculation:&lt;/p&gt;
-&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
-Y_n = n C_p + c_n E(M_n|X_1,\ldots,X_n),
-\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;where &lt;span class=&quot;math inline&quot;&gt;\(M_n = M -(\sum_{j=1}^n X_j)\)&lt;/span&gt;. If we further assume that in the &lt;span class=&quot;math inline&quot;&gt;\((n+1)\)&lt;/span&gt;&#39;th proofcalculation round errors are detected independently of each other with probability &lt;span class=&quot;math inline&quot;&gt;\(p_n, 0 \leq p_n \leq 1\)&lt;/span&gt; and &lt;span class=&quot;math inline&quot;&gt;\(p_n\)&lt;/span&gt; being a known number we obtain that&lt;/p&gt;
-&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
-X_{n+1} \&amp;gt;|\&amp;gt; M, X_1,\ldots,X_n \sim \text{Bin}(M_n, p_n), \quad n=0,1,2,\ldots.
-\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;Under the further assumption that &lt;span class=&quot;math inline&quot;&gt;\(M\sim \text{Po}(\lambda)\)&lt;/span&gt; with &lt;span class=&quot;math inline&quot;&gt;\(\lambda&amp;gt;0\)&lt;/span&gt; being known, one can show that the loss function is independent of the observations (Ferguson and Hardwick, 1989), i.e.&lt;/p&gt;
-&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
-Y_n = n C_p + c_n \lambda \prod_{j=0}^{n-1} (1-p_j), \quad n=0,1,2,\ldots.
-\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;The above Poisson assumption seems to be an acceptable approximation if the total number of results &lt;span class=&quot;math inline&quot;&gt;\(M\)&lt;/span&gt; is large and the probability of a result being wrong is low. In this case the optimal stopping rule is given by:&lt;/p&gt;
-&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
-n_{\text{stop}} = \min_{n\geq 0} Y_n.
-\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;One limitation of the above approach is that we have used a &lt;strong&gt;guesstimate&lt;/strong&gt; on how the detection probability &lt;span class=&quot;math inline&quot;&gt;\(p_n\)&lt;/span&gt; evolves over time. An extension would be to sequentially estimate this parameter from the obtained results. This goes along the lines of Dalal and Mallows (1988) which discuss when to stop testing your software - see the following &lt;a href=&quot;/hoehle/blog/2016/05/06/when2stop.html&quot;&gt;blog entry&lt;/a&gt; for a short statistical treatment of their approach.&lt;/p&gt;
-&lt;h3 id=&quot;numerical-example&quot;&gt;Numerical example&lt;/h3&gt;
-&lt;p&gt;We consider a setup where the costly errors have substantial ramifications and thus are easy to detect early on. As time passes on the errors become more difficult to detect. This is reflected by the subsequent choices of &lt;span class=&quot;math inline&quot;&gt;\(p_n\)&lt;/span&gt; and &lt;span class=&quot;math inline&quot;&gt;\(c_n\)&lt;/span&gt; - see below. Furthermore, the expected number of bugs is taken to be the non-homogeneous capture-recapture estimate of the remaining errors. This coupling of the two procedures is somewhat pragmatic: it does not include the first round of proofcalculation in the decision making as this is used to estimate &lt;span class=&quot;math inline&quot;&gt;\(\lambda\)&lt;/span&gt;. Furthermore, no estimation uncertainty in &lt;span class=&quot;math inline&quot;&gt;\(\lambda\)&lt;/span&gt; from this stage is transferred to the subsequent stages.&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;co&quot;&gt;#Cost of one round of proofcalculation (say in number of working days)&lt;/span&gt;
-Cp &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;
-&lt;span class=&quot;co&quot;&gt;#Cost of finding errors after n round of proofcalculation&lt;/span&gt;
-cn &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(n) &lt;span class=&quot;dv&quot;&gt;10&lt;/span&gt;*&lt;span class=&quot;fl&quot;&gt;0.9&lt;/span&gt;^(&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;*(n&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;))
-&lt;span class=&quot;co&quot;&gt;#Expected number of errors&lt;/span&gt;
-(lambda &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;M_est$Nhat -&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;sum&lt;/span&gt;(testP))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;pre&gt;&lt;code&gt;## [1] 37&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;co&quot;&gt;#Probabilty of detecting an error in round j+1&lt;/span&gt;
-pj &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(j) {
-  &lt;span class=&quot;fl&quot;&gt;0.8&lt;/span&gt;^(j&lt;span class=&quot;dv&quot;&gt;+1&lt;/span&gt;)
-}
-&lt;span class=&quot;co&quot;&gt;#Expected conditional loss as defined above&lt;/span&gt;
-Yn &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;Vectorize&lt;/span&gt;(function(n) {
-  n*Cp +&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;cn&lt;/span&gt;(n) *&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;lambda *&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;prod&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;-&lt;span class=&quot;kw&quot;&gt;pj&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;:(n&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;)))
-})
-
-&lt;span class=&quot;co&quot;&gt;#Make a data.frame with the results.&lt;/span&gt;
-df &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;data.frame&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;:&lt;span class=&quot;dv&quot;&gt;20&lt;/span&gt;) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;mutate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;Yn=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;Yn&lt;/span&gt;(n),&lt;span class=&quot;dt&quot;&gt;cn=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;cn&lt;/span&gt;(n),&lt;span class=&quot;dt&quot;&gt;pn=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;pj&lt;/span&gt;(n&lt;span class=&quot;dv&quot;&gt;-1&lt;/span&gt;))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;The above choice of parameters leads to the following functional forms:&lt;/p&gt;
-&lt;figure&gt;
-&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-05-22-proofCalculation/unnamed-chunk-7-1.png&quot; /&gt;
-&lt;/figure&gt;
-&lt;p&gt;The optimal strategy is thus found as:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;df %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;filter&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;rank&lt;/span&gt;(Yn) ==&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;select&lt;/span&gt;(n,Yn)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;pre&gt;&lt;code&gt;##   n       Yn
-## 1 5 6.457426&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;In other words, one should test after &lt;span class=&quot;math inline&quot;&gt;\(n_{\text{stop}}=5\)&lt;/span&gt; additional rounds.&lt;/p&gt;
-&lt;h1 id=&quot;discussion&quot;&gt;Discussion&lt;/h1&gt;
-&lt;p&gt;Is any of the above &lt;strong&gt;useful&lt;/strong&gt;? Well, I have not heard about such approaches being used seriously in software engineering. The presented methods narrow down a complex problem down using assumptions in order to make the problem mathematically tractable. You may not agree with the assumptions as, e.g., Bolton (2010) - yet, such assumptions are a good way to get started. The point is that statisticians appear to be very good at enlightening others about the &lt;strong&gt;virtues of statistics&lt;/strong&gt; (repeat your measurements, have a sampling plan, pantomimic acts visualizing the horror of p-values). However, when it comes to our own analyses, we are surprisingly statistics-illiterate at times.&lt;/p&gt;
-&lt;figure&gt;
-&lt;img src=&quot;/hoehle/blog/figure/source/2016-05-22-proofCalculation/look_for_the_pattern-300px.png&quot; title=&quot;Source: https://openclipart.org/detail/248382/dropping-numbers&quot; /&gt;
-&lt;/figure&gt;
-&lt;h1 id=&quot;literature&quot;&gt;Literature&lt;/h1&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;Bolton, M (2010). &lt;a href=&quot;http://www.developsense.com/blog/2010/07/another-silly-quantitative-model/&quot;&gt;Another Silly Quantitative Model&lt;/a&gt;, Blog post, July 2010.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Cook, JD (2010). &lt;a href=&quot;http://www.johndcook.com/blog/2010/07/13/lincoln-index/&quot;&gt;How many errors are left to find?&lt;/a&gt;, Blog post, July 2010.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Dalal, S. R. and C. L. Mallows. “&lt;a href=&quot;http://www.jstor.org/stable/2289319&quot;&gt;When Should One Stop Testing Software?&lt;/a&gt;”. Journal of the American Statistical Association (1988), 83(403):872–879.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Ferguson, TS and Hardwick JP (1989). &lt;a href=&quot;http://www.jstor.org/stable/3214037&quot;&gt;Stopping Rules For Proofreading&lt;/a&gt;, J. Appl. Prob. 26:304-313.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Hayes, B (2010). &lt;a href=&quot;http://bit-player.org/2010/the-thrill-of-the-chase&quot;&gt;The thrill of the chase&lt;/a&gt;, Blog post, July 2010.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Singpurwalla ND, Wilson SP (1999). &lt;a href=&quot;http://www.springer.com/us/book/9780387988238&quot;&gt;Statistical Methods in Software Engineering&lt;/a&gt;, Springer.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Yang MCK, Wackerly DD, Rosalsky A (1982). &lt;a href=&quot;http://www.jstor.org/stable/3213535&quot;&gt;Optimal Stopping Rules in Proofreading&lt;/a&gt;, Journal of Applied Probability 19(3), pp. 723-729&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Zeller, A (2009). &lt;a href=&quot;http://www.whyprogramsfail.com/&quot;&gt;Why programs fail&lt;/a&gt;, Elsevier, 2009, 423 pages.&lt;/p&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div id=&quot;refs&quot; class=&quot;references&quot;&gt;
-
-&lt;/div&gt;
-</description>
-        <pubDate>Sun, 22 May 2016 00:00:00 +0200</pubDate>
-        <link>http://staff.math.su.se/hoehle/blog/2016/05/22/proofCalculation.html</link>
-        <guid isPermaLink="true">http://staff.math.su.se/hoehle/blog/2016/05/22/proofCalculation.html</guid>
         
         <category>datascience</category>
         

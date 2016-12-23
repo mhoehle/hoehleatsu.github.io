@@ -1,0 +1,301 @@
+---
+layout: post
+title: "suRprise! - Classifying Kinder Eggs by Boosting"
+tags: [rstats, stats, programming, juleforsøg, classification]
+bibliography: ~/Literature/Bibtex/jabref.bib
+comments: true
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2016-12-23-surprise/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2016-12-23-surprise/"
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='',autodep=TRUE)
+options(width=90)
+library("dplyr")
+library("ggplot2")
+library("tidyr")
+library("methods")
+library("forcats")
+
+theme_set(theme_bw())
+
+##Set seed
+set.seed(123)
+```
+
+## Abstract
+
+Carrying the Danish tradition of Juleforsøg to the realm of
+statistics, we use R to classify the figure content of Kinder Eggs
+using boosted regression trees for the egg's weight and possible
+rattling noises.
+
+<center>
+```{r,results='asis',echo=FALSE}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"pics/figures.jpg"),")")
+```
+</center>
+
+{% include license.html %}
+
+## Introduction
+
+A **juleforsøg** is the kind of
+[exploding experiment](https://www.youtube.com/watch?v=sinQ06YzbJI8)
+happening in the last physics or chemistry class before the Christmas
+vacation. Frequently the teacher, with a look of secrecy, initializes
+the class by locking the door mumbling something like "the headmaster
+better not see this...". With Christmas approaching fast, here is an
+attempt to create a statistical juleforsøg concluding the *Theory
+meets practice* 2016 posting season:
+
+The advertisement campaign of the
+[Kinder Surprise Eggs](https://en.wikipedia.org/wiki/Kinder_Surprise)
+aka. [Kinder Joy](https://en.wikipedia.org/wiki/Kinder_Joy) claims
+that the content of every 7th egg is a figure (see
+[example](https://blog.kalaydo.de/blog/wp-content/uploads/2016/05/Biene-Maja.jpg)) -
+otherwise they contain toys or puzzles, which positively can be
+described as junk. Figures, in particular completed series, on the
+other hand, can achieve high
+[trading values](https://translate.google.com/translate?sl=de&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=https%3A%2F%2Fwww.kalaydo.de%2Fblog%2Fwertvolle-ue-ei-figuren%2F&edit-text=&act=url). The
+clear goal is thus to optimize your egg hunting strategy in order to
+maximize figure content.
+
+
+## The problem
+
+Your budget is limited, so the question is which egg to select when
+standing in the supermarket?
+
+<center>
+```{r,results='asis',echo=FALSE}
+##Photo taken 17 Oct 2013 in Coop supermarked Södermalm, Stockholm.
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"pics/inshopwithprice.jpg"),")")
+```
+</center>
+<p>
+
+### Various egg selection strategies
+
+It goes without saying that brute force purchasing strategies would be
+insane. Hence, a number of egg selection strategies can be observed in
+real life:
+
+* The no clue egg enthusiast: Selects an egg at random. With a certain
+    probability (determined by the producer and the cleverness of the
+    previous supermarked visitors) the egg contains a figure
+
+* The egg junkie: knows a good
+  [radiologist](https://www.radiologycafe.com/blog/easter-egg-xray)
+
+* The egg nerd: using
+[scale, rattling noises and the barcode](https://translate.google.com/translate?sl=de&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=http%3A%2F%2Fwww.eierwiki.de%2Findex.php%3Ftitle%3DTipps_%2526_Tricks_beim_Eierkauf&edit-text=&act=url)
+he/she quickly determines whether there is a figure in the egg
+
+We shall in this post be interested in **the statistician's egg
+selection approach**: Egg classification based on weight and rattling
+noise using 'top-notch' machine learning algorithms - in our case
+based on boosted classification trees.
+
+
+## Data Collection
+
+```{r,echo=FALSE}
+#Load data
+surprise <- read.table(paste0(filePath,"surprise.txt"),header=TRUE,skip=9)
+#Some data munging to get factor variable
+surprise <- surprise %>% mutate(rattles=1-rattles_like_figure, #solve ambiguity in the rattling covar
+                                rattles_fac = fct_recode(factor(rattles),
+                                                         "no"="0",
+                                                         "yes"="1"),
+                                figure_fac = fct_recode(factor(figure),
+                                                     "no" = "0",
+                                                     "yes" = "1"))
+```
+We collected n=`r nrow(surprise)` eggs of which
+`r sprintf('%.1f%%',100*mean(surprise$figure))` were figures - the
+data are available under a GPL v3.0 license from github. For
+each egg, we determined its **weight** as well as the sound it produced
+when being shaken. If the sounds could be characterized as **rattling**
+(aka. clattering) this was indicative of the content consisting of
+many parts and, hence, unlikely to be a figure.
+
+<center>
+```{r,results='asis',echo=FALSE}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"pics/weightandrattle.jpg"),")")
+```
+</center>
+<p>
+Altogether, the first couple of rows of the dataset look as follows.
+
+```{r}
+head(surprise, n=5)
+```
+
+### Descriptive Data Analysis
+```{r,echo=FALSE}
+tab <- with(surprise, table(figure, rattles))
+```
+
+The fraction of figures in the dataset was
+`r sum(surprise$figure)`/`r nrow(surprise)`, which is way higher than
+the proclaimed 1/7; possibly, because professionals egg collectors were at work...
+
+Of the `r sum(tab)` analysed eggs, `r colSums(tab)[1]` were categorized as non-rattling.
+The probability of such a non-rattling egg really containing
+a figure was `r sprintf("%.1f%%",tab[1,1]/(tab[1,1]+tab[2,1])*100)`.
+This proportion is not impressive, but could be due to the data
+collector's having a different understanding of exactly how the variable
+*rattling* was to be interpreted: Does it *rattle*, or does it
+*rattle like a figure*? In hindsight, a clearer definition and
+communication of this variable would have prevented ambiguity in the
+collection.
+
+A descriptive plot of the weight distribution of eggs with and without
+figure content shows, that eggs with figures tend to be slightly
+heavier:
+
+```{r, WEIGHTPLOT, echo=FALSE}
+##Plot boxplot & barchart in one figure
+p1 <- ggplot(surprise, aes(x=figure_fac, y= weight)) + geom_boxplot() + xlab("") + ylab("Weight (g)")
+p2 <- ggplot(surprise, aes(x=weight,fill=figure_fac)) + geom_bar() + xlab("Weight (g)") + ylab("Eggs") + scale_fill_manual(name="Content:",values=c("figure"="#66C2A5","no figure"="#FC8D62"))
+gridExtra::grid.arrange(p1,p2,ncol=2)
+```
+
+Below the proportion (in %) of eggs with figure content per observed weight:
+```{r}
+tabw <- with(surprise, table(weight, figure_fac))
+tabw <- tabw / rowSums(tabw)
+print(t(tabw*100),digits=3)
+```
+
+A simple selection rule based on weight would be to weigh eggs until
+you hit a 40g egg. A slightly less certain stopping rule would be to
+pick 34g eggs. However, modern statistics is more than counting and
+analysing proportions!
+
+## Machine Learning the Egg Content
+
+We use machine learning algorithms to solve the binary classification
+problem at hand. In particular, we use the `caret` package [@caret]
+and classify figure content using boosted regression trees as implemented in the
+[`xgboost`](https://en.wikipedia.org/wiki/Xgboost) package
+[@xgboost]. Details on how to use the `caret` package can, e.g.,
+be found in the following
+[tutorial](https://topepo.github.io/caret/index.html).
+
+```{r,message=FALSE,warning=FALSE,cache=TRUE, results='hide'}
+library(caret)
+
+##Grid with xgboost hyperparameters
+xgb_hyperparam_grid = expand.grid(
+  nrounds = c(25, 100, 1000),
+  eta = c(0.01, 0.001, 0.0001),
+  max_depth = c(2, 4, 8, 10, 16, 32),
+  gamma = 1,
+  colsample_bytree = 0.8, min_child_weight = 1, subsample = 0.5
+)
+##caret training control object
+control <- trainControl(method="repeatedcv", number=8, repeats=8, classProbs=TRUE,
+                        summaryFunction = twoClassSummary, allowParallel=TRUE)
+##train away and do it parallelized...
+library(doMC)
+registerDoMC(cores = 3)
+m_xgb <- train( figure_fac ~ weight * rattles_fac, data=surprise, method="xgbTree",
+               trControl=control, verbose=FALSE, metric="ROC", tuneGrid=xgb_hyperparam_grid)
+##look at the result
+m_xgb
+```
+```{r,echo=FALSE}
+str <- capture.output(m_xgb)
+#Skip some lines of the cv output
+idx1 <- grep("Resampling results across tuning",str)
+idx2 <- grep("Tuning parameter 'gamma' was ",str)
+#Reduce output
+removeLines <- (idx1+6):(idx2-4)
+str[removeLines[1]] <- "  ...  ...        ..."
+cat(paste(str[-removeLines[-1]],"\n"))
+```
+```{r,eval=FALSE}
+m_xgb$bestTune
+sprintf("%.2f",mean(m_xgb$resample$ROC))
+```
+
+The average AUC for the `r length(m_xgb$resample$ROC)` resamples is
+`r sprintf("%.2f",mean(m_xgb$resample$ROC))`. Average sensitivity and
+specificity are `r sprintf("%.1f%%",100*mean(m_xgb$resample$Sens))`
+and `r sprintf("%.1f%%",100*mean(m_xgb$resample$Spec))`, respectively.
+This shows that predicting figure content with the available data is
+better than simply picking an egg at random,
+but no figure-guaranteeing strategy appears possible on a per-egg basis.
+
+### Predicting the Content of a Particular Egg
+
+Suppose the egg you look at weighs 36g and when shaken it sounds
+like a lot of small parts being moved. In other words:
+
+```{r, echo=TRUE,message=FALSE,warning=FALSE}
+predict(m_xgb, newdata = data.frame(weight=36, rattles_fac="yes"),type="prob")
+```
+
+Hence, despite the rattling noises, the classifier is of the opinion
+that it's slightly more likely than 50% that there is a figure
+inside. However, when we opened this particular egg:
+
+<center>
+```{r,results='asis',echo=FALSE}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"pics/car.jpg"),")")
+```
+</center>
+<p>
+
+...a car. Definitely not a figure! The proof of concept disappointment was,
+however, quickly counteracted by the surrounding chocolate...
+
+As a standard operating procedure for your optimized future
+supermarket hunt, below are shown the classifier's predicted
+probabilities for figure content as a function of egg weight and the
+`rattles_fac` variable.
+
+```{r,echo=FALSE, CLASSIFIEROUTPUT}
+nd <- data.frame(weight=rep(30:40,times=2), rattles_fac=rep(c("no","yes"),each=11))
+nd$p <- predict(m_xgb, newdata = nd,type="prob")[,2]
+ggplot(nd, aes(x=weight, y=p)) + geom_line() + facet_grid(. ~ rattles_fac) + ylab("Probability of figure") + xlab("Weight (g)") + scale_y_continuous(labels=scales::percent)
+```
+
+## Discussion
+
+The above post only discusses the optimal selection on a per-egg
+basis. One could weight & shake several eggs and then select the one
+with the highest predicted probability for containing a figure. Future
+research is needed to solve this sequential decision making problem in
+an
+[optimal way](http://staff.math.su.se/hoehle/blog/2016/06/12/optimalChoice.html).
+
+### Outlook
+
+We have retained a validation sample of 10 eggs and are willing to
+send an unconsumed 11th element of the sample to whoever obtains the
+best score on this validation sample. Anyone who knows how to upload
+this to [kaggle](https://www.kaggle.com)?
+
+<center>
+We wish all readers *God jul* and a happy new year!
+</center>
+<p>
+
+## Acknowledgments
+
+Thanks to former colleagues at the Department of Statistics,
+University of Munich, as well as numerous statistics students in
+Munich and Stockholm, for contributing to the data collection. In
+particular we thank Alexander Jerak for his idea of optimizing figure
+hunting in a data driven way more than 10 years ago.
+
+## Literature

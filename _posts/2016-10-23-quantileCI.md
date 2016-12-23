@@ -141,7 +141,7 @@ When it comes to confidence intervals for quantiles the set of alternative imple
 
 | Package::Function   |  Version | Description                                            |
 |---------------------|:--------:|--------------------------------------------------------|
-| [`MKMisc::quantileCI`](http://finzi.psych.upenn.edu/R/library/MKmisc/html/quantileCI.html)| 0.993 | Implements an exact but very slow $O(n^2)$ search as well as an asymptotic method approximating the exact procedure. Do to the method being slow it is not investigated further, but looking at it an `Rcpp` implementation of the nested loop might be able to speed up the performance substantially. |
+| [`MKMisc::quantileCI`](http://finzi.psych.upenn.edu/R/library/MKmisc/html/quantileCI.html)| 0.993 | Implements an exact but very slow $O(n^2)$ search as well as an asymptotic method approximating the exact procedure. Due to the method being slow it is not investigated further, but looking at it an `Rcpp` implementation of the nested loop might be able to speed up the performance substantially. |
 |   |   |  |
 | [`jmuOutlier::quantileCI`](http://finzi.psych.upenn.edu/R/library/jmuOutlier/html/quantileCI.html)  |  1.1  | Implements the exact method. |
 |   |   |  |
@@ -203,7 +203,8 @@ other packages. However, when the `interpolate` argument is set to
 `TRUE` (the default), an additional interpolation step between the two
 neighbouring order statistics is performed as suggested in the work of
 @nyblom1992, which extends work for the median by
-@hettmansperger_sheather1986 and generates intervals of the form.
+@hettmansperger_sheather1986 to arbitrary quantiles. It generates
+intervals of the form:
 
 $$
 \left( (1-\lambda_1) x_{(d)} + \lambda_1 x_{(d+1)}, (1-\lambda_2) x_{(e-1)} + \lambda_1 x_{(e)} \right)
@@ -314,7 +315,7 @@ simulate.coverage_qci(n=11, p=0.5, conf.level=0.95)
 We note that the `EnvStats_exact` procedure again has a lower coverage
 than the nominal required level, it must therefore implement a
 slightly different procedure than expected. That coverage is
-less than the nominal for an *exact* method is, however, somewhat
+less than the nominal for an *exact* method is, however, still somewhat
 *surprising*.
 
 In this study for the median, the original

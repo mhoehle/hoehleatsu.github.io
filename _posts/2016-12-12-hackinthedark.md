@@ -49,8 +49,8 @@ As a consequence, this blog post gathers our experiences from
 organising a small **4x3 hackathon** (4 people, 3 days) for the
 surveillance R-package in connection with the
 [ESCAIDE2016](http://ecdc.europa.eu/en/escaide/Pages/ESCAIDE.aspx)
-conference. Our hope is that these experiences might be useful for
-others - even if working in very different contexts.
+conference in November 2016. Our hope is that these experiences might
+be useful for others - even if working in very different contexts.
 
 ## Organizing and Running the Hackathon
 
@@ -165,8 +165,6 @@ hackathon outside the virtual world of twitter.
 The three days of hackathon passed quickly, but we managed to get the
 four formulated outputs done.
 
-## Reflections
-
 Intense software sprints are hard work, thus, it was natural that
 towards the end of the hackathon the concentration decreased
 slightly. However, phases of intense coding are perfectly supplemented
@@ -200,7 +198,7 @@ aspects. It also proves wise not to ignore fresh air & sunlight
 completely. To our surprise, the 6:30 hours of daylight were at times
 actually quite sunny in Stockholm!
 
-## Visit the Hack in the Dark Output
+### Visit the Hack in the Dark Output
 
 The output of the hackathon can be found here:
 
@@ -209,17 +207,10 @@ The output of the hackathon can be found here:
 </center>
 <p>
 
-In order to run the accompanying code (available from
-github by clicking on the "fork me on github" icons), version 1.12.3
-of the `surveillance` package is needed. Currently, this development
-version of the package is not on CRAN, but can be installed from
-R-Forge by running:
-
-```r
-install.packages("surveillance", repos="http://R-Forge.R-project.org")
-```
-
-As an appetizer to check out the hackathon
+In order to run the accompanying code (available from github by
+clicking on the "fork me on github" icons), version 1.13.0 of the
+`surveillance` package is needed (available from CRAN). As an
+appetizer to check out the hackathon
 [site](https://surveillancer.github.io/tutorials/) or the
 [code](https://github.com/surveillancer/tutorials), here are two of
 our tweets demoing output during the event:
@@ -230,7 +221,7 @@ our tweets demoing output during the event:
 <blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">Interactive illustration of monitoring algorithms for infectious disease surveillance <a href="https://twitter.com/hashtag/escaide2016?src=hash">#escaide2016</a> <a href="https://twitter.com/hashtag/rstats?src=hash">#rstats</a> <a href="https://t.co/qizcqqMbEJ">https://t.co/qizcqqMbEJ</a> <a href="https://t.co/LyZujDLsF2">pic.twitter.com/LyZujDLsF2</a></p>&mdash; Dirk Schumacher (\@dirk_sch) <a href="https://twitter.com/dirk_sch/status/803573405660286976">November 29, 2016</a></blockquote>
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-## The Future
+### The Future
 
 We wish you all the best for your own hackathon event. Put software on the
 scientific agenda!
