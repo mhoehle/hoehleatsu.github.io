@@ -161,10 +161,10 @@ A descriptive plot of the weight distribution of eggs with and without
 figure content shows, that eggs with figures tend to be slightly
 heavier:
 
-```{r, WEIGHTPLOT, echo=FALSE}
+```{r, WEIGHTPLOT, echo=FALSE, fig.align='center'}
 ##Plot boxplot & barchart in one figure
 p1 <- ggplot(surprise, aes(x=figure_fac, y= weight)) + geom_boxplot() + xlab("") + ylab("Weight (g)")
-p2 <- ggplot(surprise, aes(x=weight,fill=figure_fac)) + geom_bar() + xlab("Weight (g)") + ylab("Eggs") + scale_fill_manual(name="Content:",values=c("figure"="#66C2A5","no figure"="#FC8D62"))
+p2 <- ggplot(surprise, aes(x=weight,fill=figure_fac)) + geom_bar() + xlab("Weight (g)") + ylab("Eggs") + scale_fill_manual(name="Figure inside?",values=c("yes"="#66C2A5","no"="#FC8D62"))
 gridExtra::grid.arrange(p1,p2,ncol=2)
 ```
 
@@ -263,7 +263,7 @@ supermarket hunt, below are shown the classifier's predicted
 probabilities for figure content as a function of egg weight and the
 `rattles_fac` variable.
 
-```{r,echo=FALSE, CLASSIFIEROUTPUT}
+```{r,echo=FALSE, CLASSIFIEROUTPUT,fig.align="center"}
 nd <- data.frame(weight=rep(30:40,times=2), rattles_fac=rep(c("no","yes"),each=11))
 nd$p <- predict(m_xgb, newdata = nd,type="prob")[,2]
 ggplot(nd, aes(x=weight, y=p)) + geom_line() + facet_grid(. ~ rattles_fac) + ylab("Probability of figure") + xlab("Weight (g)") + scale_y_continuous(labels=scales::percent)
