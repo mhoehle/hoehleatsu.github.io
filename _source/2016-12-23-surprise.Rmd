@@ -167,6 +167,8 @@ p1 <- ggplot(surprise, aes(x=figure_fac, y= weight)) + geom_boxplot() + xlab("")
 p2 <- ggplot(surprise, aes(x=weight,fill=figure_fac)) + geom_bar() + xlab("Weight (g)") + ylab("Eggs") + scale_fill_manual(name="Figure inside?",values=c("yes"="#66C2A5","no"="#FC8D62")) + ggtitle("")
 gridExtra::grid.arrange(p1,p2,ncol=2)
 ```
+Note: About 50% of the eggs were weighted on a standard supermarket scales, which showed the
+result in steps of 2g only.
 
 Below the proportion (in %) of eggs with figure content per observed weight:
 ```{r,echo=FALSE}
@@ -237,16 +239,16 @@ but no figure-guaranteeing strategy appears possible on a per-egg basis.
 
 ### Predicting the Content of a Particular Egg
 
-Suppose the egg you look at weighs 36g and when shaken it sounds
+Suppose the egg you look at weighs 36g and, when shaken, sounds
 like a lot of small parts being moved. In other words:
 
 ```{r, echo=TRUE,message=FALSE,warning=FALSE}
 predict(m_xgb, newdata = data.frame(weight=36, rattles_fac="yes"),type="prob")
 ```
 
-Hence, despite the rattling noises, the classifier is of the opinion
-that it's slightly more likely than 50% that there is a figure
-inside. However, when we opened this particular egg:
+Despite the rattling noises, the classifier thinks that it's slightly
+more likely that the content is a figure. However, when we opened this
+particular egg:
 
 <center>
 ```{r,results='asis',echo=FALSE}
@@ -271,7 +273,7 @@ ggplot(nd, aes(x=weight, y=p)) + geom_line() + facet_grid(. ~ rattles_fac) + yla
 
 ## Discussion
 
-The above post only discusses the optimal selection on a per-egg
+The present post only discusses the optimal selection on a per-egg
 basis. One could weight & shake several eggs and then select the one
 with the highest predicted probability for containing a figure. Future
 research is needed to solve this sequential decision making problem in

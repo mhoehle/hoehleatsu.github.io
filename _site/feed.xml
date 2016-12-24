@@ -6,8 +6,8 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 24 Dec 2016 10:39:54 +0100</pubDate>
-    <lastBuildDate>Sat, 24 Dec 2016 10:39:54 +0100</lastBuildDate>
+    <pubDate>Sat, 24 Dec 2016 11:51:18 +0100</pubDate>
+    <lastBuildDate>Sat, 24 Dec 2016 11:51:18 +0100</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
@@ -54,7 +54,7 @@ href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Comm
 &lt;p&gt;The fraction of figures in the dataset was 34/79, which is way higher than the proclaimed 1/7; possibly, because professionals egg collectors were at work...&lt;/p&gt;
 &lt;p&gt;Of the 79 analysed eggs, 54 were categorized as non-rattling. The probability of such a non-rattling egg really containing a figure was 51.9%. This proportion is not impressive, but could be due to the data collector&#39;s having a different understanding of exactly how the variable &lt;em&gt;rattling&lt;/em&gt; was to be interpreted: Does it &lt;em&gt;rattle&lt;/em&gt;, or does it &lt;em&gt;rattle like a figure&lt;/em&gt;? In hindsight, a clearer definition and communication of this variable would have prevented ambiguity in the collection.&lt;/p&gt;
 &lt;p&gt;A descriptive plot of the weight distribution of eggs with and without figure content shows, that eggs with figures tend to be slightly heavier:&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-12-23-surprise/WEIGHTPLOT-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-12-23-surprise/WEIGHTPLOT-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt; Note: About 50% of the eggs were weighted on a standard supermarket scales, which showed the result in steps of 2g only.&lt;/p&gt;
 &lt;p&gt;Below the proportion (in %) of eggs with figure content per observed weight:&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;##           weight
 ## figure_fac    26    28    29    30    31    32    33    34    35    36    40
@@ -112,11 +112,11 @@ m_xgb&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 ##   gamma = 1, colsample_bytree = 0.8, min_child_weight = 1 and subsample = 0.5.&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;The average AUC for the 64 resamples is 0.68. Average sensitivity and specificity are 86.6% and 43.3%, respectively. This shows that predicting figure content with the available data is better than simply picking an egg at random, but no figure-guaranteeing strategy appears possible on a per-egg basis.&lt;/p&gt;
 &lt;h3 id=&quot;predicting-the-content-of-a-particular-egg&quot;&gt;Predicting the Content of a Particular Egg&lt;/h3&gt;
-&lt;p&gt;Suppose the egg you look at weighs 36g and when shaken it sounds like a lot of small parts being moved. In other words:&lt;/p&gt;
+&lt;p&gt;Suppose the egg you look at weighs 36g and, when shaken, sounds like a lot of small parts being moved. In other words:&lt;/p&gt;
 &lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;predict&lt;/span&gt;(m_xgb, &lt;span class=&quot;dt&quot;&gt;newdata =&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;data.frame&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;weight=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;36&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;rattles_fac=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;yes&amp;quot;&lt;/span&gt;),&lt;span class=&quot;dt&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;prob&amp;quot;&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;pre&gt;&lt;code&gt;##          no       yes
 ## 1 0.4695328 0.5304672&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Hence, despite the rattling noises, the classifier is of the opinion that it&#39;s slightly more likely than 50% that there is a figure inside. However, when we opened this particular egg:&lt;/p&gt;
+&lt;p&gt;Despite the rattling noises, the classifier thinks that it&#39;s slightly more likely that the content is a figure. However, when we opened this particular egg:&lt;/p&gt;
 &lt;center&gt;
 &lt;img src=&quot;/hoehle/blog/figure/source/2016-12-23-surprise/pics/car.jpg&quot; /&gt;
 &lt;/center&gt;
@@ -125,7 +125,7 @@ m_xgb&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;As a standard operating procedure for your optimized future supermarket hunt, below are shown the classifier&#39;s predicted probabilities for figure content as a function of egg weight and the &lt;code&gt;rattles_fac&lt;/code&gt; variable.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-12-23-surprise/CLASSIFIEROUTPUT-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
 &lt;h2 id=&quot;discussion&quot;&gt;Discussion&lt;/h2&gt;
-&lt;p&gt;The above post only discusses the optimal selection on a per-egg basis. One could weight &amp;amp; shake several eggs and then select the one with the highest predicted probability for containing a figure. Future research is needed to solve this sequential decision making problem in an &lt;a href=&quot;http://staff.math.su.se/hoehle/blog/2016/06/12/optimalChoice.html&quot;&gt;optimal way&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;The present post only discusses the optimal selection on a per-egg basis. One could weight &amp;amp; shake several eggs and then select the one with the highest predicted probability for containing a figure. Future research is needed to solve this sequential decision making problem in an &lt;a href=&quot;http://staff.math.su.se/hoehle/blog/2016/06/12/optimalChoice.html&quot;&gt;optimal way&lt;/a&gt;.&lt;/p&gt;
 &lt;h3 id=&quot;outlook&quot;&gt;Outlook&lt;/h3&gt;
 &lt;p&gt;We have retained a validation sample of 10 eggs and are willing to send an unconsumed 11th element of the sample to whoever obtains the best score on this validation sample. Anyone who knows how to upload this to &lt;a href=&quot;https://www.kaggle.com&quot;&gt;kaggle&lt;/a&gt;?&lt;/p&gt;
 &lt;center&gt;
