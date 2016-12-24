@@ -1,10 +1,14 @@
 ######################################################################
 ## Data collected by a candy community on whether kinder eggs contain
 ## a figure in relation to the egg's weight and rattling noise.
-## See http://staff.math.su.se/hoehle/blog/2016/12/13/surprise.html
-## for details about the data.
+## See http://staff.math.su.se/hoehle/blog/2016/12/23/surprise.html
+## for details about the data - note also that the R code of the
+## blog performs some data preprocessing, e.g.
 ##
-## Data are (C) Michael Höhle <http://www.math.su.se/~hoehle>, 2016
+##   rattles = 1 - rattles_like_figure
+##
+##
+## Data are (C) 2016 by Michael Höhle <http://www.math.su.se/~hoehle>
 ## and available under a GPL v3.0 license.
 ######################################################################
 weight		rattles_like_figure	figure
@@ -87,4 +91,3 @@ weight		rattles_like_figure	figure
 31		1	1
 36		1	1
 34		0	1
-

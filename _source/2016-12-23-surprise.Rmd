@@ -120,7 +120,7 @@ surprise <- surprise %>% mutate(rattles=1-rattles_like_figure, #solve ambiguity 
 ```
 We collected n=`r nrow(surprise)` eggs of which
 `r sprintf('%.1f%%',100*mean(surprise$figure))` were figures - the
-data are available under a GPL v3.0 license from github. For
+data are available under a GPL v3.0 license from [github](https://github.com/hoehleatsu/hoehleatsu.github.io/blob/master/figure/source/2016-12-23-surprise/surprise.txt). For
 each egg, we determined its **weight** as well as the sound it produced
 when being shaken. If the sounds could be characterized as **rattling**
 (aka. clattering) this was indicative of the content consisting of
