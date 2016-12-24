@@ -49,7 +49,7 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"pics/fig
 A **juleforsøg** is the kind of
 [exploding experiment](https://www.youtube.com/watch?v=sinQ06YzbJI8)
 happening in the last physics or chemistry class before the Christmas
-vacation. Frequently the teacher, with a look of secrecy, initializes
+vacation. Not seldomly the teacher, with a look of secrecy, initializes
 the class by locking the door mumbling something like "the headmaster
 better not see this...". With Christmas approaching fast, here is an
 attempt to create a statistical juleforsøg concluding the *Theory
@@ -163,13 +163,13 @@ heavier:
 
 ```{r, WEIGHTPLOT, echo=FALSE, fig.align='center'}
 ##Plot boxplot & barchart in one figure
-p1 <- ggplot(surprise, aes(x=figure_fac, y= weight)) + geom_boxplot() + xlab("") + ylab("Weight (g)")
-p2 <- ggplot(surprise, aes(x=weight,fill=figure_fac)) + geom_bar() + xlab("Weight (g)") + ylab("Eggs") + scale_fill_manual(name="Figure inside?",values=c("yes"="#66C2A5","no"="#FC8D62"))
+p1 <- ggplot(surprise, aes(x=figure_fac, y= weight)) + geom_boxplot() + xlab("") + ylab("Weight (g)") + ggtitle("Figure inside?")
+p2 <- ggplot(surprise, aes(x=weight,fill=figure_fac)) + geom_bar() + xlab("Weight (g)") + ylab("Eggs") + scale_fill_manual(name="Figure inside?",values=c("yes"="#66C2A5","no"="#FC8D62")) + ggtitle("")
 gridExtra::grid.arrange(p1,p2,ncol=2)
 ```
 
 Below the proportion (in %) of eggs with figure content per observed weight:
-```{r}
+```{r,echo=FALSE}
 tabw <- with(surprise, table(weight, figure_fac))
 tabw <- tabw / rowSums(tabw)
 print(t(tabw*100),digits=3)
@@ -222,7 +222,7 @@ removeLines <- (idx1+6):(idx2-4)
 str[removeLines[1]] <- "  ...  ...        ..."
 cat(paste(str[-removeLines[-1]],"\n"))
 ```
-```{r,eval=FALSE}
+```{r,eval=FALSE, echo=FALSE}
 m_xgb$bestTune
 sprintf("%.2f",mean(m_xgb$resample$ROC))
 ```

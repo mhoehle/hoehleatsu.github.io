@@ -6,8 +6,8 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 24 Dec 2016 00:28:10 +0100</pubDate>
-    <lastBuildDate>Sat, 24 Dec 2016 00:28:10 +0100</lastBuildDate>
+    <pubDate>Sat, 24 Dec 2016 01:03:40 +0100</pubDate>
+    <lastBuildDate>Sat, 24 Dec 2016 01:03:40 +0100</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
@@ -20,7 +20,7 @@
 &lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
 href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
-&lt;p&gt;A &lt;strong&gt;juleforsøg&lt;/strong&gt; is the kind of &lt;a href=&quot;https://www.youtube.com/watch?v=sinQ06YzbJI8&quot;&gt;exploding experiment&lt;/a&gt; happening in the last physics or chemistry class before the Christmas vacation. Frequently the teacher, with a look of secrecy, initializes the class by locking the door mumbling something like &amp;quot;the headmaster better not see this...&amp;quot;. With Christmas approaching fast, here is an attempt to create a statistical juleforsøg concluding the &lt;em&gt;Theory meets practice&lt;/em&gt; 2016 posting season:&lt;/p&gt;
+&lt;p&gt;A &lt;strong&gt;juleforsøg&lt;/strong&gt; is the kind of &lt;a href=&quot;https://www.youtube.com/watch?v=sinQ06YzbJI8&quot;&gt;exploding experiment&lt;/a&gt; happening in the last physics or chemistry class before the Christmas vacation. Not seldomly the teacher, with a look of secrecy, initializes the class by locking the door mumbling something like &amp;quot;the headmaster better not see this...&amp;quot;. With Christmas approaching fast, here is an attempt to create a statistical juleforsøg concluding the &lt;em&gt;Theory meets practice&lt;/em&gt; 2016 posting season:&lt;/p&gt;
 &lt;p&gt;The advertisement campaign of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Kinder_Surprise&quot;&gt;Kinder Surprise Eggs&lt;/a&gt; aka. &lt;a href=&quot;https://en.wikipedia.org/wiki/Kinder_Joy&quot;&gt;Kinder Joy&lt;/a&gt; claims that the content of every 7th egg is a figure (see &lt;a href=&quot;https://blog.kalaydo.de/blog/wp-content/uploads/2016/05/Biene-Maja.jpg&quot;&gt;example&lt;/a&gt;) - otherwise they contain toys or puzzles, which positively can be described as junk. Figures, in particular completed series, on the other hand, can achieve high &lt;a href=&quot;https://translate.google.com/translate?sl=de&amp;amp;tl=en&amp;amp;js=y&amp;amp;prev=_t&amp;amp;hl=en&amp;amp;ie=UTF-8&amp;amp;u=https%3A%2F%2Fwww.kalaydo.de%2Fblog%2Fwertvolle-ue-ei-figuren%2F&amp;amp;edit-text=&amp;amp;act=url&quot;&gt;trading values&lt;/a&gt;. The clear goal is thus to optimize your egg hunting strategy in order to maximize figure content.&lt;/p&gt;
 &lt;h2 id=&quot;the-problem&quot;&gt;The problem&lt;/h2&gt;
 &lt;p&gt;Your budget is limited, so the question is which egg to select when standing in the supermarket?&lt;/p&gt;
@@ -56,9 +56,6 @@ href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Comm
 &lt;p&gt;A descriptive plot of the weight distribution of eggs with and without figure content shows, that eggs with figures tend to be slightly heavier:&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-12-23-surprise/WEIGHTPLOT-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
 &lt;p&gt;Below the proportion (in %) of eggs with figure content per observed weight:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;tabw &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;with&lt;/span&gt;(surprise, &lt;span class=&quot;kw&quot;&gt;table&lt;/span&gt;(weight, figure_fac))
-tabw &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;tabw /&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rowSums&lt;/span&gt;(tabw)
-&lt;span class=&quot;kw&quot;&gt;print&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;t&lt;/span&gt;(tabw*&lt;span class=&quot;dv&quot;&gt;100&lt;/span&gt;),&lt;span class=&quot;dt&quot;&gt;digits=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;pre&gt;&lt;code&gt;##           weight
 ## figure_fac    26    28    29    30    31    32    33    34    35    36    40
 ##        no  100.0  50.0  66.7  53.3  71.4  72.7  75.0  25.0 100.0  33.3   0.0
@@ -113,8 +110,6 @@ m_xgb&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 ##  ROC was used to select the optimal model using  the largest value. 
 ##  The final values used for the model were nrounds = 100, max_depth = 2, eta = 0.01, 
 ##   gamma = 1, colsample_bytree = 0.8, min_child_weight = 1 and subsample = 0.5.&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;m_xgb$bestTune
-&lt;span class=&quot;kw&quot;&gt;sprintf&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;%.2f&amp;quot;&lt;/span&gt;,&lt;span class=&quot;kw&quot;&gt;mean&lt;/span&gt;(m_xgb$resample$ROC))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;The average AUC for the 64 resamples is 0.68. Average sensitivity and specificity are 86.6% and 43.3%, respectively. This shows that predicting figure content with the available data is better than simply picking an egg at random, but no figure-guaranteeing strategy appears possible on a per-egg basis.&lt;/p&gt;
 &lt;h3 id=&quot;predicting-the-content-of-a-particular-egg&quot;&gt;Predicting the Content of a Particular Egg&lt;/h3&gt;
 &lt;p&gt;Suppose the egg you look at weighs 36g and when shaken it sounds like a lot of small parts being moved. In other words:&lt;/p&gt;
