@@ -33,7 +33,7 @@ set.seed(123)
 
 Carrying the Danish tradition of Juleforsøg to the realm of
 statistics, we use R to classify the figure content of Kinder Eggs
-using boosted regression trees for the egg's weight and possible
+using boosted classification trees for the egg's weight and possible
 rattling noises.
 
 <center>
@@ -80,7 +80,8 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"pics/ins
 ```
 </center>
 <p>
-Photo: Price in SEK per egg in a Swedish supermarket.
+Photo: Price in SEK per egg in a Swedish supermarket. The red ellipse
+shows the price per kg.
 
 
 ### Various egg selection strategies
@@ -169,8 +170,9 @@ p1 <- ggplot(surprise, aes(x=figure_fac, y= weight)) + geom_boxplot() + xlab("")
 p2 <- ggplot(surprise, aes(x=weight,fill=figure_fac)) + geom_bar() + xlab("Weight (g)") + ylab("Eggs") + scale_fill_manual(name="Figure inside?",values=c("yes"="#66C2A5","no"="#FC8D62")) + ggtitle("")
 gridExtra::grid.arrange(p1,p2,ncol=2)
 ```
-Note: About 50% of the eggs were weighted on a standard supermarket scales, which showed the
-result in steps of 2g only.
+Note: The first approximately 50% of the eggs were weighted on a
+standard supermarket scales, which showed the resulting weight in
+even steps of 2g only.
 
 Below the proportion (in %) of eggs with figure content per observed weight:
 ```{r,echo=FALSE}
@@ -188,7 +190,7 @@ analysing proportions!
 
 We use machine learning algorithms to solve the binary classification
 problem at hand. In particular, we use the `caret` package [@caret]
-and classify figure content using boosted regression trees as implemented in the
+and classify figure content using boosted classification trees as implemented in the
 [`xgboost`](https://en.wikipedia.org/wiki/Xgboost) package
 [@xgboost]. Details on how to use the `caret` package can, e.g.,
 be found in the following
@@ -208,7 +210,7 @@ xgb_hyperparam_grid = expand.grid(
 ##caret training control object
 control <- trainControl(method="repeatedcv", number=8, repeats=8, classProbs=TRUE,
                         summaryFunction = twoClassSummary, allowParallel=TRUE)
-##train away and do it parallelized...
+##train away and do it parallelized on 3 cores...
 library(doMC)
 registerDoMC(cores = 3)
 m_xgb <- train( figure_fac ~ weight * rattles_fac, data=surprise, method="xgbTree",

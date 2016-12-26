@@ -6,14 +6,14 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sun, 25 Dec 2016 22:02:15 +0100</pubDate>
-    <lastBuildDate>Sun, 25 Dec 2016 22:02:15 +0100</lastBuildDate>
+    <pubDate>Mon, 26 Dec 2016 17:29:28 +0100</pubDate>
+    <lastBuildDate>Mon, 26 Dec 2016 17:29:28 +0100</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
         <title>suRprise! - Classifying Kinder Eggs by Boosting</title>
         <description>&lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
-&lt;p&gt;Carrying the Danish tradition of Juleforsøg to the realm of statistics, we use R to classify the figure content of Kinder Eggs using boosted regression trees for the egg&#39;s weight and possible rattling noises.&lt;/p&gt;
+&lt;p&gt;Carrying the Danish tradition of Juleforsøg to the realm of statistics, we use R to classify the figure content of Kinder Eggs using boosted classification trees for the egg&#39;s weight and possible rattling noises.&lt;/p&gt;
 &lt;center&gt;
 &lt;img src=&quot;/hoehle/blog/figure/source/2016-12-23-surprise/pics/figures.jpg&quot; /&gt;
 &lt;/center&gt;
@@ -28,7 +28,7 @@ href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Comm
 &lt;img src=&quot;/hoehle/blog/figure/source/2016-12-23-surprise/pics/inshopwithprice.jpg&quot; /&gt;
 &lt;/center&gt;
 &lt;p&gt;
-&lt;p&gt;Photo: Price in SEK per egg in a Swedish supermarket.&lt;/p&gt;
+&lt;p&gt;Photo: Price in SEK per egg in a Swedish supermarket. The red ellipse shows the price per kg.&lt;/p&gt;
 &lt;h3 id=&quot;various-egg-selection-strategies&quot;&gt;Various egg selection strategies&lt;/h3&gt;
 &lt;p&gt;It goes without saying that brute force purchasing strategies would be insane. Hence, a number of egg selection strategies can be observed in real life:&lt;/p&gt;
 &lt;ul&gt;
@@ -55,7 +55,7 @@ href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Comm
 &lt;p&gt;The fraction of figures in the dataset was 34/79, which is way higher than the proclaimed 1/7; possibly, because professionals egg collectors were at work...&lt;/p&gt;
 &lt;p&gt;Of the 79 analysed eggs, 54 were categorized as non-rattling. The probability of such a non-rattling egg really containing a figure was 51.9%. This proportion is not impressive, but could be due to the data collector&#39;s having a different understanding of exactly how the variable &lt;em&gt;rattling&lt;/em&gt; was to be interpreted: Does it &lt;em&gt;rattle&lt;/em&gt;, or does it &lt;em&gt;rattle like a figure&lt;/em&gt;? In hindsight, a clearer definition and communication of this variable would have prevented ambiguity in the collection.&lt;/p&gt;
 &lt;p&gt;A descriptive plot of the weight distribution of eggs with and without figure content shows, that eggs with figures tend to be slightly heavier:&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-12-23-surprise/WEIGHTPLOT-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt; Note: About 50% of the eggs were weighted on a standard supermarket scales, which showed the result in steps of 2g only.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2016-12-23-surprise/WEIGHTPLOT-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt; Note: The first approximately 50% of the eggs were weighted on a standard supermarket scales, which showed the resulting weight in even steps of 2g only.&lt;/p&gt;
 &lt;p&gt;Below the proportion (in %) of eggs with figure content per observed weight:&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;##           weight
 ## figure_fac    26    28    29    30    31    32    33    34    35    36    40
@@ -63,7 +63,7 @@ href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Comm
 ##        yes   0.0  50.0  33.3  46.7  28.6  27.3  25.0  75.0   0.0  66.7 100.0&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;A simple selection rule based on weight would be to weigh eggs until you hit a 40g egg. A slightly less certain stopping rule would be to pick 34g eggs. However, modern statistics is more than counting and analysing proportions!&lt;/p&gt;
 &lt;h2 id=&quot;machine-learning-the-egg-content&quot;&gt;Machine Learning the Egg Content&lt;/h2&gt;
-&lt;p&gt;We use machine learning algorithms to solve the binary classification problem at hand. In particular, we use the &lt;code&gt;caret&lt;/code&gt; package &lt;span class=&quot;citation&quot; data-cites=&quot;caret&quot;&gt;(Kuhn 2016)&lt;/span&gt; and classify figure content using boosted regression trees as implemented in the &lt;a href=&quot;https://en.wikipedia.org/wiki/Xgboost&quot;&gt;&lt;code&gt;xgboost&lt;/code&gt;&lt;/a&gt; package &lt;span class=&quot;citation&quot; data-cites=&quot;xgboost&quot;&gt;(Chen et al. 2016)&lt;/span&gt;. Details on how to use the &lt;code&gt;caret&lt;/code&gt; package can, e.g., be found in the following &lt;a href=&quot;https://topepo.github.io/caret/index.html&quot;&gt;tutorial&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;We use machine learning algorithms to solve the binary classification problem at hand. In particular, we use the &lt;code&gt;caret&lt;/code&gt; package &lt;span class=&quot;citation&quot; data-cites=&quot;caret&quot;&gt;(Kuhn 2016)&lt;/span&gt; and classify figure content using boosted classification trees as implemented in the &lt;a href=&quot;https://en.wikipedia.org/wiki/Xgboost&quot;&gt;&lt;code&gt;xgboost&lt;/code&gt;&lt;/a&gt; package &lt;span class=&quot;citation&quot; data-cites=&quot;xgboost&quot;&gt;(Chen et al. 2016)&lt;/span&gt;. Details on how to use the &lt;code&gt;caret&lt;/code&gt; package can, e.g., be found in the following &lt;a href=&quot;https://topepo.github.io/caret/index.html&quot;&gt;tutorial&lt;/a&gt;.&lt;/p&gt;
 &lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;library&lt;/span&gt;(caret)
 
 ##Grid with xgboost hyperparameters
@@ -77,7 +77,7 @@ xgb_hyperparam_grid =&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span cla
 ##caret training control object
 control &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;trainControl&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;method=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;repeatedcv&amp;quot;&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;number=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;8&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;repeats=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;8&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;classProbs=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;TRUE&lt;/span&gt;,
                         &lt;span class=&quot;dt&quot;&gt;summaryFunction =&lt;/span&gt; twoClassSummary, &lt;span class=&quot;dt&quot;&gt;allowParallel=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;TRUE&lt;/span&gt;)
-##train away and do it parallelized...
+##train away and do it parallelized on 3 cores...
 &lt;span class=&quot;kw&quot;&gt;library&lt;/span&gt;(doMC)
 &lt;span class=&quot;kw&quot;&gt;registerDoMC&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;cores =&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;)
 m_xgb &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;train&lt;/span&gt;( figure_fac ~&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;weight *&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;rattles_fac, &lt;span class=&quot;dt&quot;&gt;data=&lt;/span&gt;surprise, &lt;span class=&quot;dt&quot;&gt;method=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;xgbTree&amp;quot;&lt;/span&gt;,
