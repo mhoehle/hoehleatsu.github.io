@@ -113,7 +113,7 @@ based on boosted classification trees.
 #Load data
 surprise <- read.table(paste0(filePath,"surprise.txt"),header=TRUE,skip=9)
 #Some data munging to get factor variable
-surprise <- surprise %>% mutate(rattles=1-rattles_like_figure, #solve ambiguity in the rattling covar
+surprise <- surprise %>% mutate(rattles=1 - rattles_like_figure, #solve ambiguity in the rattling covar
                                 rattles_fac = fct_recode(factor(rattles),
                                                          "no"="0",
                                                          "yes"="1"),
@@ -164,11 +164,15 @@ A descriptive plot of the weight distribution of eggs with and without
 figure content shows, that eggs with figures tend to be slightly
 heavier:
 
-```{r, WEIGHTPLOT, echo=FALSE, fig.align='center'}
+```{r, WEIGHTPLOT, echo=FALSE, fig.align='center', message=FALSE, warning=FALSE}
+require(gtable)
+require(gridExtra)
+pal <- c("yes"="#66C2A5","no"="#FC8D62")
 ##Plot boxplot & barchart in one figure
-p1 <- ggplot(surprise, aes(x=figure_fac, y= weight)) + geom_boxplot() + xlab("") + ylab("Weight (g)") + ggtitle("Figure inside?")
-p2 <- ggplot(surprise, aes(x=weight,fill=figure_fac)) + geom_bar() + xlab("Weight (g)") + ylab("Eggs") + scale_fill_manual(name="Figure inside?",values=c("yes"="#66C2A5","no"="#FC8D62")) + ggtitle("")
-gridExtra::grid.arrange(p1,p2,ncol=2)
+p1 <- ggplot(surprise, aes(x=figure_fac, y= weight, fill=figure_fac)) + geom_boxplot() + xlab("") + ylab("Weight (g)") + scale_fill_manual(guide=FALSE,values=pal) + ggtitle("Figure inside?")
+p2 <- ggplot(surprise, aes(x=weight,fill=figure_fac)) + geom_bar() + xlab("Weight (g)") + ylab("Eggs") + scale_fill_manual(name="Figure inside?",values=pal) + ggtitle("")
+##Show the two plots next to each other with different sizes
+gridExtra::grid.arrange(p1,p2,ncol=2, widths=list(unit(3,"cm"),unit(7,"cm")))
 ```
 Note: The first approximately 50% of the eggs were weighted on a
 standard supermarket scales, which showed the resulting weight in
