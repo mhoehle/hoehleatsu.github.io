@@ -235,6 +235,9 @@ cat(paste(str[-removeLines[-1]],"\n"))
 ```{r,eval=FALSE, echo=FALSE}
 m_xgb$bestTune
 sprintf("%.2f",mean(m_xgb$resample$ROC))
+m_xgb$finalModel
+xgb.plot.tree(feature_names = c("weight", "rattles_fac", "weight:rattles_fac"), model=m_xgb$finalModel,n_first_tree=3)
+xgb.plot.multi.trees(model = m_xgb$finalModel, c("weight", "rattles_fac", "weight:rattles_fac"), features_keep = 5)
 ```
 
 The average AUC for the `r length(m_xgb$resample$ROC)` resamples is
