@@ -1,0 +1,374 @@
+---
+layout: post
+title: "Naming uncertainty by the Bootstrap"
+tags: [rstats, stats, programming]
+bibliography: ~/Literature/Bibtex/jabref.bib
+comments: true
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2017-02-04-onomastics/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2017-02-04-onomastics/"
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='') # autodep=TRUE
+options(width=90)
+library("dplyr")
+library("ggplot2")
+library("tidyr")
+library("methods")
+library("magrittr")
+
+##For plotting the map
+library("rgdal")
+library("rgeos")
+
+library("xtable")
+
+##Extend wordcloud package functionality.
+source(file.path(filePath,"mywordcloud.R"))
+
+theme_set(theme_bw())
+```
+
+## Abstract
+
+We use the names of all newborn babies in Berlin 2016 to illustrate
+how a scientific treatment of chance could enhance the rank statements
+in **onomastics** investigations. For this purpose, we first identify
+different stages of the naming-your-baby process, which are influenced
+by chance. Second, we compute confidence intervals for the ranks based
+on the bootstrap reflecting the above chance elements. This leads to a
+representation of the league table based on so called **uncertainty
+corrected ranks**. From an R perspective we practice data wrangling
+`dplyr`-style.
+
+
+<center>
+```{r,results='asis',echo=FALSE}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"ears-1.png"),")")
+```
+</center>
+
+{% include license.html %}
+
+## Introduction
+
+What's the most popular first name given to newborn boys and girls?
+This question seems to fascinate at different levels of temporal and
+spatial aggregation. Besides the competitive element, the ranking and
+its temporal dynamics reflect cultural behavior (the desire to pick
+new and interesting names), but can even be reflect historic events.
+The dynamics can even studied using mathematical evolutionary models
+or models for contagious phenomena
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3380031/
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1698036/pdf/12952655.pdf
+The scientific study of names is entitled
+[**onomastics**](https://en.wikipedia.org/wiki/Onomastics).
+
+However, once the bureau of statistics or similar institution has
+released the numbers for all names of newborns in a given year, the
+answer to the question appears obvious by simply ranking the names by
+their frequency.  This then leads to headlines like
+["The most popular name in 2016 in Germany was Mia and Ben"](https://translate.google.com/translate?sl=de&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=http%3A%2F%2Fwww.beliebte-vornamen.de%2Fjahrgang%2Fj2016&edit-text=).
+
+However, statistics is the scientific study of chance. One fundamental
+concept is the inference of **population** quantities from observing
+this quantity in a **sample** (=subset) of this population. To make
+this specific for the baby names: In Germany there is no official
+first name statistics, as a consequence the site
+[www.beliebte-vornamen.de](http://www.beliebte-vornamen.de) uses
+information from a sample of 196,158 kids (corresponding to 26% of all
+newborns in Germany) originating from a selection of registrar's
+offices and birth clinics to determine the most popular first
+name. However, uncertainty in the resulting ranking is ignored.
+
+The city of Berlin recently released the official
+[2016 first name statistic](https://daten.berlin.de/datensaetze/liste-der-h%C3%A4ufigen-vornamen-2014)
+of all newborns in the city under the CC-BY license. The data are
+available at district level, but a small caveat with this statistic is
+that, if a child is given several first names, each name is counted
+once in the statistic. Hence, the sum of the number of times names
+appear is higher than the number of kids.  Still, one could argue that
+the data cover the **entire population of interest** (newborns in
+Berlin 2016) is covered thus making **inferential statistics**
+superfluous.  But is it that simple?
+
+
+The gender a newborn will have can be considered a chance phenomena,
+with currently a small excess of boys being born (about 51.2% of the
+newborns being boys) [REF].
+The ratio of the number of born boys vs. girls is about
+`r (sex_ratio=1.05)` [@jacobsen1999], which
+means that the fraction of of boys among the newborns is approximately
+`r sprintf("%.2f%%",100*sex_ratio/(1+sex_ratio))`.
+
+http://www.pnas.org/content/112/16/E2102.full.pdf
+
+https://www.cdc.gov/nchs/data/nvsr/nvsr53/nvsr53_20.pdf
+
+
+
+Furthermore, one could argue that even
+given that the parents know the gender, the naming is still subject to
+chance phenomena (top-candidate name made impossible by impossible
+boss having the same name or similar). In what follows we use the
+Berlin newborn names to illustrate how a scientific treatment of
+chance could enhance the rank statements in onomastic investigations.
+
+## Descriptive Data Analysis
+
+```{r,echo=FALSE, results='hide', message=FALSE}
+##Read aggregated data
+library(readr)
+year <- 2016
+distrNames <- read_csv(file=file.path(filePath,paste0("berlin-firstnames-",year,".csv"))) %>% select(-strata)
+distrNames <- distrNames %>% mutate(district = factor(district), sex=factor(sex))
+
+
+##How many in total (per gender)
+nKids <- distrNames %>% group_by(sex) %>% summarise(n=sum(count))
+n_sex <- structure(nKids %$% n, names=nKids %$% as.character(sex))
+```
+
+Altogether, the `distrNames` variable contains the information about
+the frequency of `r distrNames %>% distinct(firstname) %>% nrow`
+unique first names. Below is shown the head of the data.
+
+```{r, echo=FALSE}
+DT::datatable(head(distrNames))
+```
+
+In total, `r sum(n_sex)` names are registered in Berlin `r year`
+(`r n_sex["m"]` boys and `r n_sex["f"]`) girls. The proportion of boy
+names is `r sprintf("%.1f%%",n_sex["m"]/sum(n_sex)*100)`, which,
+despite of the potential problems with multiple names per kids,
+appears to be close to the above mentioned numerical proportion of
+sexes at birth. We can also look at the top-5-names for each gender:
+
+```{r}
+##Aggregate data over district and sort according to rank
+newborn <- distrNames %>% group_by(firstname, sex) %>%
+  summarise(count=sum(count)) %>% group_by(firstname, sex)
+
+##Show top-5 results for each gender
+newborn %>% arrange(desc(count)) %>% group_by(sex) %>%
+  mutate(rank=rank(-count,ties="min"))  %>% do({head(.,n=5)})
+```
+
+The top-ranked boy and girl name per district is shown in following
+**wordmapcloud**, which is based on a shapefile available from Berlin
+Open Data and an extended version of the `wordcloud` package.
+
+```{r, WORDMAPCLOUD, echo=FALSE, warning=FALSE, fig.width=6,fig.height=6,dpi=150, message=FALSE, results='hide',cache=TRUE}
+##Make an SpatialPolygon object containing the Bezirke
+##Data available from Berlin Open Data
+##http://daten.berlin.de/datensaetze/rbs-lor-lebensweltlich-orientierte-r%C3%A4ume-dezember-2015
+map <- readOGR(dsn=file.path(filePath,"RBS_OD_LOR_2015_12/"),layer="RBS_OD_LOR_2015_12")
+distrMap <- gUnaryUnion(map, id=as(map,"data.frame")$BEZNAME)
+loc <- coordinates(distrMap)
+rownames(loc) <- tolower(rownames(loc))
+
+##Create palette - include alpha channel for better visability
+pal = RColorBrewer::brewer.pal(9, "BuGn")
+pal <- pal[-(1:4)]
+pal <- paste0(pal,"1A")
+
+
+##Make a plot, just base-graphics nothing fancy.
+par(mar=c(0,0,4.1,0))
+plot(distrMap,border=rgb(0.8,0.8,0.8))
+for (distr in tolower(names(distrMap))) {
+  theDistrNames <- distrNames %>% filter(district==distr)
+  theDistr <- distrMap[tolower(names(distrMap)) == distr,]
+  mywordcloud(words=theDistrNames$firstname, freq=theDistrNames$count,scale=c(2,1),random.order=FALSE,colors = pal,offset=loc[distr,],use.r.layout=FALSE, bbox=bbox(theDistr),min.freq=5)
+}
+##Redraw borders
+plot(distrMap,border=rgb(0.8,0.8,0.8),add=TRUE)
+
+##Plot the top-1 name in each gender.
+for (distr in tolower(names(distrMap))) {
+  theDistrNames <- distrNames %>% filter(district==distr)
+  topMale    <- theDistrNames %>% filter(sex == "m") %>% head(n=1)
+  topFemale  <- theDistrNames %>% filter(sex == "f") %>% head(n=1)
+  text(loc[distr,1],loc[distr,2],topMale %$% firstname, col="blue",pos=1,offset=0.3,font=2)
+  text(loc[distr,1],loc[distr,2],topFemale %$% firstname, col="darkred",pos=3,offset=0.3,font=2)
+}
+
+title(paste0("Most common first name for newborns in\n Berlin ",year," (female/male for each district)"))
+```
+
+```{r, echo=FALSE, message=FALSE}
+require(ineq)
+gini <- newborn %>% group_by(sex) %>% summarise(gini=Gini(count))
+gini_sex <- structure(gini %$% gini, names=gini %$% as.character(sex))
+```
+
+The [gini coefficient](https://en.wikipedia.org/wiki/Gini_coefficient)
+for the name frequency is easily calculated using the `ineq` package
+and is
+`r sprintf("%.3f",gini_sex["f"])` and
+`r sprintf("%.3f",gini_sex["m"])` for girls and boys, respectively.
+This means that the occurence of names in boys is slightly dominated by fewer
+names than the girls. For both genders few names tend to dominate the distribution - this
+could also be visualized by a Lorenz curve (see github code).
+
+```{r, echo=FALSE, eval=FALSE}
+newborn %>% filter(sex=="m") %$% count %>% Lc %>% plot(col="blue",lwd=2)
+```
+
+
+## Analysing Stochasticity in the Name Selection
+
+At which places is stochasticity a useful concept to abstract
+unobservable facts about the name selection process ultimatively
+leading to the reported data analysed above? We shall focus on 4
+stages:
+
+1. the number of actual babies born - factors determining this range
+from parents decision to have a baby, that they will live in Berlin at
+the time of birth, that pregnancy has no complication etc.
+
+2. the gender of the baby - as mentioned above the odds for the kid
+being a boy is roughly `r sex_ratio`:1.
+
+3. the selection of the name given the gender is known - it might
+depend on spur-of-the-moment impressions
+
+4. reporting problems lead to the wrong name(s) being recorded
+
+We will ignore uncertainty from stage 1 as well as stage 4. How large
+the contribution of chance in stage 3 really is, may be questioned: Is
+naming deterministic once parents know the sex of their baby? In this
+post we take the position that this is also the outcome of a
+stochastic process: the result corresponds to one realization of the
+multinomial with the underlying true proportions of all possible names
+acting as selection probabilities. These probabilities are likely to
+vary from parents to parents based on complex interactions between,
+social status, existing names in the family etc. However, since such
+data are unavailable we will instead do the best possible with the
+given data and hence assume that the drawing probabilities are
+district specific.
+
+### Uncertainty Assessment using the Bootstrap
+
+Altogether, if combining stage 2 and 3 this means can be quantified by
+a **simple bootstrap** procedure **stratified by district**.  In
+spirit, this approach corresponds to the bootstrap approach used in
+Sect. 5.3 of @goldstein_spiegelhalter1996. We operationalize this in R
+using the `boot` package, the workhorse will be the function
+`name_ranks` shown below.
+
+```{r}
+######################################################################
+## Compute rank of name within female and male population,
+## respectively for a draw of all kids (one kid per row) with
+## replacement.
+##
+## Parameters:
+##  x - the full data, one row per kid
+##  idx - vector of length nrow(x) containing a possible permutation
+##        (with replacement)
+##  all_strata - data.frame containing a line for each (firstname, sex)
+##               combination to report the rank for. count should be zero.
+##
+## Returns:
+##  sex stratified ranks (order according to (firstname, sex))
+######################################################################
+
+name_ranks <- function(x,  idx=seq_len(nrow(x)), all_strata) {
+  ##Make resampled data set and append all_strata to ensure each firstname-sex combination occurs
+  x_boot <- x %>% slice(idx) %>% bind_rows(all_strata)
+
+  ##Summarise the number of occurences for each firstname-sex strata and compute the ranks.
+  aggrx_wranks <- x_boot %>%  group_by(firstname,sex) %>%
+    summarise(count = sum(count)) %>%
+    group_by(sex) %>%
+    mutate(rank=rank(-count, ties.method="min")) %>%
+    arrange(firstname, sex) #important to ensure order.
+
+  return(aggrx_wranks %$% rank)
+}
+```
+
+We operationalize the above, by first creating `all_strata` which is a
+`data.frame` containing all possible strata of gender and
+firstname. This is done in order to ensure that we later get a zero
+count for names, which do not appear in the bootstrap resample.
+```{r, echo=FALSE}
+all_strata <- distrNames %>% distinct(firstname, sex, .keep_all=TRUE) %>%
+  mutate(count=0)
+```
+
+We then convert the aggregated data to long format where each kid is
+represented by one row. This is the most didactical way to explain
+what's going on, but an aggregated multinomial approach is probably
+much faster in execution time.
+```{r}
+kids <- distrNames %>% slice(rep(seq_len(nrow(distrNames)), times=distrNames %$% count)) %>% mutate(count=1)
+```
+
+Ready to perform the bootstrap stratified within
+districts? Yes, because its conveniently done using the `boot`
+package (which is easily parallelized).
+
+```{r, cache=TRUE}
+set.seed(123) ##fix seed for reproducability
+R <- 999
+b <- boot::boot(kids, statistic=name_ranks, R=R, strata=kids$district,all_strata=all_strata,
+                parallel="multicore",ncpus=3)
+```
+
+We use the percentile method on the `r R` + 1 bootstrap rank-vectors
+as a method for computing a 95% confidence interval for the rank of
+each name for boys and girls, respectively.
+```{r, echo=FALSE, warning=FALSE}
+##Percentile based 95% CI for the ranks.
+rankci <- t(apply(cbind(b$t0, t(b$t)),1,quantile, prob=c(0.05,0.95),type=3))
+
+###Combine into a result data.frame.
+newborn_ranks <- data.frame(newborn %>% arrange(firstname,sex) %>% select(firstname,sex),
+                            rank=name_ranks(kids, all_strata=all_strata),
+                            rankci=rankci) %>% tbl_df %>% group_by(sex)
+```
+Using the lower limit of the 95% CI to group names, we define the
+concept of a **uncertainty corrected** rank (ucrank). This is just the lowest
+rank which we, given the modeled stochasticity, can not be ruled out.
+Listing the top-5 of these corrected ranks leads to the following
+tables for girls and boys, respectively:
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, results="asis"}
+##Group according to lower CI
+nb_rankswunc <- newborn_ranks %>% group_by(sex, rankci.5.) %>% do( {
+  data.frame(uc_rank=.$rankci.5.[1], fnames=paste(.$firstname, collapse=", "),sex=.$sex[1])
+}) %>% group_by(sex) %>% select(uc_rank, fnames) %>% rename("ucrank"=uc_rank, "first names"=fnames)
+
+nb <- nb_rankswunc %>% do({head(.,n=5)})
+#knitr::kable(nb %>% ungroup %>% filter(sex=="f") %>% select(-sex))
+##knitr::kable(nb %>% ungroup %>% filter(sex=="m") %>% select(-sex))
+```
+
+```{r, echo=FALSE, warning=FALSE, results="asis"}
+tab <- xtable(bind_cols(nb %>% ungroup %>% filter(sex=="f") %>% select(-sex),
+                        nb %>% ungroup %>% filter(sex=="m") %>% select(-sex)))
+align(tab)[c(2:4)] <- "c"
+print(tab,include.rownames=FALSE,type="html",html.table.attributes=list(border=1))
+```
+
+# Discussion
+
+* Naming can be seen as a choice experiment where each parent couple
+choses their top-ranked first name.
+
+* As soon as there is uncertainty, ranks are known to be subject to
+large variation.
+
+* What if there is no stage 3 uncertainty?
+
+* Could speed up sampling.
+
+# References
