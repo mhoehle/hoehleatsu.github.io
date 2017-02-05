@@ -6,35 +6,7 @@ bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
 ---
 
-```{r,include=FALSE,echo=FALSE,message=FALSE}
-##If default fig.path, then set it.
-if (knitr::opts_chunk$get("fig.path") == "figure/") {
-  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
-  knitr::opts_chunk$set(fig.path="figure/source/2017-02-04-onomastics/")
-}
-knitr::opts_chunk$set(base.url="./")
-fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
-filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2017-02-04-onomastics/"
 
-knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='',fig.align='center') # autodep=TRUE
-options(width=90)
-library("dplyr")
-library("ggplot2")
-library("tidyr")
-library("methods")
-library("magrittr")
-
-##For plotting the map
-library("rgdal")
-library("rgeos")
-
-library("xtable")
-
-##Extend wordcloud package functionality.
-source(file.path(filePath,"mywordcloud.R"))
-
-theme_set(theme_bw())
-```
 
 ## Abstract
 
@@ -50,9 +22,7 @@ perspective we use the problem as a practice session for wrangling
 data `dplyr`-style.
 
 <center>
-```{r,results='asis',echo=FALSE}
-cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"WORDMAPCLOUD-1.png"),")")
-```
+![]({{ site.baseurl }}/figure/source/2017-02-04-onomastics/WORDMAPCLOUD-1.png )
 </center>
 
 {% include license.html %}
@@ -79,9 +49,7 @@ example the
 respectively.
 
 <center>
-```{r,results='asis',echo=FALSE}
-cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"Hello-My-Name-Is.png"),")")
-```
+![]({{ site.baseurl }}/figure/source/2017-02-04-onomastics/Hello-My-Name-Is.png )
 <br>
 <!-- Modified based on the following source: https://openclipart.org/image/300px/svg_to_png/250091/ -->
 </center>
@@ -120,49 +88,37 @@ general and onomastic investigations in particular.
 
 ## Descriptive Data Analysis
 
-```{r,echo=FALSE, results='hide', message=FALSE}
-##Read aggregated data
-library(readr)
-year <- 2016
-distrNames <- read_csv(file=file.path(filePath,paste0("berlin-firstnames-",year,".csv"))) %>% select(-strata)
-distrNames <- distrNames %>% mutate(district = factor(district), sex=factor(sex))
 
-
-##How many in total (per gender)
-nKids <- distrNames %>% group_by(sex) %>% summarise(n=sum(count))
-n_sex <- structure(nKids %$% n, names=nKids %$% as.character(sex))
-```
 
 Altogether, the `distrNames` variable contains the information about
-the frequency of `r distrNames %>% distinct(firstname) %>% nrow`
+the frequency of 13245
 unique first names. Below is shown the first 10 lines of the data.
 
-```{r, echo=FALSE}
-DT::datatable(head(distrNames, n=10))
-```
+<img src="http://staff.math.su.se/hoehle/blog/figure/source/2017-02-04-onomastics/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
 
 By suming the `count` column it becomes clear that in total, `r
-sum(n_sex)` names were registered in Berlin `r year` (`r n_sex["m"]`
-boys and `r n_sex["f"]`) girls. The proportion of boy names is
-`r sprintf("%.1f%%",n_sex["m"]/sum(n_sex)*100)`, which, despite of the
+sum(n_sex)` names were registered in Berlin 2016 (35620
+boys and 33905) girls. The proportion of boy names is
+51.2%, which, despite of the
 potential problems with multiple names per kids, appears to be close
 to reported ratios of the number of born boys vs. girls of
-`r (sex_ratio=1.05)` [@jacobsen1999], which means that the expected fraction of
+1.05 [@jacobsen1999], which means that the expected fraction of
 boys among the newborns should be approximately
-`r sprintf("%.1f%%",100*sex_ratio/(1+sex_ratio))`.
+51.2%.
 
 Strangely enough,
-`r distrNames %>% filter(is.na(firstname)) %>% ungroup %>% summarise(n=sum(count)) %>% as.numeric`
+15
 babies seem to have an empty first name (but the sex is known). We decided to
 keep these `NA` names in the analysis, because at the time of writing
 it was unclear, if this is a data recording problem (e.g. a delay of the
 December 2016 kids) or actually allowed. An email inquiry with the data
 providing agency about the orgigin of these `NA`'s currently remains
-unanswered (since `r as.numeric(Sys.Date() - as.Date("2017-02-02"))` days).
+unanswered (since 3 days).
 
 We can now look at the top-5-names in Berlin for each gender:
 
-```{r}
+
+```r
 ##Aggregate data over district and sort according to rank within gender
 newborn <- distrNames %>% group_by(firstname, sex) %>%
   summarise(count=sum(count)) %>%
@@ -170,9 +126,23 @@ newborn <- distrNames %>% group_by(firstname, sex) %>%
   mutate(rank=rank(-count,ties="min"))
 ```
 
-```{r,echo=FALSE}
-##Show top-5 results for each gender
-newborn %>% do({head(.,n=5)})
+
+```
+## Source: local data frame [10 x 4]
+## Groups: sex [2]
+## 
+##     firstname    sex count  rank
+##         <chr> <fctr> <int> <int>
+## 1       Marie      f   695     1
+## 2      Sophie      f   649     2
+## 3   Charlotte      f   495     3
+## 4       Maria      f   403     4
+## 5      Emilia      f   382     5
+## 6   Alexander      m   467     1
+## 7        Paul      m   383     2
+## 8       Elias      m   371     3
+## 9  Maximilian      m   344     4
+## 10       Emil      m   295     5
 ```
 
 The top-1 names per gender and district from `distrNames` can easily
@@ -181,81 +151,29 @@ operations. To spice up the visualization we use a custom made
 **wordmapcloud**, which overlays the top-1 names over an alpha-channelled
 wordcloud of the district's name with font size proportional to frequency.
 
-```{r, WORDMAPCLOUD, echo=FALSE, warning=FALSE, fig.width=6,fig.height=6,dpi=100, message=FALSE, results='hide',cache=TRUE}
-##Make an SpatialPolygon object containing the Bezirke
-##Data available from Berlin Open Data
-##http://daten.berlin.de/datensaetze/rbs-lor-lebensweltlich-orientierte-r%C3%A4ume-dezember-2015
-map <- readOGR(dsn=file.path(filePath,"RBS_OD_LOR_2015_12/"),layer="RBS_OD_LOR_2015_12")
-distrMap <- gUnaryUnion(map, id=as(map,"data.frame")$BEZNAME)
-loc <- coordinates(distrMap)
-rownames(loc) <- tolower(rownames(loc))
-
-##Create palette - include alpha channel for better visability
-pal = RColorBrewer::brewer.pal(9, "BuGn")
-pal <- pal[-(1:4)]
-pal <- paste0(pal,"1A")
+<img src="http://staff.math.su.se/hoehle/blog/figure/source/2017-02-04-onomastics/WORDMAPCLOUD-1.png" style="display: block; margin: auto;" />
 
 
-##Make a plot, just base-graphics nothing fancy.
-par(mar=c(0,0,4.1,0))
-plot(distrMap,border=rgb(0.8,0.8,0.8))
-for (distr in tolower(names(distrMap))) {
-  theDistrNames <- distrNames %>% filter(district==distr)
-  theDistr <- distrMap[tolower(names(distrMap)) == distr,]
-  mywordcloud(words=theDistrNames$firstname, freq=theDistrNames$count,scale=c(2,1),random.order=FALSE,colors = pal,offset=loc[distr,],use.r.layout=FALSE, bbox=bbox(theDistr),min.freq=5)
-}
-##Redraw borders
-plot(distrMap,border=rgb(0.8,0.8,0.8),add=TRUE)
-
-##Plot the top-1 name in each gender.
-for (distr in tolower(names(distrMap))) {
-  theDistrNames <- distrNames %>% filter(district==distr)
-  topMale    <- theDistrNames %>% filter(sex == "m") %>% head(n=1)
-  topFemale  <- theDistrNames %>% filter(sex == "f") %>% head(n=1)
-  text(loc[distr,1],loc[distr,2],topMale %$% firstname, col="blue",pos=1,offset=0.3,font=2)
-  text(loc[distr,1],loc[distr,2],topFemale %$% firstname, col="darkred",pos=3,offset=0.3,font=2)
-}
-
-title(paste0("Most common first name for newborns in\n Berlin ",year," (female/male for each district)"))
-```
-
-```{r, echo=FALSE, message=FALSE}
-require(ineq)
-gini <- newborn %>% group_by(sex) %>% summarise(gini=Gini(count))
-gini_sex <- structure(gini %$% gini, names=gini %$% as.character(sex))
-```
 
 The [Gini index](https://en.wikipedia.org/wiki/Gini_coefficient)
 for the name frequency is calculated using the `ineq` package and is
-`r sprintf("%.3f",gini_sex["f"])` and
-`r sprintf("%.3f",gini_sex["m"])` for girls and boys, respectively.  This
+0.728 and
+0.743 for girls and boys, respectively.  This
 means that the occurence of names in boys is dominated
 by fewer specific names for boys than for girls. Furthermore, both gender's name distribution
 tend to be dominated by few names. This feature can also be
 visualized by a Lorenz curve - here shown separately for each sex:
 
-```{r, LORENZCURVE, echo=FALSE}
-##Make a lorenz curve
-newborn %>% filter(sex=="f") %$% count %>% Lc %>%
-  plot(col="darkred",lwd=2,xlab="Cumulative share of baby names with considered sex", ylab="Cumulative share of all babies of that sex")
-newborn %>% filter(sex=="m") %$% count %>% Lc %>%
-  lines(col="blue",lwd=2)
-legend(x="topleft",c("Girls","Boys"),col=c("darkred","blue"),lwd=2)
+<img src="http://staff.math.su.se/hoehle/blog/figure/source/2017-02-04-onomastics/LORENZCURVE-1.png" style="display: block; margin: auto;" />
 
-##Compute a quantile manually
-topX <- 50
-newborn_f <- newborn %>% filter(sex=="f") %>% mutate(topX = row_number() <= topX) %>% group_by(topX) %>% summarise(count=sum(count))
-topXshare <- (newborn_f %$% count / colSums(newborn_f)["count"] )[2]
-```
-
-From the curve one can deduce that the frequency of the top-`r topX` girl names
+From the curve one can deduce that the frequency of the top-50 girl names
 (top
-`r sprintf("%.1f%%",(topX/nrow(newborn %>% filter(sex=="f")))*100)`
+0.7%
 out of the
-`r nrow(newborn %>% filter(sex=="f"))` girl names),
+6957 girl names),
 cover
-`r sprintf("%.1f%%",topXshare*100)` of all
-`r sum(newborn %>% filter(sex=="f") %$% count)`
+29.0% of all
+33905
 girl namings.
 
 ## Analysing Stochasticity in the Name Selection
@@ -267,7 +185,7 @@ data analysed above? We shall focus on 5 stages:
 1. the number of babies born in Berlin in 2016
 
 2. the gender of the born baby; as mentioned above the odds for the
-kid being a boy is roughly `r sex_ratio`:1.
+kid being a boy is roughly 1.05:1.
 
 2. the number of names given to a baby of a specific sex
 
@@ -300,7 +218,8 @@ corresponds to the bootstrap approach to ranks used in Sect. 5.3 of
 `boot` package, the work-horse will be the function `name_ranks` shown
 below.
 
-```{r}
+
+```r
 ######################################################################
 ## Compute rank of name within female and male population,
 ## respectively for a draw of all kids (one kid per row) with
@@ -335,16 +254,14 @@ We operationalize the above, by first creating `all_strata` which is a
 `data.frame` containing all possible strata of gender and
 firstname. This is done in order to ensure that we later get a zero
 count for names, even if they do not appear in the bootstrap resample.
-```{r, echo=FALSE}
-all_strata <- distrNames %>% distinct(firstname, sex, .keep_all=TRUE) %>%
-  mutate(count=0)
-```
+
 
 We then convert the aggregated data to long format where each kid is
 represented by one row. This is the most didactical way to explain
 what is going on in the bootstrap, but an aggregated multinomial
 approach would probably be much faster in terms of execution time.
-```{r, warning=FALSE}
+
+```r
 kids <- distrNames %>% slice(rep(seq_len(nrow(distrNames)), times=distrNames %$% count)) %>% mutate(count=1)
 ```
 
@@ -352,25 +269,33 @@ Ready to perform the bootstrap stratified within
 districts? Yes, its conveniently done using the `boot`
 package (which is easily parallelized also).
 
-```{r, cache=TRUE, warning=FALSE, message=FALSE}
+
+```r
 set.seed(123) ##fix seed for reproducibility
 R <- 999
 b <- boot::boot(kids, statistic=name_ranks, R=R, strata=kids$district, parallel="multicore",ncpus=3)
 ```
 
-We use the percentile method on the `r R` + 1 bootstrap rank-vectors
+We use the percentile method on the 999 + 1 bootstrap rank-vectors
 as a method for computing a 95% confidence interval for the rank of
 each name for boys and girls, respectively.
-```{r, echo=FALSE, warning=FALSE, message=FALSE }
-##Percentile based 95% CI for the ranks.
-rankci <- t(apply(cbind(b$t0, t(b$t)),1,quantile, prob=c(0.05,0.95),type=3))
 
-###Combine into a result data.frame.
-newborn_ranks <- data.frame(newborn %>% arrange(firstname,sex) %>% select(firstname,sex),
-                            rank=name_ranks(kids),
-                            rankci=rankci) %>% tbl_df %>% group_by(sex)
-##Show result
-newborn_ranks %>% arrange(rank) %>% filter( rank <= 5)
+```
+## Source: local data frame [10 x 5]
+## Groups: sex [2]
+## 
+##     firstname    sex  rank rankci.5. rankci.95.
+##         <chr> <fctr> <int>     <int>      <int>
+## 1   Alexander      m     1         1          1
+## 2       Marie      f     1         1          2
+## 3        Paul      m     2         2          4
+## 4      Sophie      f     2         1          2
+## 5   Charlotte      f     3         3          3
+## 6       Elias      m     3         2          4
+## 7       Maria      f     4         4          5
+## 8  Maximilian      m     4         3          4
+## 9        Emil      m     5         5          9
+## 10     Emilia      f     5         4          5
 ```
 Using the lower limit of the 95% CI to group the names, we define the
 concept of a **uncertainty corrected** rank (ucrank). This is just the lowest
@@ -379,26 +304,19 @@ rank which we, given the modeled stochasticity, can not be ruled out
 Listing the top-5 of these corrected ranks leads to the following
 tables for girls and boys, respectively:
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE, results="asis"}
-##Group according to lower CI
-nb_rankswunc <- newborn_ranks %>% group_by(sex, rankci.5.) %>% do( {
-  data.frame(uc_rank=.$rankci.5.[1], fnames=paste(.$firstname, collapse=", "),sex=.$sex[1])
-}) %>% group_by(sex) %>% select(uc_rank, fnames) %>% rename("ucrank"=uc_rank, "first names"=fnames)
 
-nb <- nb_rankswunc %>% do({head(.,n=5)})
-#knitr::kable(nb %>% ungroup %>% filter(sex=="f") %>% select(-sex))
-##knitr::kable(nb %>% ungroup %>% filter(sex=="m") %>% select(-sex))
-```
 
 <center>
-```{r, echo=FALSE, warning=FALSE, results="asis"}
-tab <- xtable(bind_cols(nb %>% ungroup %>% filter(sex=="f") %>% select(-sex) %>%
-                        rename("first names (girls)"=`first names`, "ucrank (among girls)"=ucrank),
-                        nb %>% ungroup %>% filter(sex=="m") %>% select(-sex) %>%
-                        rename("first names (boys)"=`first names`,"ucrank (among boys)"=ucrank)))
-align(tab)[c(2:4)] <- "c"
-print(tab,include.rownames=FALSE,type="html", html.table.attributes="border=5, padding=10, style=\"width=100%\"")
-```
+<!-- html table generated in R 3.3.2 by xtable 1.8-2 package -->
+<!-- Sun Feb  5 17:46:07 2017 -->
+<table border=5, padding=10, style="width=100%">
+<tr> <th> ucrank (among girls) </th> <th> first names (girls) </th> <th> ucrank (among boys) </th> <th> first names (boys) </th>  </tr>
+  <tr> <td align="center">   1 </td> <td align="center"> Marie, Sophie </td> <td align="center">   1 </td> <td> Alexander </td> </tr>
+  <tr> <td align="center">   3 </td> <td align="center"> Charlotte </td> <td align="center">   2 </td> <td> Elias, Paul </td> </tr>
+  <tr> <td align="center">   4 </td> <td align="center"> Emilia, Maria </td> <td align="center">   3 </td> <td> Maximilian </td> </tr>
+  <tr> <td align="center">   6 </td> <td align="center"> Anna, Emma, Mia, Sophia </td> <td align="center">   5 </td> <td> Anton, Emil, Felix, Noah </td> </tr>
+  <tr> <td align="center">   8 </td> <td align="center"> Johanna </td> <td align="center">   6 </td> <td> Jonas, Oskar </td> </tr>
+   </table>
 </center>
 <p>
 
