@@ -1,9 +1,11 @@
 ######################################################################
-## Code take from the wordcloud package
+## Code taken from the wordcloud package
 ## https://cran.r-project.org/web/packages/wordcloud/
 ##
 ## by Ian Fellows <ian at fellstat.com> available under the LGPL-2.1
 ## license
+##
+## and modified further to plot without opening a plot.new() every time.
 ##
 ## Author: Michael Höhle <http://www.math.su.se/~hoehle>
 ## Date:   2016-03-21

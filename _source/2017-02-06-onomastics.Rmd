@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Naming Uncertainty by the Bootstrap"
-tags: [rstats, stats, ranks, onomastics, data journalism]
+tags: [rstats, stats, ranks, league table, data journalism,onomastics]
 bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
 ---
@@ -10,11 +10,11 @@ comments: true
 ##If default fig.path, then set it.
 if (knitr::opts_chunk$get("fig.path") == "figure/") {
   knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
-  knitr::opts_chunk$set(fig.path="figure/source/2017-02-04-onomastics/")
+  knitr::opts_chunk$set(fig.path="figure/source/2017-02-06-onomastics/")
 }
 knitr::opts_chunk$set(base.url="./")
 fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
-filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2017-02-04-onomastics/"
+filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2017-02-06-onomastics/"
 
 knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='',fig.align='center') # autodep=TRUE
 options(width=90)
@@ -33,6 +33,9 @@ library("xtable")
 ##Extend wordcloud package functionality.
 source(file.path(filePath,"mywordcloud.R"))
 
+##If you are unhappy about the colours, change them here
+palette <- c(f="darkred",m="blue")
+
 theme_set(theme_bw())
 ```
 
@@ -47,7 +50,8 @@ intervals for the ranks based on a bootstrap procedure reflecting the
 above chance elements. This leads to an alternative league table based
 on what we will call **uncertainty corrected ranks**. From an R
 perspective we use the problem as a practice session for wrangling
-data `dplyr`-style.
+data `dplyr`-style (code available by clicking on the github logo in
+the license below).
 
 <center>
 ```{r,results='asis',echo=FALSE}
@@ -62,21 +66,20 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"WORDMAPC
 What's the most popular first name given to newborn boys and girls?
 This question seems to fascinate at different levels of temporal and
 spatial aggregation, because the choice of names and its dynamics
-reflect cultural and social behavior. The branch of science related to
-the study of names is entitled
-[**onomastics**](https://en.wikipedia.org/wiki/Onomastics). A part of
-onomastics is the mathematical modelling of name dynamics by
-evolutionary models and models for contagious phenomena
+reflects cultural and social behavior. The branch of science related
+to the study of names is entitled
+[**onomastics**](https://en.wikipedia.org/wiki/Onomastics). Mathematical
+modelling is used in onomastics to study name dynamics by evolutionary
+models and models for contagious phenomena
 [@kahn_bentley2003, @kessler_etal2012]. But even the task of naming
-your baby has nowadays almost onomastic and optimizing flavour,
+your baby has almost onomastics optimizing flavour
 requiring
 [data science skills](http://waitbutwhy.com/2013/12/how-to-name-baby.html). However,
 once the Official Social Security Administration has released the
 numbers for all names of newborns in a given year, finding the most
 popular baby name appears a simple counting and ranking job: for
 example the
-[most popular US baby name in 2015 was Emma (girls) and Noah (boys)](http://www.babynamewizard.com/the-top-1000-baby-names-of-2015-united-states-of-america),
-respectively.
+[most popular US baby name in 2015 were Emma (girls) and Noah (boys)](http://www.babynamewizard.com/the-top-1000-baby-names-of-2015-united-states-of-america).
 
 <center>
 ```{r,results='asis',echo=FALSE}
@@ -89,33 +92,30 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"Hello-My
 <p>
 
 **Statistics** is the scientific study of chance. One fundamental
-concept is the inference of **population** quantities from observing
-this quantity in a **sample** (=subset) of this population. To make
+concept is the inference of a **population** quantity from observing
+the quantity in a **sample** (=subset) of this population. To make
 this specific for the baby names: In Germany there is no official
 first name statistics, as a consequence, the site
 [www.beliebte-vornamen.de](http://www.beliebte-vornamen.de) uses
 information from a sample of 196,158 kids (corresponding to 26% of all
 newborns in Germany 2016) originating from a selection of registrar's
-offices and birth clinics to determine the most popular first name
-2016 in Germany. However, the aspect of uncertainty in the resulting
-ranking is ignored. The aspect of uncertainty can also be more
-subtle. As an example, the city of Berlin recently released the
-official
+offices and birth clinics to determine the most popular first name in
+Germany 2016. However, the aspect of uncertainty in the resulting
+ranking due to only having a sample is ignored. The aspect of
+uncertainty can also be more subtle. As an example, the city of Berlin
+recently released the official
 [2016 first name statistic](https://daten.berlin.de/datensaetze/liste-der-h%C3%A4ufigen-vornamen-2014)
 of **all newborns** in the city. The data are available at
 [district level](https://en.wikipedia.org/wiki/Boroughs_and_neighborhoods_of_Berlin),
 which is helpful since there are notable socio-economic and cultural
-differences between the districts. One caveat with the statistic is
-the fact that, if a child is given several first names, each name is
-counted once in the statistic. Hence, the sum of the number of times a
-names appears is higher than the number of kids.  Still, one could
-argue that since the data cover the **entire population of interest**
-(i.e. newborns in Berlin 2016) the use of **inferential statistics**
-is superfluous.  But is it that simple?
+differences between the districts. One could argue that since the data
+cover the **entire population of interest** (i.e. newborns in Berlin
+2016) the use of **inferential statistics** is superfluous.  But is it
+that simple?
 
 In what follows we use the Berlin newborn names to illustrate how a
 scientific treatment of **chance** could enhance rank statements in
-general and onomastic investigations in particular.
+general and in name rank tables in particular.
 
 
 ## Descriptive Data Analysis
@@ -141,11 +141,16 @@ unique first names. Below is shown the first 10 lines of the data.
 DT::datatable(head(distrNames, n=10))
 ```
 
-By suming the `count` column it becomes clear that in total, `r
-sum(n_sex)` names were registered in Berlin `r year` (`r n_sex["m"]`
+By summing the `count` column it becomes clear that in total,
+`r sum(n_sex)` names were registered in Berlin `r year` (`r n_sex["m"]`
 boys and `r n_sex["f"]`) girls. The proportion of boy names is
-`r sprintf("%.1f%%",n_sex["m"]/sum(n_sex)*100)`, which, despite of the
-potential problems with multiple names per kids, appears to be close
+`r sprintf("%.1f%%",n_sex["m"]/sum(n_sex)*100)`. One caveat with the Berlin statistic is
+the fact that, if a child is given several first names, each name is
+counted once in the statistic. Hence, the above total sum is actually higher than the number of kids born 2016 (roughly
+38,030 in 2015, official 2016 number not available yet).
+Despite of the
+potential problems with multiple names per kids, the empirical boy
+fraction in the data is close
 to reported ratios of the number of born boys vs. girls of
 `r (sex_ratio=1.05)` [@jacobsen1999], which means that the expected fraction of
 boys among the newborns should be approximately
@@ -157,7 +162,7 @@ babies seem to have an empty first name (but the sex is known). We decided to
 keep these `NA` names in the analysis, because at the time of writing
 it was unclear, if this is a data recording problem (e.g. a delay of the
 December 2016 kids) or actually allowed. An email inquiry with the data
-providing agency about the orgigin of these `NA`'s currently remains
+providing agency about the origin of these `NA`'s currently remains
 unanswered (since `r as.numeric(Sys.Date() - as.Date("2017-02-02"))` days).
 
 We can now look at the top-5-names in Berlin for each gender:
@@ -178,8 +183,10 @@ newborn %>% do({head(.,n=5)})
 The top-1 names per gender and district from `distrNames` can easily
 be computed in similar fashion using `group_by` and `summarise`
 operations. To spice up the visualization we use a custom made
-**wordmapcloud**, which overlays the top-1 names over an alpha-channelled
+**wordmapcloud**, which overlays the top-1 names over an alpha-channeled
 wordcloud of the district's name with font size proportional to frequency.
+We see little geographical variation in the top-1
+names over the districts - particularly for the girls.
 
 ```{r, WORDMAPCLOUD, echo=FALSE, warning=FALSE, fig.width=6,fig.height=6,dpi=100, message=FALSE, results='hide',cache=TRUE}
 ##Make an SpatialPolygon object containing the Bezirke
@@ -190,7 +197,7 @@ distrMap <- gUnaryUnion(map, id=as(map,"data.frame")$BEZNAME)
 loc <- coordinates(distrMap)
 rownames(loc) <- tolower(rownames(loc))
 
-##Create palette - include alpha channel for better visability
+##Create palette - include alpha channel for better visibility
 pal = RColorBrewer::brewer.pal(9, "BuGn")
 pal <- pal[-(1:4)]
 pal <- paste0(pal,"1A")
@@ -212,8 +219,8 @@ for (distr in tolower(names(distrMap))) {
   theDistrNames <- distrNames %>% filter(district==distr)
   topMale    <- theDistrNames %>% filter(sex == "m") %>% head(n=1)
   topFemale  <- theDistrNames %>% filter(sex == "f") %>% head(n=1)
-  text(loc[distr,1],loc[distr,2],topMale %$% firstname, col="blue",pos=1,offset=0.3,font=2)
-  text(loc[distr,1],loc[distr,2],topFemale %$% firstname, col="darkred",pos=3,offset=0.3,font=2)
+  text(loc[distr,1],loc[distr,2],topMale %$% firstname, col=palette["m"],pos=1,offset=0.3,font=2)
+  text(loc[distr,1],loc[distr,2],topFemale %$% firstname, col=palette["f"],pos=3,offset=0.3,font=2)
 }
 
 title(paste0("Most common first name for newborns in\n Berlin ",year," (female/male for each district)"))
@@ -225,22 +232,23 @@ gini <- newborn %>% group_by(sex) %>% summarise(gini=Gini(count))
 gini_sex <- structure(gini %$% gini, names=gini %$% as.character(sex))
 ```
 
+
 The [Gini index](https://en.wikipedia.org/wiki/Gini_coefficient)
 for the name frequency is calculated using the `ineq` package and is
 `r sprintf("%.3f",gini_sex["f"])` and
 `r sprintf("%.3f",gini_sex["m"])` for girls and boys, respectively.  This
-means that the occurence of names in boys is dominated
-by fewer specific names for boys than for girls. Furthermore, both gender's name distribution
+means that the occurrence of names in boys is dominated
+by fewer names for boys than for girls. Furthermore, both gender's name distribution
 tend to be dominated by few names. This feature can also be
 visualized by a Lorenz curve - here shown separately for each sex:
 
 ```{r, LORENZCURVE, echo=FALSE}
 ##Make a lorenz curve
 newborn %>% filter(sex=="f") %$% count %>% Lc %>%
-  plot(col="darkred",lwd=2,xlab="Cumulative share of baby names with considered sex", ylab="Cumulative share of all babies of that sex")
+  plot(col=palette["f"],lwd=2,xlab="Cumulative share of baby names with considered sex", ylab="Cumulative share of all babies of that sex")
 newborn %>% filter(sex=="m") %$% count %>% Lc %>%
-  lines(col="blue",lwd=2)
-legend(x="topleft",c("Girls","Boys"),col=c("darkred","blue"),lwd=2)
+  lines(col=palette["m"],lwd=2)
+legend(x="topleft",c("Girls","Boys"),col=palette,lwd=2)
 
 ##Compute a quantile manually
 topX <- 50
@@ -248,7 +256,7 @@ newborn_f <- newborn %>% filter(sex=="f") %>% mutate(topX = row_number() <= topX
 topXshare <- (newborn_f %$% count / colSums(newborn_f)["count"] )[2]
 ```
 
-From the curve one can deduce that the frequency of the top-`r topX` girl names
+From the curve one can for example deduce that the frequency of the top-`r topX` girl names
 (top
 `r sprintf("%.1f%%",(topX/nrow(newborn %>% filter(sex=="f")))*100)`
 out of the
@@ -266,7 +274,7 @@ data analysed above? We shall focus on 5 stages:
 
 1. the number of babies born in Berlin in 2016
 
-2. the gender of the born baby; as mentioned above the odds for the
+2. the gender of a given born baby; as mentioned above the odds for the
 kid being a boy is roughly `r sex_ratio`:1.
 
 2. the number of names given to a baby of a specific sex
@@ -277,7 +285,7 @@ kid being a boy is roughly `r sex_ratio`:1.
 
 We will ignore uncertainty from stages 1, 3 and 5 and, hence, only
 focus on uncertainty arising from stages 2 and 4. One may ask in stage
-4, if naming is not deterministic, once the parents know the sex of
+4, if the naming is not deterministic, once the parents know the sex of
 their baby? In this post we take the position that *even* given sex
 the naming is the outcome of a stochastic process. The selection
 probabilities are likely to vary from couple to couple based on
@@ -287,7 +295,7 @@ data are never going to be available on these individual factors,
 we will, as a proxy, assume that the drawing probabilities are
 district specific. As a result, the selected name can be considered as
 one realization of the multinomial distribution with the underlying
-true populiarities of all possible names in the district acting as selection
+true popularity of all possible names in the district acting as selection
 probabilities.
 
 ### Uncertainty Assessment using the Bootstrap
@@ -296,7 +304,7 @@ When combining the above stages 3 and 4, the name selection process
 can be mimicked by a **simple bootstrap** procedure **stratified by
 district** [@davison_hinkley1997].  In spirit, this approach
 corresponds to the bootstrap approach to ranks used in Sect. 5.3 of
-@goldstein_spiegelhalter1996. We operationalize this in R using the
+@goldstein_spiegelhalter1996. We operationalise this in R using the
 `boot` package, the work-horse will be the function `name_ranks` shown
 below.
 
@@ -331,17 +339,17 @@ name_ranks <- function(x,  idx=seq_len(nrow(x)), returns=c("rank","count")) {
 }
 ```
 
-We operationalize the above, by first creating `all_strata` which is a
+In the above, `all_strata` is a
 `data.frame` containing all possible strata of gender and
 firstname. This is done in order to ensure that we later get a zero
-count for names, even if they do not appear in the bootstrap resample.
+count for names, even if they do not appear in the bootstrap re-sample.
 ```{r, echo=FALSE}
 all_strata <- distrNames %>% distinct(firstname, sex, .keep_all=TRUE) %>%
   mutate(count=0)
 ```
 
 We then convert the aggregated data to long format where each kid is
-represented by one row. This is the most didactical way to explain
+represented by one row. This is the most didactic way to explain
 what is going on in the bootstrap, but an aggregated multinomial
 approach would probably be much faster in terms of execution time.
 ```{r, warning=FALSE}
@@ -350,15 +358,14 @@ kids <- distrNames %>% slice(rep(seq_len(nrow(distrNames)), times=distrNames %$%
 
 Ready to perform the bootstrap stratified within
 districts? Yes, its conveniently done using the `boot`
-package (which is easily parallelized also).
+package (which is easily paralleled too).
 
 ```{r, cache=TRUE, warning=FALSE, message=FALSE}
 set.seed(123) ##fix seed for reproducibility
-R <- 999
-b <- boot::boot(kids, statistic=name_ranks, R=R, strata=kids$district, parallel="multicore",ncpus=3)
+b <- boot::boot(kids, statistic=name_ranks, R=999, strata=kids$district, parallel="multicore",ncpus=3)
 ```
 
-We use the percentile method on the `r R` + 1 bootstrap rank-vectors
+We use the percentile method on the `r b$R` + 1 bootstrap rank-vectors
 as a method for computing a 95% confidence interval for the rank of
 each name for boys and girls, respectively.
 ```{r, echo=FALSE, warning=FALSE, message=FALSE }
@@ -374,7 +381,7 @@ newborn_ranks %>% arrange(rank) %>% filter( rank <= 5)
 ```
 Using the lower limit of the 95% CI to group the names, we define the
 concept of a **uncertainty corrected** rank (ucrank). This is just the lowest
-rank which we, given the modeled stochasticity, can not be ruled out
+rank which we, given the modelled stochasticity, cannot be ruled out
 (at the 2.5% lvl. of significance).
 Listing the top-5 of these corrected ranks leads to the following
 tables for girls and boys, respectively:
@@ -402,21 +409,34 @@ print(tab,include.rownames=FALSE,type="html", html.table.attributes="border=5, p
 </center>
 <p>
 
+Instead of using the uncertainty corrected ranks, we could instead
+have visualized the 95% rank confidence intervals instead (dots denote the
+observed ranks):
+
+```{r, RANKCIPLOT, echo=FALSE, warning=FALSE, message=FALSE, fig.height=4, dpi=150}
+top5 <- newborn_ranks %>% group_by(sex) %>% arrange(sex,rank) %>% filter(row_number() <=5)
+p <- ggplot(top5 , aes(x=firstname,y=rank,color=sex)) + geom_point() + ylim(c(1,max(top5$rankci.95.))) +
+  geom_errorbar(aes(ymin = rankci.5.,ymax = rankci.95.))
+p + facet_wrap(~ sex, scales="free_x") +  theme(legend.position="none") +  scale_colour_manual(values=palette) +
+  scale_y_continuous(breaks = seq(1, max(top5$rankci.95.), 1), expand = c(0, 0.25))
+```
+
+
 ## Discussion
 
 In this post we have used the bootstrap method as a way to assess
 uncertainty in ranks. This approach is very general and can be
 extended to areas beyond onomastics. No matter the area of application
-it takes a careful identification of the elements of chance you want
-to take into account. In the particular application we decided to
-ignore specific uncertainty aspects (e.g. number of babies born) to
-stay close to the problem of interest. However, as soon as there is
-uncertainty, ranks are known to be subject to large variation. Hence,
-a different reporting or visualization of the ranks than the point
-estimator from the sample is necessary. The use of *uncertainty
-corrected* ranks is not revolutionary, but it underlines the
-importance of uncertainty in the construction of league tables. A more
-uncertainty respecting presentation of ranks in, e.g., data
+the approach requires a careful identification of the elements of
+chance you want to take into account. In the particular application we
+decided to ignore specific uncertainty aspects (e.g. number of babies
+born) to not impose further hard-to-verify assumptions. However, as
+soon as there is uncertainty, ranks are known to be subject to large
+variation. Hence, a different reporting or visualization of the ranks
+than the point estimator from the sample is necessary. The use of
+*uncertainty corrected* ranks is not revolutionary, but it underlines
+the importance of uncertainty in the construction of league tables. A
+more uncertainty enhancing presentation of ranks in, e.g., data
 journalism, is therefore needed.
 
 <center>
