@@ -6,8 +6,8 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 06 Feb 2017 08:07:13 +0100</pubDate>
-    <lastBuildDate>Mon, 06 Feb 2017 08:07:13 +0100</lastBuildDate>
+    <pubDate>Tue, 07 Feb 2017 01:42:02 +0100</pubDate>
+    <lastBuildDate>Tue, 07 Feb 2017 01:42:02 +0100</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
@@ -20,19 +20,19 @@
 &lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
 href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
-&lt;p&gt;What&#39;s the most popular first name given to newborn boys and girls? This question seems to fascinate at different levels of temporal and spatial aggregation, because the choice of names and its dynamics reflects cultural and social behavior. The branch of science related to the study of names is entitled &lt;a href=&quot;https://en.wikipedia.org/wiki/Onomastics&quot;&gt;&lt;strong&gt;onomastics&lt;/strong&gt;&lt;/a&gt;. Mathematical modelling is used in onomastics to study name dynamics by evolutionary models and models for contagious phenomena &lt;span class=&quot;citation&quot; data-cites=&quot;kahn_bentley2003&quot;&gt;(Hahn and Bentley 2003, &lt;span class=&quot;citation&quot; data-cites=&quot;kessler_etal2012&quot;&gt;Kessler et al. (2012)&lt;/span&gt;)&lt;/span&gt;. But even the task of naming your baby has almost onomastics optimizing flavour requiring &lt;a href=&quot;http://waitbutwhy.com/2013/12/how-to-name-baby.html&quot;&gt;data science skills&lt;/a&gt;. However, once the Official Social Security Administration has released the numbers for all names of newborns in a given year, finding the most popular baby name appears a simple counting and ranking job: for example the &lt;a href=&quot;http://www.babynamewizard.com/the-top-1000-baby-names-of-2015-united-states-of-america&quot;&gt;most popular US baby name in 2015 were Emma (girls) and Noah (boys)&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;What&#39;s the most popular first name given to newborn boys and girls? This question seems to fascinate at different levels of temporal and spatial aggregation, because the choice of names and its dynamics reflects cultural and social behavior. The branch of science related to the study of names is entitled &lt;a href=&quot;https://en.wikipedia.org/wiki/Onomastics&quot;&gt;&lt;strong&gt;onomastics&lt;/strong&gt;&lt;/a&gt;. Mathematical modelling is used in onomastics to study name dynamics by evolutionary models and models for contagious phenomena &lt;span class=&quot;citation&quot; data-cites=&quot;kahn_bentley2003&quot;&gt;(Hahn and Bentley 2003, &lt;span class=&quot;citation&quot; data-cites=&quot;kessler_etal2012&quot;&gt;Kessler et al. (2012)&lt;/span&gt;)&lt;/span&gt;. But even the task of &lt;a href=&quot;(http://waitbutwhy.com/2013/12/how-to-name-baby.html)&quot;&gt;naming your baby&lt;/a&gt; has almost onomastics optimizing flavour requiring data science skills. However, once the Official Social Security Administration has released the numbers for all names of newborns in a given year, finding the most popular baby name appears a simple counting and ranking job: for example the &lt;a href=&quot;http://www.babynamewizard.com/the-top-1000-baby-names-of-2015-united-states-of-america&quot;&gt;most popular US baby names in 2015 were Emma (girls) and Noah (boys)&lt;/a&gt;.&lt;/p&gt;
 &lt;center&gt;
 &lt;img src=&quot;/hoehle/blog/figure/source/2017-02-06-onomastics/Hello-My-Name-Is.png&quot; /&gt; &lt;br&gt; &lt;!-- Modified based on the following source: https://openclipart.org/image/300px/svg_to_png/250091/ --&gt;
 &lt;/center&gt;
 &lt;p&gt;
 &lt;p&gt;
-&lt;p&gt;&lt;strong&gt;Statistics&lt;/strong&gt; is the scientific study of chance. One fundamental concept is the inference of a &lt;strong&gt;population&lt;/strong&gt; quantity from observing the quantity in a &lt;strong&gt;sample&lt;/strong&gt; (=subset) of this population. To make this specific for the baby names: In Germany there is no official first name statistics, as a consequence, the site &lt;a href=&quot;http://www.beliebte-vornamen.de&quot;&gt;www.beliebte-vornamen.de&lt;/a&gt; uses information from a sample of 196,158 kids (corresponding to 26% of all newborns in Germany 2016) originating from a selection of registrar&#39;s offices and birth clinics to determine the most popular first name in Germany 2016. However, the aspect of uncertainty in the resulting ranking due to only having a sample is ignored. The aspect of uncertainty can also be more subtle. As an example, the city of Berlin recently released the official &lt;a href=&quot;https://daten.berlin.de/datensaetze/liste-der-h%C3%A4ufigen-vornamen-2014&quot;&gt;2016 first name statistic&lt;/a&gt; of &lt;strong&gt;all newborns&lt;/strong&gt; in the city. The data are available at &lt;a href=&quot;https://en.wikipedia.org/wiki/Boroughs_and_neighborhoods_of_Berlin&quot;&gt;district level&lt;/a&gt;, which is helpful since there are notable socio-economic and cultural differences between the districts. One could argue that since the data cover the &lt;strong&gt;entire population of interest&lt;/strong&gt; (i.e. newborns in Berlin 2016) the use of &lt;strong&gt;inferential statistics&lt;/strong&gt; is superfluous. But is it that simple?&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Statistics&lt;/strong&gt; is the scientific study of chance. One fundamental concept is the inference of a &lt;strong&gt;population&lt;/strong&gt; quantity from observing the quantity in a &lt;strong&gt;sample&lt;/strong&gt; (=subset) of this population. To make this specific for the baby names: In Germany there is no official first name statistics, as a consequence, the site &lt;a href=&quot;http://www.beliebte-vornamen.de&quot;&gt;www.beliebte-vornamen.de&lt;/a&gt; uses information from a sample of 196,158 kids (corresponding to 26% of all newborns in Germany 2016) originating from a selection of registrar&#39;s offices and birth clinics to determine the most popular first name in Germany 2016. However, the aspect of uncertainty in the resulting ranking, due to only measuring a sample of the population, is ignored when reporting the &lt;a href=&quot;http://www.beliebte-vornamen.de/jahrgang/j2016&quot;&gt;2016 league table&lt;/a&gt;. The aspect of uncertainty can, however, also be more subtle. As an example, the city of Berlin recently released the official &lt;a href=&quot;https://daten.berlin.de/datensaetze/liste-der-h%C3%A4ufigen-vornamen-2014&quot;&gt;2016 first name statistic&lt;/a&gt; of &lt;strong&gt;all newborns&lt;/strong&gt; in the city. The data are available at &lt;a href=&quot;https://en.wikipedia.org/wiki/Boroughs_and_neighborhoods_of_Berlin&quot;&gt;district level&lt;/a&gt;, which is helpful, because there are notable socio-economic and cultural differences between the districts. One could argue that since the data cover the &lt;strong&gt;entire population of interest&lt;/strong&gt; (i.e. newborns in Berlin 2016) the use of &lt;strong&gt;inferential statistics&lt;/strong&gt; is superfluous. But is it that simple?&lt;/p&gt;
 &lt;p&gt;In what follows we use the Berlin newborn names to illustrate how a scientific treatment of &lt;strong&gt;chance&lt;/strong&gt; could enhance rank statements in general and in name rank tables in particular.&lt;/p&gt;
 &lt;h2 id=&quot;descriptive-data-analysis&quot;&gt;Descriptive Data Analysis&lt;/h2&gt;
 &lt;p&gt;Altogether, the &lt;code&gt;distrNames&lt;/code&gt; variable contains the information about the frequency of 13245 unique first names. Below is shown the first 10 lines of the data.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2017-02-06-onomastics/unnamed-chunk-5-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
-&lt;p&gt;By summing the &lt;code&gt;count&lt;/code&gt; column it becomes clear that in total, 69525 names were registered in Berlin 2016 (35620 boys and 33905) girls. The proportion of boy names is 51.2%. One caveat with the Berlin statistic is the fact that, if a child is given several first names, each name is counted once in the statistic. Hence, the above total sum is actually higher than the number of kids born 2016 (roughly 38,030 in 2015, official 2016 number not available yet). Despite of the potential problems with multiple names per kids, the empirical boy fraction in the data is close to reported ratios of the number of born boys vs. girls of 1.05 &lt;span class=&quot;citation&quot; data-cites=&quot;jacobsen1999&quot;&gt;(Jacobsen, Møller, and Mouritsen 1999)&lt;/span&gt;, which means that the expected fraction of boys among the newborns should be approximately 51.2%.&lt;/p&gt;
-&lt;p&gt;Strangely enough, 15 babies seem to have an empty first name (but the sex is known). We decided to keep these &lt;code&gt;NA&lt;/code&gt; names in the analysis, because at the time of writing it was unclear, if this is a data recording problem (e.g. a delay of the December 2016 kids) or actually allowed. An email inquiry with the data providing agency about the origin of these &lt;code&gt;NA&lt;/code&gt;&#39;s currently remains unanswered (since 4 days).&lt;/p&gt;
+&lt;p&gt;By summing the &lt;code&gt;count&lt;/code&gt; column it becomes clear that in total, 69525 names were registered in Berlin 2016 (35620 boys and 33905) girls. The proportion of boy names is 51.2%. One caveat with the Berlin name statistic is that, if a child is given several first names, each name is counted once in the statistic. Hence, the above total sum is actually higher than the number of kids born 2016 (38,030 in 2015, official 2016 number not available yet). Despite of the potential problems with multiple names per kids, the empirical boy fraction in the data is close to reported ratios of the number of born boys vs. girls of 1.05 &lt;span class=&quot;citation&quot; data-cites=&quot;jacobsen1999&quot;&gt;(Jacobsen, Møller, and Mouritsen 1999)&lt;/span&gt;, which means that the expected fraction of boys among the newborns should be approximately 51.2%.&lt;/p&gt;
+&lt;p&gt;Strangely enough, 15 babies seem to have an empty first name (but the sex is known). We decided to keep these &lt;code&gt;NA&lt;/code&gt; names in the analysis, because at the time of writing it was unclear, if this is a data recording problem (e.g. a delay of the December 2016 kids) or actually allowed. An email inquiry with the data providing agency about the origin of these &lt;code&gt;NA&lt;/code&gt;&#39;s currently remains unanswered (since 5 days).&lt;/p&gt;
 &lt;p&gt;We can now look at the top-5-names in Berlin for each gender:&lt;/p&gt;
 &lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;##Aggregate data over district and sort according to rank within gender
 newborn &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;distrNames %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;group_by&lt;/span&gt;(firstname, sex) %&amp;gt;%
@@ -54,13 +54,13 @@ newborn &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;distrNames %&amp
 ## 8       Elias      m   371     3
 ## 9  Maximilian      m   344     4
 ## 10       Emil      m   295     5&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The top-1 names per gender and district from &lt;code&gt;distrNames&lt;/code&gt; can easily be computed in similar fashion using &lt;code&gt;group_by&lt;/code&gt; and &lt;code&gt;summarise&lt;/code&gt; operations. To spice up the visualization we use a custom made &lt;strong&gt;wordmapcloud&lt;/strong&gt;, which overlays the top-1 names over an alpha-channeled wordcloud of the district&#39;s name with font size proportional to frequency. We see little geographical variation in the top-1 names over the districts - particularly for the girls.&lt;/p&gt;
+&lt;p&gt;The top-1 names per gender and district from &lt;code&gt;distrNames&lt;/code&gt; can easily be computed in similar fashion using &lt;code&gt;group_by&lt;/code&gt; and &lt;code&gt;summarise&lt;/code&gt; operations. To spice up the visualization we use a custom made &lt;strong&gt;wordmapcloud&lt;/strong&gt;, which overlays the top-1 names over an alpha-channeled wordcloud of the district&#39;s name with font size proportional to frequency. In the resulting plot we see little geographical variation in the top-1 names over the districts - particularly for girls.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2017-02-06-onomastics/WORDMAPCLOUD-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
 &lt;p&gt;The &lt;a href=&quot;https://en.wikipedia.org/wiki/Gini_coefficient&quot;&gt;Gini index&lt;/a&gt; for the name frequency is calculated using the &lt;code&gt;ineq&lt;/code&gt; package and is 0.728 and 0.743 for girls and boys, respectively. This means that the occurrence of names in boys is dominated by fewer names for boys than for girls. Furthermore, both gender&#39;s name distribution tend to be dominated by few names. This feature can also be visualized by a Lorenz curve - here shown separately for each sex:&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2017-02-06-onomastics/LORENZCURVE-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
 &lt;p&gt;From the curve one can for example deduce that the frequency of the top-50 girl names (top 0.7% out of the 6957 girl names), cover 29.0% of all 33905 girl namings.&lt;/p&gt;
 &lt;h2 id=&quot;analysing-stochasticity-in-the-name-selection&quot;&gt;Analysing Stochasticity in the Name Selection&lt;/h2&gt;
-&lt;p&gt;At which places is stochasticity a useful concept for abstracting unobservable factors influencing the name selection and, hence, the data analysed above? We shall focus on 5 stages:&lt;/p&gt;
+&lt;p&gt;At which places is stochasticity a useful concept for abstracting unobservable factors influencing the name selection? We shall focus on 5 stages:&lt;/p&gt;
 &lt;ol type=&quot;1&quot;&gt;
 &lt;li&gt;&lt;p&gt;the number of babies born in Berlin in 2016&lt;/p&gt;&lt;/li&gt;
 &lt;li&gt;&lt;p&gt;the gender of a given born baby; as mentioned above the odds for the kid being a boy is roughly 1.05:1.&lt;/p&gt;&lt;/li&gt;
@@ -80,51 +80,66 @@ newborn &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;distrNames %&amp
 ##  x - the full data, one row per kid
 ##  idx - vector of length nrow(x) containing a possible permutation
 ##        (with replacement)
-##  returns - which column to return, rank or count?
+##  returns - which column to return, &amp;quot;rank&amp;quot; or &amp;quot;count&amp;quot; (for use in boot).
+##            If returns==&amp;quot;dplyr::everything()&amp;quot;, then entire frame is returned (useful for
+##            use with broom)
 ##
 ## Returns:
-##  sex stratified ranks (ordered according to (firstname, sex))
+##  vector or data.frame with stratified ranks (arranged by (firstname, sex))
 ######################################################################
 
-name_ranks &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(x,  &lt;span class=&quot;dt&quot;&gt;idx=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;seq_len&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;nrow&lt;/span&gt;(x)), &lt;span class=&quot;dt&quot;&gt;returns=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;rank&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;count&amp;quot;&lt;/span&gt;)) {
+name_ranks &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;function(x,  &lt;span class=&quot;dt&quot;&gt;idx=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;seq_len&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;nrow&lt;/span&gt;(x)), &lt;span class=&quot;dt&quot;&gt;returns=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;rank&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;count&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;dplyr::everything()&amp;quot;&lt;/span&gt;)) {
   ##Make resampled data and append all_strata to ensure each firstname-sex combination occurs
   x_boot &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;x %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;slice&lt;/span&gt;(idx) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;bind_rows&lt;/span&gt;(all_strata)
 
-  ##Summarise the number of occurences for each firstname-sex strata and compute the ranks.
+  ##Summarise the number of occurrences for each firstname-sex strata and compute the ranks.
   aggrx_wranks &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;x_boot %&amp;gt;%&lt;span class=&quot;st&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;group_by&lt;/span&gt;(firstname,sex) %&amp;gt;%
 &lt;span class=&quot;st&quot;&gt;    &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;summarise&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;count =&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;sum&lt;/span&gt;(count)) %&amp;gt;%
 &lt;span class=&quot;st&quot;&gt;    &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;group_by&lt;/span&gt;(sex) %&amp;gt;%
 &lt;span class=&quot;st&quot;&gt;    &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;mutate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;rank=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;rank&lt;/span&gt;(-count, &lt;span class=&quot;dt&quot;&gt;ties.method=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;min&amp;quot;&lt;/span&gt;)) %&amp;gt;%
 &lt;span class=&quot;st&quot;&gt;    &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;arrange&lt;/span&gt;(firstname, sex) &lt;span class=&quot;co&quot;&gt;#important to ensure order.&lt;/span&gt;
 
-  &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(aggrx_wranks %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;select_&lt;/span&gt;(returns) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;.[[&lt;span class=&quot;dv&quot;&gt;2&lt;/span&gt;]])
+  ##Select relevant columns
+  res &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;aggrx_wranks %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;ungroup&lt;/span&gt;() %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;select_&lt;/span&gt;(returns)
+
+  ##Return as vector (needed for boot pkg) or data.frame (needed from broom)
+  if (returns[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;] %in%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;rank&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;count&amp;quot;&lt;/span&gt;)) &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(res %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;.[[&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;]]) else &lt;span class=&quot;kw&quot;&gt;return&lt;/span&gt;(res)
 }&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;In the above, &lt;code&gt;all_strata&lt;/code&gt; is a &lt;code&gt;data.frame&lt;/code&gt; containing all possible strata of gender and firstname. This is done in order to ensure that we later get a zero count for names, even if they do not appear in the bootstrap re-sample.&lt;/p&gt;
-&lt;p&gt;We then convert the aggregated data to long format where each kid is represented by one row. This is the most didactic way to explain what is going on in the bootstrap, but an aggregated multinomial approach would probably be much faster in terms of execution time.&lt;/p&gt;
+&lt;p&gt;We then convert the aggregated data to long format where each kid is represented by one row. This is the most didactic way to explain what is going on in the bootstrap, but an aggregated multinomial approach would probably be faster in terms of execution time.&lt;/p&gt;
 &lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;kids &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;distrNames %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;slice&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;rep&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;seq_len&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;nrow&lt;/span&gt;(distrNames)), &lt;span class=&quot;dt&quot;&gt;times=&lt;/span&gt;distrNames %$%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;count)) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;mutate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;count=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;Ready to perform the bootstrap stratified within districts? Yes, its conveniently done using the &lt;code&gt;boot&lt;/code&gt; package (which is easily paralleled too).&lt;/p&gt;
 &lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;set.seed&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;123&lt;/span&gt;) ##fix seed for reproducibility
 b &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;boot::&lt;span class=&quot;kw&quot;&gt;boot&lt;/span&gt;(kids, &lt;span class=&quot;dt&quot;&gt;statistic=&lt;/span&gt;name_ranks, &lt;span class=&quot;dt&quot;&gt;R=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;999&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;strata=&lt;/span&gt;kids$district, &lt;span class=&quot;dt&quot;&gt;parallel=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;multicore&amp;quot;&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;ncpus=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;We use the percentile method on the 999 + 1 bootstrap rank-vectors as a method for computing a 95% confidence interval for the rank of each name for boys and girls, respectively.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;## Source: local data frame [10 x 5]
+&lt;p&gt;We use the percentile method on the 999 + 1 bootstrap rank-vectors as a method for computing a 90% confidence interval for the rank of each name for boys and girls, respectively.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Update 2017-02-07&lt;/strong&gt;: &lt;a href=&quot;http://www.masalmon.eu/&quot;&gt;Maëlle&lt;/a&gt; made me &lt;a href=&quot;https://twitter.com/ma_salmon/status/828505021666967552&quot;&gt;aware&lt;/a&gt; of some newer ways to perform the bootstrap, e.g., using the &lt;code&gt;broom&lt;/code&gt; package. It&#39;s especially useful for the parametric bootstrap, but by joining with the previously calculated observed ranks, the code for making a simple bootstrap stratified bootstrap actually looks quite nice (although not parallized and hence slower):&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;require&lt;/span&gt;(broom)
+b_broom &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;kids %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;group_by&lt;/span&gt;(district) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;bootstrap&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;m=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;999&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;by_group=&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;TRUE&lt;/span&gt;) %&amp;gt;%
+&lt;span class=&quot;st&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;do&lt;/span&gt;({ &lt;span class=&quot;kw&quot;&gt;name_ranks&lt;/span&gt;(.,&lt;span class=&quot;dt&quot;&gt;returns=&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;dplyr::everything()&amp;quot;&lt;/span&gt;) }) %&amp;gt;%
+&lt;span class=&quot;st&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;group_by&lt;/span&gt;(sex,firstname) %&amp;gt;%
+&lt;span class=&quot;st&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;summarise&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;rankci.5.&amp;quot;&lt;/span&gt;=&lt;span class=&quot;kw&quot;&gt;quantile&lt;/span&gt;(rank, &lt;span class=&quot;fl&quot;&gt;0.05&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;),&lt;span class=&quot;st&quot;&gt;&amp;quot;rankci.95.&amp;quot;&lt;/span&gt;=&lt;span class=&quot;kw&quot;&gt;quantile&lt;/span&gt;(rank, &lt;span class=&quot;fl&quot;&gt;0.95&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;3&lt;/span&gt;))
+
+newborn_ranks &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;newborn %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;inner_join&lt;/span&gt;(b_broom,&lt;span class=&quot;dt&quot;&gt;by=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;firstname&amp;quot;&lt;/span&gt;,&lt;span class=&quot;st&quot;&gt;&amp;quot;sex&amp;quot;&lt;/span&gt;)) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;arrange&lt;/span&gt;(rank,sex)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;newborn_ranks %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;arrange&lt;/span&gt;(rank) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;filter&lt;/span&gt;( rank &amp;lt;=&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;5&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## Source: local data frame [10 x 6]
 ## Groups: sex [2]
 ## 
-##     firstname    sex  rank rankci.5. rankci.95.
-##         &amp;lt;chr&amp;gt; &amp;lt;fctr&amp;gt; &amp;lt;int&amp;gt;     &amp;lt;int&amp;gt;      &amp;lt;int&amp;gt;
-## 1   Alexander      m     1         1          1
-## 2       Marie      f     1         1          2
-## 3        Paul      m     2         2          4
-## 4      Sophie      f     2         1          2
-## 5   Charlotte      f     3         3          3
-## 6       Elias      m     3         2          4
-## 7       Maria      f     4         4          5
-## 8  Maximilian      m     4         3          4
-## 9        Emil      m     5         5          9
-## 10     Emilia      f     5         4          5&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Using the lower limit of the 95% CI to group the names, we define the concept of a &lt;strong&gt;uncertainty corrected&lt;/strong&gt; rank (ucrank). This is just the lowest rank which we, given the modelled stochasticity, cannot be ruled out (at the 2.5% lvl. of significance). Listing the top-5 of these corrected ranks leads to the following tables for girls and boys, respectively:&lt;/p&gt;
+##     firstname    sex count  rank rankci.5. rankci.95.
+##         &amp;lt;chr&amp;gt; &amp;lt;fctr&amp;gt; &amp;lt;int&amp;gt; &amp;lt;int&amp;gt;     &amp;lt;int&amp;gt;      &amp;lt;int&amp;gt;
+## 1       Marie      f   695     1         1          2
+## 2   Alexander      m   467     1         1          1
+## 3      Sophie      f   649     2         1          2
+## 4        Paul      m   383     2         2          3
+## 5   Charlotte      f   495     3         3          3
+## 6       Elias      m   371     3         2          4
+## 7       Maria      f   403     4         4          5
+## 8  Maximilian      m   344     4         3          4
+## 9      Emilia      f   382     5         4          5
+## 10       Emil      m   295     5         5          9&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Using the lower limit of the 90% CI to group the names, we define the concept of a &lt;strong&gt;uncertainty corrected&lt;/strong&gt; rank (ucrank). This is just the lowest rank which we, given the modelled stochasticity, cannot be ruled out (at the 5% lvl. of significance). Listing the top-5 of these corrected ranks leads to the following tables for girls and boys, respectively:&lt;/p&gt;
 &lt;center&gt;
 &lt;!-- html table generated in R 3.3.2 by xtable 1.8-2 package --&gt;
-&lt;!-- Mon Feb  6 08:07:12 2017 --&gt;
+&lt;!-- Tue Feb  7 01:42:01 2017 --&gt;
 &lt;table border=&quot;5,&quot; padding=&quot;10,&quot; style=&quot;width=100%&quot;&gt;
 &lt;tr&gt;
 &lt;th&gt;
@@ -165,7 +180,7 @@ Charlotte
 2
 &lt;/td&gt;
 &lt;td&gt;
-Elias, Paul
+Paul, Elias
 &lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
@@ -173,7 +188,7 @@ Elias, Paul
 4
 &lt;/td&gt;
 &lt;td align=&quot;center&quot;&gt;
-Emilia, Maria
+Maria, Emilia
 &lt;/td&gt;
 &lt;td align=&quot;center&quot;&gt;
 3
@@ -193,7 +208,7 @@ Anna, Emma, Mia, Sophia
 5
 &lt;/td&gt;
 &lt;td&gt;
-Anton, Emil, Felix, Noah
+Emil, Noah, Anton, Felix
 &lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr&gt;
@@ -201,19 +216,19 @@ Anton, Emil, Felix, Noah
 8
 &lt;/td&gt;
 &lt;td align=&quot;center&quot;&gt;
-Johanna
+Johanna, Luise
 &lt;/td&gt;
 &lt;td align=&quot;center&quot;&gt;
 6
 &lt;/td&gt;
 &lt;td&gt;
-Jonas, Oskar
+Oskar
 &lt;/td&gt;
 &lt;/tr&gt;
 &lt;/table&gt;
 &lt;/center&gt;
 &lt;p&gt;
-&lt;p&gt;Instead of using the uncertainty corrected ranks, we could instead have visualized the 95% rank confidence intervals instead (dots denote the observed ranks):&lt;/p&gt;
+&lt;p&gt;Instead of using the uncertainty corrected ranks, we could instead have visualized the 90% rank confidence intervals instead (dots denote the observed ranks):&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://staff.math.su.se/hoehle/blog/figure/source/2017-02-06-onomastics/RANKCIPLOT-1.png&quot; style=&quot;display: block; margin: auto;&quot; /&gt;&lt;/p&gt;
 &lt;h2 id=&quot;discussion&quot;&gt;Discussion&lt;/h2&gt;
 &lt;p&gt;In this post we have used the bootstrap method as a way to assess uncertainty in ranks. This approach is very general and can be extended to areas beyond onomastics. No matter the area of application the approach requires a careful identification of the elements of chance you want to take into account. In the particular application we decided to ignore specific uncertainty aspects (e.g. number of babies born) to not impose further hard-to-verify assumptions. However, as soon as there is uncertainty, ranks are known to be subject to large variation. Hence, a different reporting or visualization of the ranks than the point estimator from the sample is necessary. The use of &lt;em&gt;uncertainty corrected&lt;/em&gt; ranks is not revolutionary, but it underlines the importance of uncertainty in the construction of league tables. A more uncertainty enhancing presentation of ranks in, e.g., data journalism, is therefore needed.&lt;/p&gt;

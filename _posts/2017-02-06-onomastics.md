@@ -38,15 +38,14 @@ to the study of names is entitled
 [**onomastics**](https://en.wikipedia.org/wiki/Onomastics). Mathematical
 modelling is used in onomastics to study name dynamics by evolutionary
 models and models for contagious phenomena
-[@kahn_bentley2003, @kessler_etal2012]. But even the task of naming
-your baby has almost onomastics optimizing flavour
-requiring
-[data science skills](http://waitbutwhy.com/2013/12/how-to-name-baby.html). However,
-once the Official Social Security Administration has released the
-numbers for all names of newborns in a given year, finding the most
-popular baby name appears a simple counting and ranking job: for
-example the
-[most popular US baby name in 2015 were Emma (girls) and Noah (boys)](http://www.babynamewizard.com/the-top-1000-baby-names-of-2015-united-states-of-america).
+[@kahn_bentley2003, @kessler_etal2012]. But even the task of
+[naming your baby]((http://waitbutwhy.com/2013/12/how-to-name-baby.html))
+has almost onomastics optimizing flavour requiring data science
+skills. However, once the Official Social Security Administration has
+released the numbers for all names of newborns in a given year,
+finding the most popular baby name appears a simple counting and
+ranking job: for example the
+[most popular US baby names in 2015 were Emma (girls) and Noah (boys)](http://www.babynamewizard.com/the-top-1000-baby-names-of-2015-united-states-of-america).
 
 <center>
 ![]({{ site.baseurl }}/figure/source/2017-02-06-onomastics/Hello-My-Name-Is.png )
@@ -66,13 +65,15 @@ information from a sample of 196,158 kids (corresponding to 26% of all
 newborns in Germany 2016) originating from a selection of registrar's
 offices and birth clinics to determine the most popular first name in
 Germany 2016. However, the aspect of uncertainty in the resulting
-ranking due to only having a sample is ignored. The aspect of
-uncertainty can also be more subtle. As an example, the city of Berlin
-recently released the official
+ranking, due to only measuring a sample of the population, is
+ignored when reporting the
+[2016 league table](http://www.beliebte-vornamen.de/jahrgang/j2016). The
+aspect of uncertainty can, however, also be more subtle. As an
+example, the city of Berlin recently released the official
 [2016 first name statistic](https://daten.berlin.de/datensaetze/liste-der-h%C3%A4ufigen-vornamen-2014)
 of **all newborns** in the city. The data are available at
 [district level](https://en.wikipedia.org/wiki/Boroughs_and_neighborhoods_of_Berlin),
-which is helpful since there are notable socio-economic and cultural
+which is helpful, because there are notable socio-economic and cultural
 differences between the districts. One could argue that since the data
 cover the **entire population of interest** (i.e. newborns in Berlin
 2016) the use of **inferential statistics** is superfluous.  But is it
@@ -96,10 +97,9 @@ unique first names. Below is shown the first 10 lines of the data.
 By summing the `count` column it becomes clear that in total,
 69525 names were registered in Berlin 2016 (35620
 boys and 33905) girls. The proportion of boy names is
-51.2%. One caveat with the Berlin statistic is
-the fact that, if a child is given several first names, each name is
-counted once in the statistic. Hence, the above total sum is actually higher than the number of kids born 2016 (roughly
-38,030 in 2015, official 2016 number not available yet).
+51.2%. One caveat with the
+Berlin name statistic is that, if a child is given several first names, each name is
+counted once in the statistic. Hence, the above total sum is actually higher than the number of kids born 2016 (38,030 in 2015, official 2016 number not available yet).
 Despite of the
 potential problems with multiple names per kids, the empirical boy
 fraction in the data is close
@@ -115,7 +115,7 @@ keep these `NA` names in the analysis, because at the time of writing
 it was unclear, if this is a data recording problem (e.g. a delay of the
 December 2016 kids) or actually allowed. An email inquiry with the data
 providing agency about the origin of these `NA`'s currently remains
-unanswered (since 4 days).
+unanswered (since 5 days).
 
 We can now look at the top-5-names in Berlin for each gender:
 
@@ -152,8 +152,8 @@ be computed in similar fashion using `group_by` and `summarise`
 operations. To spice up the visualization we use a custom made
 **wordmapcloud**, which overlays the top-1 names over an alpha-channeled
 wordcloud of the district's name with font size proportional to frequency.
-We see little geographical variation in the top-1
-names over the districts - particularly for the girls.
+In the resulting plot we see little geographical variation in the top-1
+names over the districts - particularly for girls.
 
 <img src="http://staff.math.su.se/hoehle/blog/figure/source/2017-02-06-onomastics/WORDMAPCLOUD-1.png" style="display: block; margin: auto;" />
 
@@ -184,8 +184,8 @@ girl namings.
 ## Analysing Stochasticity in the Name Selection
 
 At which places is stochasticity a useful concept for abstracting
-unobservable factors influencing the name selection and, hence, the
-data analysed above? We shall focus on 5 stages:
+unobservable factors influencing the name selection? We shall focus on
+5 stages:
 
 1. the number of babies born in Berlin in 2016
 
@@ -234,24 +234,30 @@ below.
 ##  x - the full data, one row per kid
 ##  idx - vector of length nrow(x) containing a possible permutation
 ##        (with replacement)
-##  returns - which column to return, rank or count?
+##  returns - which column to return, "rank" or "count" (for use in boot).
+##            If returns=="dplyr::everything()", then entire frame is returned (useful for
+##            use with broom)
 ##
 ## Returns:
-##  sex stratified ranks (ordered according to (firstname, sex))
+##  vector or data.frame with stratified ranks (arranged by (firstname, sex))
 ######################################################################
 
-name_ranks <- function(x,  idx=seq_len(nrow(x)), returns=c("rank","count")) {
+name_ranks <- function(x,  idx=seq_len(nrow(x)), returns=c("rank","count","dplyr::everything()")) {
   ##Make resampled data and append all_strata to ensure each firstname-sex combination occurs
   x_boot <- x %>% slice(idx) %>% bind_rows(all_strata)
 
-  ##Summarise the number of occurences for each firstname-sex strata and compute the ranks.
+  ##Summarise the number of occurrences for each firstname-sex strata and compute the ranks.
   aggrx_wranks <- x_boot %>%  group_by(firstname,sex) %>%
     summarise(count = sum(count)) %>%
     group_by(sex) %>%
     mutate(rank=rank(-count, ties.method="min")) %>%
     arrange(firstname, sex) #important to ensure order.
 
-  return(aggrx_wranks %>% select_(returns) %>% .[[2]])
+  ##Select relevant columns
+  res <- aggrx_wranks %>% ungroup() %>% select_(returns)
+
+  ##Return as vector (needed for boot pkg) or data.frame (needed from broom)
+  if (returns[1] %in% c("rank","count")) return(res %>% .[[1]]) else return(res)
 }
 ```
 
@@ -264,7 +270,7 @@ count for names, even if they do not appear in the bootstrap re-sample.
 We then convert the aggregated data to long format where each kid is
 represented by one row. This is the most didactic way to explain
 what is going on in the bootstrap, but an aggregated multinomial
-approach would probably be much faster in terms of execution time.
+approach would probably be faster in terms of execution time.
 
 ```r
 kids <- distrNames %>% slice(rep(seq_len(nrow(distrNames)), times=distrNames %$% count)) %>% mutate(count=1)
@@ -279,32 +285,56 @@ package (which is easily paralleled too).
 set.seed(123) ##fix seed for reproducibility
 b <- boot::boot(kids, statistic=name_ranks, R=999, strata=kids$district, parallel="multicore",ncpus=3)
 ```
-
 We use the percentile method on the 999 + 1 bootstrap rank-vectors
-as a method for computing a 95% confidence interval for the rank of
+as a method for computing a 90% confidence interval for the rank of
 each name for boys and girls, respectively.
 
+
+**Update 2017-02-07**: [Maëlle](http://www.masalmon.eu/) made me
+[aware](https://twitter.com/ma_salmon/status/828505021666967552) of
+some newer ways to perform the bootstrap, e.g., using the `broom`
+package. It's especially useful for the parametric bootstrap, but by
+joining with the previously calculated observed ranks, the code for
+making a simple bootstrap stratified bootstrap actually looks quite
+nice (although not parallized and hence slower):
+
+
+```r
+require(broom)
+b_broom <- kids %>% group_by(district) %>% bootstrap(m=999, by_group=TRUE) %>%
+  do({ name_ranks(.,returns="dplyr::everything()") }) %>%
+  group_by(sex,firstname) %>%
+  summarise("rankci.5."=quantile(rank, 0.05,type=3),"rankci.95."=quantile(rank, 0.95,type=3))
+
+newborn_ranks <- newborn %>% inner_join(b_broom,by=c("firstname","sex")) %>% arrange(rank,sex)
 ```
-## Source: local data frame [10 x 5]
+
+```r
+newborn_ranks %>% arrange(rank) %>% filter( rank <= 5)
+```
+
+```
+## Source: local data frame [10 x 6]
 ## Groups: sex [2]
 ## 
-##     firstname    sex  rank rankci.5. rankci.95.
-##         <chr> <fctr> <int>     <int>      <int>
-## 1   Alexander      m     1         1          1
-## 2       Marie      f     1         1          2
-## 3        Paul      m     2         2          4
-## 4      Sophie      f     2         1          2
-## 5   Charlotte      f     3         3          3
-## 6       Elias      m     3         2          4
-## 7       Maria      f     4         4          5
-## 8  Maximilian      m     4         3          4
-## 9        Emil      m     5         5          9
-## 10     Emilia      f     5         4          5
+##     firstname    sex count  rank rankci.5. rankci.95.
+##         <chr> <fctr> <int> <int>     <int>      <int>
+## 1       Marie      f   695     1         1          2
+## 2   Alexander      m   467     1         1          1
+## 3      Sophie      f   649     2         1          2
+## 4        Paul      m   383     2         2          3
+## 5   Charlotte      f   495     3         3          3
+## 6       Elias      m   371     3         2          4
+## 7       Maria      f   403     4         4          5
+## 8  Maximilian      m   344     4         3          4
+## 9      Emilia      f   382     5         4          5
+## 10       Emil      m   295     5         5          9
 ```
-Using the lower limit of the 95% CI to group the names, we define the
+
+Using the lower limit of the 90% CI to group the names, we define the
 concept of a **uncertainty corrected** rank (ucrank). This is just the lowest
 rank which we, given the modelled stochasticity, cannot be ruled out
-(at the 2.5% lvl. of significance).
+(at the 5% lvl. of significance).
 Listing the top-5 of these corrected ranks leads to the following
 tables for girls and boys, respectively:
 
@@ -312,20 +342,20 @@ tables for girls and boys, respectively:
 
 <center>
 <!-- html table generated in R 3.3.2 by xtable 1.8-2 package -->
-<!-- Mon Feb  6 08:07:12 2017 -->
+<!-- Tue Feb  7 01:42:01 2017 -->
 <table border=5, padding=10, style="width=100%">
 <tr> <th> ucrank (among girls) </th> <th> first names (girls) </th> <th> ucrank (among boys) </th> <th> first names (boys) </th>  </tr>
   <tr> <td align="center">   1 </td> <td align="center"> Marie, Sophie </td> <td align="center">   1 </td> <td> Alexander </td> </tr>
-  <tr> <td align="center">   3 </td> <td align="center"> Charlotte </td> <td align="center">   2 </td> <td> Elias, Paul </td> </tr>
-  <tr> <td align="center">   4 </td> <td align="center"> Emilia, Maria </td> <td align="center">   3 </td> <td> Maximilian </td> </tr>
-  <tr> <td align="center">   6 </td> <td align="center"> Anna, Emma, Mia, Sophia </td> <td align="center">   5 </td> <td> Anton, Emil, Felix, Noah </td> </tr>
-  <tr> <td align="center">   8 </td> <td align="center"> Johanna </td> <td align="center">   6 </td> <td> Jonas, Oskar </td> </tr>
+  <tr> <td align="center">   3 </td> <td align="center"> Charlotte </td> <td align="center">   2 </td> <td> Paul, Elias </td> </tr>
+  <tr> <td align="center">   4 </td> <td align="center"> Maria, Emilia </td> <td align="center">   3 </td> <td> Maximilian </td> </tr>
+  <tr> <td align="center">   6 </td> <td align="center"> Anna, Emma, Mia, Sophia </td> <td align="center">   5 </td> <td> Emil, Noah, Anton, Felix </td> </tr>
+  <tr> <td align="center">   8 </td> <td align="center"> Johanna, Luise </td> <td align="center">   6 </td> <td> Oskar </td> </tr>
    </table>
 </center>
 <p>
 
 Instead of using the uncertainty corrected ranks, we could instead
-have visualized the 95% rank confidence intervals instead (dots denote the
+have visualized the 90% rank confidence intervals instead (dots denote the
 observed ranks):
 
 <img src="http://staff.math.su.se/hoehle/blog/figure/source/2017-02-06-onomastics/RANKCIPLOT-1.png" style="display: block; margin: auto;" />
