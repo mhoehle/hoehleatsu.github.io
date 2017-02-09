@@ -1,0 +1,196 @@
+---
+layout: post
+title: "Birthday Problems"
+tags: [rstats, stats, data journalism, onomastics]
+bibliography: ~/Literature/Bibtex/jabref.bib
+comments: true
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2017-02-08-bday/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2017-02-08-bday/"
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='',fig.align='center') # autodep=TRUE
+options(width=90)
+library("dplyr")
+library("ggplot2")
+library("tidyr")
+library("methods")
+library("magrittr")
+
+##For plotting the map
+library("rgdal")
+library("rgeos")
+
+library("xtable")
+
+##If you are unhappy about the colours, change them here
+palette <- c(f="darkred",m="blue")
+
+theme_set(theme_bw())
+```
+
+## Abstract
+
+Birthday problem with uneven probabilities.
+
+<center>
+```{r,results='asis',echo=FALSE}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"WORDMAPCLOUD-1.png"),")")
+```
+</center>
+
+{% include license.html %}
+
+## Introduction
+
+Calculate probability for non-collision.
+
+```{r}
+##Baby names in Berlin
+filePath_onomastics <- "/Users/hoehle/Sandbox/Blog/figure/source/2017-02-06-onomastics/"
+library(readr)
+year <- 2016
+distrNames <- read_csv(file=file.path(filePath_onomastics,paste0("berlin-firstnames-",year,".csv"))) %>% select(-strata)
+distrNames <- distrNames %>% mutate(district = factor(district), sex=factor(sex))
+newborn <- distrNames %>% group_by(firstname, sex) %>%
+  summarise(count=sum(count)) %>% ungroup() %>%
+  mutate(p=count/sum(count)) %>%
+  arrange(desc(count))
+
+N <- nrow(newborn)
+p <- newborn$p
+
+##Birthday problem
+##N <- 365 ; p <- rep(1/N, N)
+
+###Class experiments
+r <- 26
+S <- sapply(seq_len(r), function(x) sum(p^x))
+
+##Prob of no repeated categories
+PAr <- prod(N:(N-r+1))/N^r
+1-PAr
+pbirthday(n=r, classes=N)
+
+##might be something to solve in C++ instead
+make_tListFunc <- function(r) {
+  str <- NULL
+  str <- rbind(str, "compute_tList <- function() {")
+  str <- rbind(str, "tList <- NULL")
+  for (i in r:1) {
+    str <- rbind(str,paste0(paste0(rep(" ",r-i),collapse=""),"for (t",i," in 0:floor(r/",i,")) {"))
+  }
+  str <- rbind(str,paste0(paste0(rep(" ",r+1),collapse=""),paste0("t <- c(",paste0("t",1:r,collapse=","),")")))
+  str <- rbind(str,paste0(paste0(rep(" ",r+1),collapse=""),"if (sum( (1:r)*t) == r) tList <- rbind(tList, t)"))
+  for (i in r:1) {
+    ##Sum too large, then stop summing
+    str <- rbind(str,paste0(paste0(rep(" ",r+1),collapse=""),"if (sum( (r:(r-",i,"+1)*t[r:(r-",i,"+1)])) > r) break;"))
+
+    ##Done
+    str <- rbind(str, paste0(paste0(rep(" ",i-1),collapse=""),"}"))
+  }
+  str <- rbind(str, "return(tList)")
+  str <- rbind(str, "}")
+  return(str)
+}
+source(textConnection(make_tListFunc(r=r)))
+##Compute list of coefs
+tList <- compute_tList()
+rowSums(tList * matrix(1:r,ncol=r,nrow=nrow(tList),byrow=TRUE))
+
+library(Rcpp)
+##might be something to solve in C++ instead
+make_tListFunc_rcpp <- function(r) {
+  str <- NULL
+  str <- rbind(str, "cppFunction('")
+  str <- rbind(str, 'int make_tList_rcpp() {')
+  str <- rbind(str, paste0('int r = ',r,";"))
+  str <- rbind(str, "std::cout << std::endl;")
+  for (i in r:1) {
+    str <- rbind(str,paste0(paste0(rep(" ",r-i+1),collapse=""),"for (int t",i,"=0; t",i," <= floor(r/",i,"); t",i,"++) {"))
+  }
+
+  ##Correct sum
+  theSum <- paste0("(",paste0(paste0(1:r,"*t",1:r, collapse="+"),")"))
+  str <- rbind(str,paste0(paste0(rep(" ",r+1),collapse=""),paste0("if (",theSum," == r) {")))
+  output <- paste0("t",1:r, collapse=" << \",\" << ")
+  str <- rbind(str,paste0(paste0(rep(" ",r+2),collapse=""),paste0("Rcout << ",output," << std::endl;")))
+  str <- rbind(str,paste0(paste0(rep(" ",r+1),collapse=""),paste0("}")))
+
+  ##Close the loops
+  for (i in r:1) {
+    ##Sum too large - stop
+    theSum <- paste0("(",paste0(paste0(r:(r-i+1),"*t",r:(r-i+1), collapse="+"),")"))
+    str <- rbind(str,paste0(paste0(rep(" ",i+1),collapse=""),paste0("if (",theSum," > r) {")))
+    str <- rbind(str,paste0(paste0(rep(" ",i+2),collapse=""),paste0("break;")))
+    str <- rbind(str,paste0(paste0(rep(" ",i+1),collapse=""),paste0("}")))
+
+
+
+
+    str <- rbind(str, paste0(paste0(rep(" ",i),collapse=""),"}"))
+  }
+  str <- rbind(str, " return(0);")
+  str <- rbind(str, "}')")
+  return(str)
+}
+
+##Example func for r=20
+cat(paste0(paste0(make_tListFunc_rcpp(r=20),collapse="\n"),"\n"))
+fsource(textConnection(make_tListFunc_rcpp(r=20)))
+##pgrm <- textConnection(make_tListFunc_rcpp(r=20)); source(pgrm)
+sink("foo.txt")
+f <- make_tList_rcpp()
+sink()
+
+###Class experiments
+tList <- read.table(file="~/Temp/coef.txt",sep=",")
+if (ncol(tList) != r) { stop("Column numbers and r don't match.") }
+S <- sapply(seq_len(r), function(x) sum(p^x))
+
+
+##Might be numerical instable for large r?
+coefFun <- function(t) {
+  factorial(r)*(-1)^(r+sum(t)) / prod( (1:r)^t * factorial(t))
+}
+
+a <- apply(tList, 1, coefFun)
+
+Sprod <- apply(tList, 1, function(t) prod(S^ifelse(t>0,t,0)))
+#Result
+1 - sum(a * Sprod)
+
+##Compare to birthday probs
+pbirthday(n=r, classes=N)
+
+######################################################################
+##Approximation by Mase, p.492
+######################################################################
+
+facpoly <- function(x, m) {
+  exp(lfactorial(x) - lfactorial(x-m))
+}
+
+rho_n1 <- exp( -facpoly(r,2)/2 * S[2])
+rho_n2 <- rho_n1 * exp( facpoly(r,3) * ( -S[2]^2/2 + S[3]/3))
+rho_n3 <- rho_n2 * exp( facpoly(r,4) * ( -5/6*S[2]^3 * S[2]*S[3] - 1/4*S[4]))
+rho_n4 <- rho_n3 * exp( facpoly(r,5) * ( -7/4*S[2]^4 + 3*S[2]^2*S[3] - S[2]*S[4] + 1/5*S[5] - 1/2*S[3]^2))
+1 - rho_n4
+pbirthday(n=r, classes=N)
+
+pbirthday(n=r, classes=N)
+
+
+newborn %>% ungroup() %>%
+  mutate(p = count/sum(count),
+           ponemore = 1 - dbinom(0,size=r-1, prob=p)) %>%
+  arrange(desc(count))
+```
+
+
