@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Birthday Problems"
+title: "Happy pbirthday!"
 tags: [rstats, stats, data journalism, onomastics]
 bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
@@ -15,7 +15,7 @@ if (knitr::opts_chunk$get("fig.path") == "figure/") {
 fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
 filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2017-02-08-bday/"
 
-knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='',fig.align='center') # autodep=TRUE
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='',fig.align='center',echo=FALSE) # autodep=TRUE
 options(width=90)
 library("dplyr")
 library("ggplot2")
@@ -37,7 +37,12 @@ theme_set(theme_bw())
 
 ## Abstract
 
-Birthday problem with uneven probabilities.
+Continuing the last post on the analysis of firstname of newborns in
+Berlin 2016, we answer the question what the probability is that in a
+school class of size $r$ of these kids there will be two or more with
+the same name. The question to answer is an instance of the birthday
+problem with uneven probabilities. We provide R code for brute force
+as well as an approximative solution.
 
 <center>
 ```{r,results='asis',echo=FALSE}
@@ -51,46 +56,73 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"WORDMAPC
 
 Calculate probability for non-collision.
 
-```{r}
+```{r, READDATA, message=FALSE}
 ##Baby names in Berlin
 filePath_onomastics <- "/Users/hoehle/Sandbox/Blog/figure/source/2017-02-06-onomastics/"
 library(readr)
 year <- 2016
 distrNames <- read_csv(file=file.path(filePath_onomastics,paste0("berlin-firstnames-",year,".csv"))) %>% select(-strata)
 distrNames <- distrNames %>% mutate(district = factor(district), sex=factor(sex))
-newborn <- distrNames %>% group_by(firstname, sex) %>%
+```
+
+For the analysis we only group by firstname and thus do not
+distinguish between instances of the same name applying to both
+females and males.
+
+```{r,echo=TRUE}
+newborn <- distrNames %>% group_by(firstname) %>%
   summarise(count=sum(count)) %>% ungroup() %>%
   mutate(p=count/sum(count)) %>%
   arrange(desc(count))
+```
 
+The probability of no collision, i.e. no kids having the same name,
+can be calculated as:
+$$
+P(NC_r) = r! \underset{1\leq i_1 < i_2 <
+\cdots  <i_r \leq r}{\sum \sum \cdots \sum}
+p_{i_1} p_{i_2} \cdots p_{i_r}.
+$$
+
+```{r}
+r <- 4
+```
+Example: $r=4$ and $N=13000$
+```{r}
+print(choose(130000,r), digits=20)
+```
+
+```{r, BDAY}
+##Prob of no repeated categories
+PAr <- prod(N:(N-r+1))/N^r
+1-PAr
+pbirthday(n=r, classes=N)
+```
+
+```{r}
 N <- nrow(newborn)
-p <- newborn$p
+p <- newborn %$% p
 
 ##Birthday problem
 ##N <- 365 ; p <- rep(1/N, N)
 
 ###Class experiments
 r <- 26
-S <- sapply(seq_len(r), function(x) sum(p^x))
-
-##Prob of no repeated categories
-PAr <- prod(N:(N-r+1))/N^r
-1-PAr
-pbirthday(n=r, classes=N)
 
 ##might be something to solve in C++ instead
-make_tListFunc <- function(r) {
+make_tListFunc <- function(n) {
   str <- NULL
   str <- rbind(str, "compute_tList <- function() {")
+  str <- rbind(str, "n <- ",n)
   str <- rbind(str, "tList <- NULL")
-  for (i in r:1) {
-    str <- rbind(str,paste0(paste0(rep(" ",r-i),collapse=""),"for (t",i," in 0:floor(r/",i,")) {"))
+  for (i in n:1) {
+    str <- rbind(str,paste0(paste0(rep(" ",n-i),collapse=""),"for (t",i," in 0:floor(n/",i,")) {"))
   }
-  str <- rbind(str,paste0(paste0(rep(" ",r+1),collapse=""),paste0("t <- c(",paste0("t",1:r,collapse=","),")")))
-  str <- rbind(str,paste0(paste0(rep(" ",r+1),collapse=""),"if (sum( (1:r)*t) == r) tList <- rbind(tList, t)"))
-  for (i in r:1) {
+  str <- rbind(str,paste0(paste0(rep(" ",n+1),collapse=""),paste0("t <- c(",paste0("t",1:n,collapse=","),")")))
+  str <- rbind(str,paste0(paste0(rep(" ",n+1),collapse=""),"if (sum( (1:n)*t) == n) tList <- rbind(tList, t)"))
+  for (i in n:1) {
     ##Sum too large, then stop summing
-    str <- rbind(str,paste0(paste0(rep(" ",r+1),collapse=""),"if (sum( (r:(r-",i,"+1)*t[r:(r-",i,"+1)])) > r) break;"))
+    str <- rbind(str,paste0(paste0(rep(" ",n+1),collapse=""),"if (sum( (n:(n-",i,"+1)*t[n:(n-",i,"+1)])) > n) break;"))
 
     ##Done
     str <- rbind(str, paste0(paste0(rep(" ",i-1),collapse=""),"}"))
@@ -99,17 +131,41 @@ make_tListFunc <- function(r) {
   str <- rbind(str, "}")
   return(str)
 }
-source(textConnection(make_tListFunc(r=r)))
-##Compute list of coefs
-tList <- compute_tList()
-rowSums(tList * matrix(1:r,ncol=r,nrow=nrow(tList),byrow=TRUE))
 
-library(Rcpp)
-##might be something to solve in C++ instead
+
+pbirthday_up <- function(n, prob) {
+  ##Make function to compute list of coefs
+  source(textConnection(make_tListFunc(n=n)))
+  ##Compute coefs
+  tList <- compute_tList()
+  ##Verify results
+  stopifnot(rowSums(tList * matrix(1:n,ncol=n,nrow=nrow(tList),byrow=TRUE)) == n)
+
+  ##P-symmetric funcs
+  P <- sapply(seq_len(n), function(x) sum(prob^x))
+
+  ##Might be numerical instable for large n?
+  coefFun <- function(t) {
+    factorial(n)*(-1)^(n+sum(t)) / prod( (1:n)^t * factorial(t))
+  }
+
+  a <- apply(tList, 1, coefFun)
+
+  Pprod <- apply(tList, 1, function(t) prod(P^ifelse(t>0,t,0)))
+  #Result
+  return(1 - sum(a * Pprod))
+}
+
+pbirthday_up(n=26, prob=newborn %$% p)
+```
+
+```{r,echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+##might be something to solve in C++ instead. done! :-)
 make_tListFunc_rcpp <- function(r) {
   str <- NULL
-  str <- rbind(str, "cppFunction('")
-  str <- rbind(str, 'int make_tList_rcpp() {')
+  str <- rbind(str, "#include <Rcpp.h>")
+  str <- rbind(str, "// [[Rcpp::export]]")
+  str <- rbind(str, 'void make_tList_rcpp() {')
   str <- rbind(str, paste0('int r = ',r,";"))
   str <- rbind(str, "std::cout << std::endl;")
   for (i in r:1) {
@@ -120,70 +176,79 @@ make_tListFunc_rcpp <- function(r) {
   theSum <- paste0("(",paste0(paste0(1:r,"*t",1:r, collapse="+"),")"))
   str <- rbind(str,paste0(paste0(rep(" ",r+1),collapse=""),paste0("if (",theSum," == r) {")))
   output <- paste0("t",1:r, collapse=" << \",\" << ")
-  str <- rbind(str,paste0(paste0(rep(" ",r+2),collapse=""),paste0("Rcout << ",output," << std::endl;")))
+  str <- rbind(str,paste0(paste0(rep(" ",r+2),collapse=""),paste0("Rcpp::Rcout << ",output," << std::endl;")))
   str <- rbind(str,paste0(paste0(rep(" ",r+1),collapse=""),paste0("}")))
 
   ##Close the loops
   for (i in r:1) {
     ##Sum too large - stop
     theSum <- paste0("(",paste0(paste0(r:(r-i+1),"*t",r:(r-i+1), collapse="+"),")"))
-    str <- rbind(str,paste0(paste0(rep(" ",i+1),collapse=""),paste0("if (",theSum," > r) {")))
-    str <- rbind(str,paste0(paste0(rep(" ",i+2),collapse=""),paste0("break;")))
-    str <- rbind(str,paste0(paste0(rep(" ",i+1),collapse=""),paste0("}")))
+    str <- rbind(str,paste0(paste0(rep(" ",i+1),collapse=""),paste0("if (",theSum," > r) { break; }")))
 
-
-
-
+    ##Close parenthesis
     str <- rbind(str, paste0(paste0(rep(" ",i),collapse=""),"}"))
   }
-  str <- rbind(str, " return(0);")
-  str <- rbind(str, "}')")
+  str <- rbind(str, "}")
   return(str)
 }
 
 ##Example func for r=20
-cat(paste0(paste0(make_tListFunc_rcpp(r=20),collapse="\n"),"\n"))
-fsource(textConnection(make_tListFunc_rcpp(r=20)))
-##pgrm <- textConnection(make_tListFunc_rcpp(r=20)); source(pgrm)
-sink("foo.txt")
+cat(paste0(paste0(make_tListFunc_rcpp(r=4),collapse="\n"),"\n"))
+writeLines(make_tListFunc_rcpp(r=r),file(file.path(filePath,"birthday.cpp")))
+Rcpp::sourceCpp(file="birthday.cpp")
+
+##Store
+sink(theTempFile <- tempfile())
 f <- make_tList_rcpp()
 sink()
 
 ###Class experiments
-tList <- read.table(file="~/Temp/coef.txt",sep=",")
+tList <- read.table(file=theTempFile(),sep=",")
 if (ncol(tList) != r) { stop("Column numbers and r don't match.") }
-S <- sapply(seq_len(r), function(x) sum(p^x))
 
-
-##Might be numerical instable for large r?
-coefFun <- function(t) {
-  factorial(r)*(-1)^(r+sum(t)) / prod( (1:r)^t * factorial(t))
-}
-
-a <- apply(tList, 1, coefFun)
-
-Sprod <- apply(tList, 1, function(t) prod(S^ifelse(t>0,t,0)))
-#Result
-1 - sum(a * Sprod)
 
 ##Compare to birthday probs
 pbirthday(n=r, classes=N)
 
+```
+
+## Approximation by Mase (1992)
+
+```{r}
 ######################################################################
 ##Approximation by Mase, p.492
 ######################################################################
 
+#factorial polynomial
 facpoly <- function(x, m) {
   exp(lfactorial(x) - lfactorial(x-m))
 }
 
-rho_n1 <- exp( -facpoly(r,2)/2 * S[2])
-rho_n2 <- rho_n1 * exp( facpoly(r,3) * ( -S[2]^2/2 + S[3]/3))
-rho_n3 <- rho_n2 * exp( facpoly(r,4) * ( -5/6*S[2]^3 * S[2]*S[3] - 1/4*S[4]))
-rho_n4 <- rho_n3 * exp( facpoly(r,5) * ( -7/4*S[2]^4 + 3*S[2]^2*S[3] - S[2]*S[4] + 1/5*S[5] - 1/2*S[3]^2))
-1 - rho_n4
-pbirthday(n=r, classes=N)
+pbirthday_up_approx <- function(n, probs=p) {
+  if (!is.integer(n)) stop("boring.")
 
+  ##Compute S.
+  S <- sapply(seq_len(r), function(x) sum(p^x))
+
+  rho_n0 <- 1
+  rho_n1 <- exp( -facpoly(r,2)/2 * S[2])
+  rho_n2 <- rho_n1 * exp( facpoly(r,3) * ( -S[2]^2/2 + S[3]/3))
+  rho_n3 <- rho_n2 * exp( facpoly(r,4) * ( -5/6*S[2]^3 * S[2]*S[3] - 1/4*S[4]))
+  rho_n4 <- rho_n3 * exp( facpoly(r,5) * ( -7/4*S[2]^4 + 3*S[2]^2*S[3] - S[2]*S[4] + 1/5*S[5] - 1/2*S[3]^2))
+
+  sigma <- c(1,
+             sigma_n1 <- exp( -facpoly(r,2)/2 * S[2]),
+             exp( facpoly(r,3) * ( -S[2]^2/2 + S[3]/3)),
+             exp( facpoly(r,4) * ( -5/6*S[2]^3 * S[2]*S[3] - 1/4*S[4])),
+             exp( facpoly(r,5) * ( -7/4*S[2]^4 + 3*S[2]^2*S[3] - S[2]*S[4] + 1/5*S[5] - 1/2*S[3]^2)))
+
+  idx <- min(r,5)
+  res <- cumprod(sigma)[idx]
+
+  return(1 - res)
+}
+
+pbirthday_up_approx(n=r)
 pbirthday(n=r, classes=N)
 
 
@@ -192,5 +257,3 @@ newborn %>% ungroup() %>%
            ponemore = 1 - dbinom(0,size=r-1, prob=p)) %>%
   arrange(desc(count))
 ```
-
-
