@@ -115,7 +115,7 @@ keep these `NA` names in the analysis, because at the time of writing
 it was unclear, if this is a data recording problem (e.g. a delay of the
 December 2016 kids) or actually allowed. An email inquiry with the data
 providing agency about the origin of these `NA`'s currently remains
-unanswered (since 5 days).
+unanswered (since 7 days).
 
 We can now look at the top-5-names in Berlin for each gender:
 
@@ -309,10 +309,6 @@ b_broom <- kids %>% group_by(district) %>% bootstrap(m=999, by_group=TRUE) %>%
 newborn_ranks <- newborn %>% inner_join(b_broom,by=c("firstname","sex")) %>% arrange(rank,sex)
 ```
 
-```r
-newborn_ranks %>% arrange(rank) %>% filter( rank <= 5)
-```
-
 ```
 ## Source: local data frame [10 x 6]
 ## Groups: sex [2]
@@ -342,7 +338,7 @@ tables for girls and boys, respectively:
 
 <center>
 <!-- html table generated in R 3.3.2 by xtable 1.8-2 package -->
-<!-- Tue Feb  7 01:42:01 2017 -->
+<!-- Thu Feb  9 23:40:38 2017 -->
 <table border=5, padding=10, style="width=100%">
 <tr> <th> ucrank (among girls) </th> <th> first names (girls) </th> <th> ucrank (among boys) </th> <th> first names (boys) </th>  </tr>
   <tr> <td align="center">   1 </td> <td align="center"> Marie, Sophie </td> <td align="center">   1 </td> <td> Alexander </td> </tr>
