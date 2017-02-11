@@ -6,59 +6,85 @@
 </description>
     <link>http://staff.math.su.se/hoehle/blog/</link>
     <atom:link href="http://staff.math.su.se/hoehle/blog/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 10 Feb 2017 00:50:36 +0100</pubDate>
-    <lastBuildDate>Fri, 10 Feb 2017 00:50:36 +0100</lastBuildDate>
+    <pubDate>Sat, 11 Feb 2017 11:33:24 +0100</pubDate>
+    <lastBuildDate>Sat, 11 Feb 2017 11:33:24 +0100</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
-        <title>Happy pbirthday!</title>
+        <title>Happy pbirthday class of 2016</title>
         <description>&lt;h2 id=&quot;abstract&quot;&gt;Abstract&lt;/h2&gt;
-&lt;p&gt;Continuing the last post on the analysis of firstname of newborns in Berlin 2016, we answer the question what the probability is that in a school class of size &lt;span class=&quot;math inline&quot;&gt;\(r\)&lt;/span&gt; of these kids there will be two or more with the same name. The question to answer is an instance of the birthday problem with uneven probabilities. We provide R code for brute force as well as an approximative solution.&lt;/p&gt;
+&lt;p&gt;Continuing the analys of firstnames given to newborns in Berlin 2016, we solve the following problem: what is the probability, that in a school class of size &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; of these 2016 born kids there will at least two kids having the same first name. This problem is an instance of the birthday problem with unequal probabilities. R code is provided for solving the problem exactly for moderate &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; and approximatively for larger &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt;. For the case that all probabilities are equal, our results are compared to the output of R&#39;s lovely &lt;code&gt;pbirthday&lt;/code&gt; function.&lt;/p&gt;
 &lt;center&gt;
 &lt;img src=&quot;/hoehle/blog/figure/source/2017-02-08-bday/WORDMAPCLOUD-1.png&quot; /&gt;
 &lt;/center&gt;
 &lt;p&gt;&lt;br&gt; &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot;/&gt;&lt;/a&gt; This work is licensed under a &lt;a rel=&quot;license&quot;
 href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;. The markdown+Rknitr source code of this blog is available under a &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GNU General Public License (GPL v3)&lt;/a&gt; license from &lt;a href=&quot;https://github.com/hoehleatsu/hoehleatsu.github.io&quot;&gt;&lt;img src=&quot;/hoehle/blog/images/GitHub-Mark-32px.png&quot; alt=&quot;github&quot; /&gt;&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
-&lt;p&gt;Calculate probability for non-collision.&lt;/p&gt;
-&lt;p&gt;For the analysis we only group by firstname and thus do not distinguish between instances of the same name applying to both females and males.&lt;/p&gt;
+&lt;p&gt;In the post &lt;a href=&quot;http://staff.math.su.se/hoehle/blog/2017/02/06/onomastics.html&quot;&gt;Naming Uncertainty by the Bootstrap&lt;/a&gt; we performed a descriptive analysis of the names given to newborns in Berlin 2016. For instance, it was shown that Marie and Alexander were the top-1 names among girls and boys, respectively. In a comment &lt;a href=&quot;http://www.masalmon.eu/&quot;&gt;Maëlle&lt;/a&gt; asked what&#39;s the resulting probability that there will be kids with the same name in a school class. We implement equations by &lt;span class=&quot;citation&quot; data-cites=&quot;klotz1979&quot;&gt;Klotz (1979)&lt;/span&gt; and &lt;span class=&quot;citation&quot; data-cites=&quot;mase1992&quot;&gt;Mase (1992)&lt;/span&gt; in R in order to answer this important question.&lt;/p&gt;
+&lt;h2 id=&quot;the-birthday-problem&quot;&gt;The Birthday Problem&lt;/h2&gt;
+&lt;p&gt;The above posed question is a variation of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Birthday_problem&quot;&gt;&lt;strong&gt;birthday problem&lt;/strong&gt;&lt;/a&gt;, which every statistician has solved at least once in an introductory probability class: &lt;em&gt;in a class of &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; randomly chosen persons, what is the probability that some pair of them will have the same birthday&lt;/em&gt;? Assuming that there are &lt;span class=&quot;math inline&quot;&gt;\(N=365\)&lt;/span&gt; possible birthdays and all days are equally probable the answer can be calculated as:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+P(\text{at least two people in the class have the same birthday}) =
+1-\frac{(N)_{n}}{N^n},
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;where &lt;span class=&quot;math inline&quot;&gt;\((x)_n = x! / (x-n)!\)&lt;/span&gt;. Say we are interested in &lt;span class=&quot;math inline&quot;&gt;\(n=26\)&lt;/span&gt;, which is the &lt;a href=&quot;https://www.berlin.de/imperia/md/content/sen-bildung/rechtsvorschriften/grundschulverordnung.pdf&quot;&gt;maximal allowed class size&lt;/a&gt; in Berlin&#39;s elementary schools (§4, Sect. 8). We can perform the necessary calculations either directly or by R&#39;s &lt;code&gt;pbirthday&lt;/code&gt;function.&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;n &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;26&lt;/span&gt; ; N &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;365&lt;/span&gt;
+&lt;span class=&quot;kw&quot;&gt;c&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;manual=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt; -&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;exp&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;lfactorial&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;365&lt;/span&gt;)-&lt;span class=&quot;kw&quot;&gt;lfactorial&lt;/span&gt;(&lt;span class=&quot;dv&quot;&gt;365-26&lt;/span&gt;) -&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;26&lt;/span&gt;*&lt;span class=&quot;kw&quot;&gt;log&lt;/span&gt;(N)),
+  &lt;span class=&quot;dt&quot;&gt;pbirthday=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;pbirthday&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;26&lt;/span&gt;,&lt;span class=&quot;dt&quot;&gt;classes=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;365&lt;/span&gt;))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;##    manual pbirthday 
+## 0.5982408 0.5982408&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finding the &lt;code&gt;pbirthday&lt;/code&gt; function as part of base R was a bit surprising, but just underlines that R really has its roots in statistics!&lt;/p&gt;
+&lt;h3 id=&quot;birthday-problem-with-unequal-probabilities&quot;&gt;Birthday Problem with Unequal Probabilities&lt;/h3&gt;
+&lt;p&gt;In our problem &lt;span class=&quot;math inline&quot;&gt;\(N\)&lt;/span&gt; corresponds to all possble names of newborns in 2016. For the analysis we only group by firstname and thus do not distinguish between instances of the same name applying to both girls and boys.&lt;/p&gt;
 &lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;newborn &amp;lt;-&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;distrNames %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;group_by&lt;/span&gt;(firstname) %&amp;gt;%
 &lt;span class=&quot;st&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;summarise&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;count=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;sum&lt;/span&gt;(count)) %&amp;gt;%&lt;span class=&quot;st&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;ungroup&lt;/span&gt;() %&amp;gt;%
 &lt;span class=&quot;st&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;mutate&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;p=&lt;/span&gt;count/&lt;span class=&quot;kw&quot;&gt;sum&lt;/span&gt;(count)) %&amp;gt;%
 &lt;span class=&quot;st&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;arrange&lt;/span&gt;(&lt;span class=&quot;kw&quot;&gt;desc&lt;/span&gt;(count))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;The probability of no collision, i.e. no kids having the same name, can be calculated as: &lt;span class=&quot;math display&quot;&gt;\[
-P(NC_r) = r! \underset{1\leq i_1 &amp;lt; i_2 &amp;lt;
-\cdots  &amp;lt;i_r \leq r}{\sum \sum \cdots \sum}
-p_{i_1} p_{i_2} \cdots p_{i_r}.
-\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;Example: &lt;span class=&quot;math inline&quot;&gt;\(r=4\)&lt;/span&gt; and &lt;span class=&quot;math inline&quot;&gt;\(N=13000\)&lt;/span&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;## [1] 11899867424412467200&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Error in eval(expr, envir, enclos): object &amp;#39;N&amp;#39; not found&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Error in eval(expr, envir, enclos): object &amp;#39;PAr&amp;#39; not found&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Error in pbirthday(n = r, classes = N): object &amp;#39;N&amp;#39; not found&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## [1] 0.3399286&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Error in writeLines(make_tListFunc_rcpp(r = r), file(file.path(filePath, : cannot open the connection&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Error in read.table(file = theTempFile(), sep = &amp;quot;,&amp;quot;): could not find function &amp;quot;theTempFile&amp;quot;&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Error in ncol(tList): object &amp;#39;tList&amp;#39; not found&lt;/code&gt;&lt;/pre&gt;
-&lt;h2 id=&quot;approximation-by-mase-1992&quot;&gt;Approximation by Mase (1992)&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;## Error in pbirthday_up_approx(n = r): boring.&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## # A tibble: 13,245 × 3
+##   firstname count           p
+##       &amp;lt;chr&amp;gt; &amp;lt;int&amp;gt;       &amp;lt;dbl&amp;gt;
+## 1     Marie   695 0.009996404
+## 2    Sophie   649 0.009334772
+## 3 Charlotte   495 0.007119741
+## 4 Alexander   468 0.006731392
+## # ... with 1.324e+04 more rows&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In total there are &lt;span class=&quot;math inline&quot;&gt;\(N=13245\)&lt;/span&gt; possible names. From the &lt;span class=&quot;math inline&quot;&gt;\(p\)&lt;/span&gt; column it also becomes obvious that not all names are equally likely. Had they been, the quick solution to Maëlle&#39;s question would have been:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;&lt;span class=&quot;kw&quot;&gt;pbirthday&lt;/span&gt;(&lt;span class=&quot;dt&quot;&gt;n=&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;26&lt;/span&gt;, &lt;span class=&quot;dt&quot;&gt;classes=&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;nrow&lt;/span&gt;(newborn))&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;pre&gt;&lt;code&gt;## [1] 0.02425434&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## # A tibble: 13,245 × 4
-##     firstname count           p  ponemore
-##         &amp;lt;chr&amp;gt; &amp;lt;int&amp;gt;       &amp;lt;dbl&amp;gt;     &amp;lt;dbl&amp;gt;
-## 1       Marie   695 0.009996404 0.2221080
-## 2      Sophie   649 0.009334772 0.2090064
-## 3   Charlotte   495 0.007119741 0.1635848
-## 4   Alexander   468 0.006731392 0.1553676
-## 5       Maria   436 0.006271125 0.1455282
-## 6        Paul   383 0.005508810 0.1289893
-## 7      Emilia   382 0.005494426 0.1286743
-## 8       Elias   371 0.005336210 0.1252022
-## 9  Maximilian   344 0.004947860 0.1166233
-## 10       Anna   305 0.004386911 0.1040889
-## # ... with 13,235 more rows&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Less than &lt;code&gt;sprintf(&amp;quot;%0.f%%&amp;quot;,pbirthday(n=26, classes=nrow(newborn)))&lt;/code&gt;! However, we expect this probability to be much higher, if we start to take unequal occurrence probabilities into account.&lt;/p&gt;
+&lt;p&gt;It&#39;s easy to see that the probability of no collision, i.e. no kids having the same name, can be calculated as: &lt;span class=&quot;math display&quot;&gt;\[
+P(NC_n) = n!
+\underset{1\leq i_1 &amp;lt; i_2 &amp;lt; \cdots &amp;lt;i_n \leq r}{\sum \sum \cdots \sum}
+p_{i_1} p_{i_2} \cdots p_{i_n}.
+\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;However, this is a formiddable number of terms to sum. In the case of &lt;span class=&quot;math inline&quot;&gt;\(N=13245\)&lt;/span&gt; and &lt;span class=&quot;math inline&quot;&gt;\(n=26\)&lt;/span&gt; the number is:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot;&gt;&lt;pre class=&quot;sourceCode r&quot;&gt;&lt;code class=&quot;sourceCode r&quot;&gt;Rmpfr::&lt;span class=&quot;kw&quot;&gt;chooseMpfr&lt;/span&gt;(N,n)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## 1 &amp;#39;mpfr&amp;#39; number of precision  294   bits 
+## [1] 360635627424461042343649241991659010127226742008898829465568350273963478046740130&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;(that&#39;s an 80 digit number!), which is not &lt;em&gt;ever&lt;/em&gt; going to happen. Instead &lt;span class=&quot;citation&quot; data-cites=&quot;klotz1979&quot;&gt;Klotz (1979)&lt;/span&gt;, based on generating functions, showed that the above corresponds to&lt;/p&gt;
+&lt;p&gt;&lt;span class=&quot;math display&quot;&gt;\[
+P(NC_n) = n!
+\underset{\underset{\sum_{j=1}^n j \cdot t_j = r}{0\leq t_1,t_2,\ldots,&amp;lt;t_n \leq n}}{\sum \sum \cdots \sum}
+(-1)^{n + \sum_j t_j}
+\left(
+\prod_{j=1}^n \frac{ (P_j/j)^{t_j}}{t_j!}
+\right),
+\]&lt;/span&gt; where &lt;span class=&quot;math inline&quot;&gt;\(P_j = \sum_{i=1}^N p_i^j\)&lt;/span&gt;. The vector &lt;span class=&quot;math inline&quot;&gt;\(\mathbf{t}=(t_1,\ldots,t_n)\)&lt;/span&gt; counts the number of singletons (&lt;span class=&quot;math inline&quot;&gt;\(t_1\)&lt;/span&gt;), doubletons (&lt;span class=&quot;math inline&quot;&gt;\(t_2\)&lt;/span&gt;), &lt;span class=&quot;math inline&quot;&gt;\(\ldots\)&lt;/span&gt;, up to the number of names occurring &lt;span class=&quot;math inline&quot;&gt;\(n\)&lt;/span&gt; times. We now &lt;em&gt;just&lt;/em&gt; have to sum over all &lt;span class=&quot;math inline&quot;&gt;\(\mathbf{t}\)&lt;/span&gt; such that &lt;span class=&quot;math inline&quot;&gt;\(\sum_{j=1}^n j \cdot t_j = n\)&lt;/span&gt;.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;## Error: &amp;lt;text&amp;gt;:105:1: unexpected symbol
+## 104: pbirthday_up(n=n, prob=rep(1/N, 365)
+## 105: pbirthday
+##      ^&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&quot;approximation-by-mase-1992&quot;&gt;Approximation by Mase (1992)&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;## Error in pbirthday_up_approx(n = r): object &amp;#39;r&amp;#39; not found&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Error in pbirthday(n = r, classes = N): object &amp;#39;r&amp;#39; not found&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Error in eval(expr, envir, enclos): object &amp;#39;r&amp;#39; not found&lt;/code&gt;&lt;/pre&gt;
 &lt;div id=&quot;refs&quot; class=&quot;references&quot;&gt;
-
+&lt;div id=&quot;ref-klotz1979&quot;&gt;
+&lt;p&gt;Klotz, J. 1979. “The Birthday Problem with Unequal Probabilities.” 591. Department of Statistics, University of Wisconsin, Madison.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&quot;ref-mase1992&quot;&gt;
+&lt;p&gt;Mase, S. 1992. “Approximations to the Birthday Problem with Unequal Occurrence Probabilities and Their Application to the Surname Problem in Japan.” &lt;em&gt;Ann. Inst. Stat. Math.&lt;/em&gt; 44 (3): 479–99.&lt;/p&gt;
+&lt;/div&gt;
 &lt;/div&gt;
 </description>
         <pubDate>Wed, 08 Feb 2017 00:00:00 +0100</pubDate>

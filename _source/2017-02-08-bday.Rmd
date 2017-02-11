@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Happy pbirthday to the class of 2016!"
+title: "Happy pbirthday class of 2016"
 tags: [rstats, stats, data journalism, onomastics]
 bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
@@ -37,14 +37,14 @@ theme_set(theme_bw())
 
 ## Abstract
 
-Continuing the last post on the analysis of firstnames given to
-newborns in Berlin 2016, we are interested in the following problem:
-what is the probability, that in a school class of size $n$ of these
-2016 born kids there will at least two kids having the same first
-name. This problem is an instance of the birthday problem with unequal
-probabilities. We provide R code for brute force as well as an
-approximative solution to this problem and for the case of equal
-probabilities compare with R's lovely `pbirthday` function.
+Continuing the analys of firstnames given to newborns in Berlin 2016,
+we solve the following problem: what is the probability, that in a
+school class of size $n$ of these 2016 born kids there will at least
+two kids having the same first name. This problem is an instance of
+the birthday problem with unequal probabilities. R code is provided
+for solving the problem exactly for moderate $n$ and approximatively
+for larger $n$. For the case that all probabilities are equal, our
+results are compared to the output of R's lovely `pbirthday` function.
 
 <center>
 ```{r,results='asis',echo=FALSE}
@@ -60,36 +60,44 @@ In the post
 [Naming Uncertainty by the Bootstrap](http://staff.math.su.se/hoehle/blog/2017/02/06/onomastics.html)
 we performed a descriptive analysis of the names given to newborns in
 Berlin 2016. For instance, it was shown that Marie and Alexander were
-the top-1 names among girls and boys, respectively.  In a comment
+the top-1 names among girls and boys, respectively. In a comment
 [Maëlle](http://www.masalmon.eu/) asked what's the resulting
-probability that there will be kids with the same name in a class.
+probability that there will be kids with the same name in a school
+class. We implement equations by @klotz1979 and @mase1992 in R in
+order to answer this important question.
 
 ## The Birthday Problem
 
-Actually, this question a variation of the
+The above posed question is a variation of the
 [**birthday problem**](https://en.wikipedia.org/wiki/Birthday_problem),
-which every statistician has solved once in an introductory
-probability class: in a class of $n$ randomly chosen persons, what is
-the probability that some pair of them will have the same birthday?
+which every statistician has solved at least once in an introductory
+probability class: *in a class of $n$ randomly chosen persons, what is
+the probability that some pair of them will have the same birthday*?
 Assuming that there are $N=365$ possible birthdays and all days are
-equally probable the answer can be calculated as: $$ P(\text{at least
-two people in the class have the same birthday}) =
-1-\frac{(N)_{n}}{N^n} $$ where $(x)_n = x! / (x-n)!$. Say we are
-interested in $n=26$ then can perform the calculations either directly
-or use the `pbirthday`function.
+equally probable the answer can be calculated as:
 
-```{r}
+$$
+P(\text{at least two people in the class have the same birthday}) =
+1-\frac{(N)_{n}}{N^n},
+$$
+
+where $(x)_n = x! / (x-n)!$. Say we are
+interested in $n=26$, which is the
+[maximal allowed class size](https://www.berlin.de/imperia/md/content/sen-bildung/rechtsvorschriften/grundschulverordnung.pdf)
+in Berlin's elementary schools (§4, Sect. 8). We can perform the
+necessary calculations either directly or by R's `pbirthday`function.
+
+```{r, echo=TRUE}
 n <- 26 ; N <- 365
-1 - exp(lfactorial(365)-lfactorial(365-26) - 26*log(N))
-pbirthday(n=26,classes=365)
+c(manual=1 - exp(lfactorial(365)-lfactorial(365-26) - 26*log(N)),
+  pbirthday=pbirthday(n=26,classes=365))
 ```
 
 Finding the `pbirthday` function as part of base R was a bit
-surprising, but really is just a relict reminding that R really has
-its roots in statistics!
+surprising, but just underlines that R really has its roots in
+statistics!
 
 ### Birthday Problem with Unequal Probabilities
-
 
 ```{r, READDATA, message=FALSE}
 ##Baby names in Berlin
@@ -100,10 +108,10 @@ distrNames <- read_csv(file=file.path(filePath_onomastics,paste0("berlin-firstna
 distrNames <- distrNames %>% mutate(district = factor(district), sex=factor(sex))
 ```
 
-In our problem $N$ corresponds to all possble names in 2016.
-For the analysis we only group by firstname and thus do not
+In our problem $N$ corresponds to all possble names of newborns
+in 2016. For the analysis we only group by firstname and thus do not
 distinguish between instances of the same name applying to both
-females and males.
+girls and boys.
 
 ```{r,echo=TRUE}
 newborn <- distrNames %>% group_by(firstname) %>%
@@ -111,41 +119,60 @@ newborn <- distrNames %>% group_by(firstname) %>%
   mutate(p=count/sum(count)) %>%
   arrange(desc(count))
 ```
+```{r,echo=FALSE}
+print(newborn, n=4)
+```
 
-From the $p$ column it becomes obvious that all names are equally
-likely. Had this been the case instead, the quick solution to Maëlle's
-question would have been
-```{r}
-(N <- nrow(newborn))
+In total there are $N=`r nrow(newborn)`$ possible names. From the $p$
+column it also becomes obvious that not all names are equally
+likely. Had they been, the quick solution to Maëlle's question would
+have been:
+
+```{r,echo=TRUE}
 pbirthday(n=26, classes=nrow(newborn))
 ```
 
-We hence have to extend our analysis to the case of unequal selection
-probabilities. It's easy to see that the probability of no collision,
-i.e. no kids having the same name, can be calculated as:
+```{r,echo=FALSE, results='hide'}
+(N <- nrow(newborn))
+```
+Less than `sprintf("%0.f%%",pbirthday(n=26, classes=nrow(newborn)))`!
+However, we expect this probability to be much higher, if we start to
+take unequal occurrence probabilities into account.
+
+It's easy to see that the probability of no collision, i.e. no kids
+having the same name, can be calculated as:
 $$
-P(NC_r) = r! \underset{1\leq i_1 < i_2 <
-\cdots  <i_r \leq r}{\sum \sum \cdots \sum}
-p_{i_1} p_{i_2} \cdots p_{i_r}.
+P(NC_n) = n!
+\underset{1\leq i_1 < i_2 < \cdots <i_n \leq r}{\sum \sum \cdots \sum}
+p_{i_1} p_{i_2} \cdots p_{i_n}.
 $$
 
-However, this is a formiddable number of terms to investigate. In the
-case of $N=`r N`$ and $n=`r n` we get that the sum consists in the
-summation of:
+However, this is a formiddable number of terms to sum. In the
+case of $N=`r N`$ and $n=`r n`$ the number is:
 
-```{r}
+```{r,eval=FALSE}
 ##noquote(sprintf("%-50.0f", choose(N,n)))
+```
+```{r,echo=TRUE}
 Rmpfr::chooseMpfr(N,n)
 ```
-terms (that's an `r floor(log10(choose(N,n)))` digit number), which is
-not *ever* going to happen.
+(that's an `r floor(log10(choose(N,n)))` digit number!), which is
+not *ever* going to happen. Instead @klotz1979, based on generating
+functions, showed that the above corresponds to
 
-```{r, BDAY}
-##Prob of no repeated categories
-PAr <- prod(N:(N-r+1))/N^r
-1-PAr
-pbirthday(n=r, classes=N)
-```
+$$
+P(NC_n) = n!
+\underset{\underset{\sum_{j=1}^n j \cdot t_j = r}{0\leq t_1,t_2,\ldots,<t_n \leq n}}{\sum \sum \cdots \sum}
+(-1)^{n + \sum_j t_j}
+\left(
+\prod_{j=1}^n \frac{ (P_j/j)^{t_j}}{t_j!}
+\right),
+$$
+where $P_j = \sum_{i=1}^N p_i^j$. The vector
+$\mathbf{t}=(t_1,\ldots,t_n)$ counts the number of singletons ($t_1$),
+doubletons ($t_2$), $\ldots$, up to the number of names occurring $n$
+times. We now *just* have to sum over all $\mathbf{t}$ such that
+$\sum_{j=1}^n j \cdot t_j = n$.
 
 ```{r}
 ##might be something to solve in C++ instead
@@ -257,7 +284,7 @@ pbirthday(n=n, classes=365)
 
 system.time(print(pbirthday_up(n=40, prob=newborn %$% p)$prob))
 ##60 in 3 min.
-system.time(print(pbirthday_up(n=60, prob=newborn %$% p, method="Rcpp")$prob))
+system.time(print(pbirthday_up(n=40, prob=newborn %$% p, method="Rcpp")$prob))
 ```
 
 ## Approximation by Mase (1992)
