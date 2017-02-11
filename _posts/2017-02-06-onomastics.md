@@ -114,8 +114,7 @@ babies seem to have an empty first name (but the sex is known). We decided to
 keep these `NA` names in the analysis, because at the time of writing
 it was unclear, if this is a data recording problem (e.g. a delay of the
 December 2016 kids) or actually allowed. An email inquiry with the data
-providing agency about the origin of these `NA`'s currently remains
-unanswered (since 7 days).
+providing agency can hopefully shed some more light on this.
 
 We can now look at the top-5-names in Berlin for each gender:
 
@@ -338,7 +337,7 @@ tables for girls and boys, respectively:
 
 <center>
 <!-- html table generated in R 3.3.2 by xtable 1.8-2 package -->
-<!-- Thu Feb  9 23:40:38 2017 -->
+<!-- Sat Feb 11 18:21:23 2017 -->
 <table border=5, padding=10, style="width=100%">
 <tr> <th> ucrank (among girls) </th> <th> first names (girls) </th> <th> ucrank (among boys) </th> <th> first names (boys) </th>  </tr>
   <tr> <td align="center">   1 </td> <td align="center"> Marie, Sophie </td> <td align="center">   1 </td> <td> Alexander </td> </tr>
