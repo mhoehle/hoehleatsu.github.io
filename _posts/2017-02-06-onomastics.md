@@ -38,7 +38,7 @@ to the study of names is entitled
 [**onomastics**](https://en.wikipedia.org/wiki/Onomastics). Mathematical
 modelling is used in onomastics to study name dynamics by evolutionary
 models and models for contagious phenomena
-[@kahn_bentley2003, @kessler_etal2012]. But even the task of
+[@kahn_bentley2003; @kessler_etal2012]. But even the task of
 [naming your baby]((http://waitbutwhy.com/2013/12/how-to-name-baby.html))
 has almost onomastics optimizing flavour requiring data science
 skills. However, once the Official Social Security Administration has
@@ -337,7 +337,7 @@ tables for girls and boys, respectively:
 
 <center>
 <!-- html table generated in R 3.3.2 by xtable 1.8-2 package -->
-<!-- Sat Feb 11 18:21:23 2017 -->
+<!-- Sat Feb 11 23:52:31 2017 -->
 <table border=5, padding=10, style="width=100%">
 <tr> <th> ucrank (among girls) </th> <th> first names (girls) </th> <th> ucrank (among boys) </th> <th> first names (boys) </th>  </tr>
   <tr> <td align="center">   1 </td> <td align="center"> Marie, Sophie </td> <td align="center">   1 </td> <td> Alexander </td> </tr>

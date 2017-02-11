@@ -70,7 +70,7 @@ to the study of names is entitled
 [**onomastics**](https://en.wikipedia.org/wiki/Onomastics). Mathematical
 modelling is used in onomastics to study name dynamics by evolutionary
 models and models for contagious phenomena
-[@kahn_bentley2003, @kessler_etal2012]. But even the task of
+[@kahn_bentley2003; @kessler_etal2012]. But even the task of
 [naming your baby]((http://waitbutwhy.com/2013/12/how-to-name-baby.html))
 has almost onomastics optimizing flavour requiring data science
 skills. However, once the Official Social Security Administration has
