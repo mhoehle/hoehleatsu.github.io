@@ -1,0 +1,457 @@
+---
+layout: post
+title: "Happy pbirthday class of 2016"
+tags: [rstats, stats, data journalism, onomastics]
+bibliography: ~/Literature/Bibtex/jabref.bib
+comments: true
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2017-02-11-bday/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2017-02-11-bday/"
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=4,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2) # autodep=TRUE
+options(width=90)
+library("dplyr")
+library("ggplot2")
+library("tidyr")
+library("methods")
+library("magrittr")
+
+theme_set(theme_bw())
+```
+
+```{r,results='hide'}
+theAnswer <- load(file.path(filePath, "theAnswer.Rdata"))
+```
+## Abstract
+
+Continuing the analysis of first names given to newborns in Berlin
+2016, we solve the following problem: what is the probability, that in
+a school class of size $n$ of these kids there will be at least two kids
+having the same first name?  The answer to the problem for classes of
+size `r n` is `r sprintf("%.0f%%",100*p_theAnswer)` and can be solved
+as an instance
+of the birthday problem with unequal probabilities. R code is provided
+for solving the problem exactly for moderate $n$ and approximately for
+larger $n$. For the case that all probabilities are equal, our results
+are compared to the output of R's lovely `pbirthday` function.
+
+<center>
+```{r,results='asis',echo=FALSE}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"APPROXVSEXACT-1.png"),")")
+```
+</center>
+
+{% include license.html %}
+
+## Introduction
+
+The previous post
+[Naming Uncertainty by the Bootstrap](http://staff.math.su.se/hoehle/blog/2017/02/06/onomastics.html)
+contained an analysis of the first names given to newborns in
+Berlin 2016. For instance, Marie and Alexander were
+the top names among girls and boys, respectively. In a comment
+[Maëlle](http://www.masalmon.eu/) asked *what's the resulting
+probability that there will be kids with the same first name in a school
+class*? We implement equations by @klotz1979 and @mase1992 in R in
+order to answer this important question.
+
+## The Birthday Problem
+
+The above posed question is a variation of the
+[**birthday problem**](https://en.wikipedia.org/wiki/Birthday_problem),
+which every statistician has solved at least once in an introductory
+probability class: *in a class of $n$ randomly chosen persons, what is
+the probability that some pair of them will have the same birthday*?
+Assuming that there are $N=365$ possible birthdays and all birthdays are
+equally probable the answer can be calculated as:
+
+$$
+P(\text{at least two people in the class have the same birthday}) =
+1-\frac{(N)_{n}}{N^n},
+$$
+
+where $(x)_n = x! / (x-n)!$ is the so called **factorial polynomial**. Say we are
+interested in $n=26$, which is the
+[maximal allowed class size](https://www.berlin.de/imperia/md/content/sen-bildung/rechtsvorschriften/grundschulverordnung.pdf)
+in Berlin's elementary schools (§4, Sect. 8 in the regulation). We can perform the
+necessary calculations either directly or by R's `pbirthday`function.
+
+```{r, echo=TRUE}
+n <- 26 ; N <- 365
+c(manual=1 - exp(lfactorial(N)-lfactorial(N-n) - n*log(N)),
+  pbirthday=pbirthday(n=n,classes=N))
+```
+
+Finding the `pbirthday` function as part of base R was a bit
+surprising, but just underlines that R really has its roots in
+**statistics**!
+
+### Birthday Problem with Unequal Probabilities
+
+```{r, READDATA, message=FALSE}
+##Baby names in Berlin
+filePath_onomastics <- "/Users/hoehle/Sandbox/Blog/figure/source/2017-02-06-onomastics/"
+library(readr)
+year <- 2016
+distrNames <- read_csv(file=file.path(filePath_onomastics,paste0("berlin-firstnames-",year,".csv"))) %>% select(-strata)
+distrNames <- distrNames %>% mutate(district = factor(district), sex=factor(sex))
+```
+
+In our problem $N$ corresponds to all possible names of newborns
+in 2016. For the analysis we only group by first name and thus do not
+distinguish between instances of the same name used for both
+girls and boys.
+
+```{r,echo=TRUE}
+newborn <- distrNames %>% group_by(firstname) %>%
+  summarise(count=sum(count)) %>% ungroup() %>%
+  mutate(p=count/sum(count)) %>%
+  arrange(desc(count))
+```
+```{r,echo=FALSE}
+print(newborn, n=4)
+```
+
+In total there are $N=`r nrow(newborn)`$ possible names. From the $p$
+column it also becomes obvious that not all names are equally
+likely. Had they been, the quick solution to Maëlle's question would
+have been:
+
+```{r,echo=TRUE}
+pbirthday(n=26, classes=nrow(newborn))
+```
+
+```{r,echo=FALSE, results='hide'}
+(N <- nrow(newborn))
+```
+Less than `r sprintf("%0.f%%",100*pbirthday(n=26, classes=nrow(newborn)))`!
+However, we expect this probability to be much higher, if we start to
+take the unequal occurrence probabilities into account. So let's do it!
+
+It's easy to see that the probability of no collision, i.e. no kids
+having the same name in the class, can be calculated as:
+$$
+P(\overline{C}_n) = n!
+\underset{1\leq i_1 < i_2 < \cdots <i_n \leq N}{\sum \sum \cdots \sum} \>
+p_{i_1} p_{i_2} \cdots p_{i_n}.
+$$
+
+However, this is a formidable number of terms to sum. In the
+case of $N=`r N`$ and $n=`r n`$ the number is:
+
+```{r,eval=FALSE}
+##noquote(sprintf("%-50.0f", choose(N,n)))
+```
+```{r,echo=TRUE}
+Rmpfr::chooseMpfr(N,n)
+```
+That's an `r ceiling(log10(choose(N,n)))` digit number! This is
+not *ever* going to happen. Instead @klotz1979, based on generating
+functions, showed that the above equation corresponds to
+
+$$
+P(\overline{C}_n) = n!
+\underset{\underset{\sum_{j=1}^n j \cdot t_j = n}{0\leq t_1,t_2,\ldots,<t_n \leq n}}{\sum \sum \cdots \sum}
+(-1)^{n + \sum_j t_j}
+\left(
+\prod_{j=1}^n \frac{ (P_j/j)^{t_j}}{t_j!}
+\right),
+$$
+where $P_j = \sum_{i=1}^N p_i^j$. Let the vector
+$\mathbf{t}=(t_1,\ldots,t_n)$ count the number of singletons ($t_1$),
+doubletons ($t_2$), triplets ($t_3$), ..., up to the number of names
+occurring $n$ times ($t_n$). The above sum means that we have to sum
+over all $\mathbf{t}$ such that $\sum_{j=1}^n j \cdot t_j = n$. The
+number of such terms to sum is much lower than in the previous
+expression, e.g., for $N=`r nrow(newborn)`$
+and $n=`r n`$ the number of terms is `r nrow(pb_up$tList)`.
+
+```{r}
+#Function implementing the calculation of factorial polynomials
+facpoly <- function(x, m) {
+  exp(lfactorial(x) - lfactorial(x-m))
+}
+
+##Make syntax for nested for loop function in R
+make_tListFunc_syntax <- function(n) {
+  str <- NULL
+  str <- rbind(str, "compute_tList <- function() {")
+  str <- rbind(str, paste0("n <- ",n))
+  str <- rbind(str, "tList <- NULL")
+  for (i in n:1) {
+    str <- rbind(str,paste0(paste0(rep(" ",n-i),collapse=""),"for (t",i," in 0:floor(n/",i,")) {"))
+  }
+  str <- rbind(str,paste0(paste0(rep(" ",n),collapse=""),paste0("t <- c(",paste0("t",1:n,collapse=","),")")))
+  str <- rbind(str,paste0(paste0(rep(" ",n),collapse=""),"if (sum( (1:n)*t) == n) tList <- rbind(tList, t)"))
+  for (i in n:1) {
+    ##Sum too large, then stop summing
+    str <- rbind(str,paste0(paste0(rep(" ",i),collapse=""),"if (sum( (n:(n-",i,"+1)*t[n:(n-",i,"+1)])) > n) break;"))
+
+    ##Done
+    str <- rbind(str, paste0(paste0(rep(" ",i-1),collapse=""),"}"))
+  }
+  str <- rbind(str, "return(tList)")
+  str <- rbind(str, "}")
+  return(str)
+}
+
+##Make syntax for nested for loop function in Rcpp
+make_tListFunc_syntax_rcpp <- function(n) {
+  str <- NULL
+  str <- rbind(str, "#include <Rcpp.h>")
+  str <- rbind(str, "// [[Rcpp::export]]")
+  str <- rbind(str, 'void make_tList_rcpp() {')
+  str <- rbind(str, paste0('int n = ',n,";"))
+  str <- rbind(str, "std::cout << std::endl;")
+  for (i in n:1) {
+    str <- rbind(str,paste0(paste0(rep(" ",n-i+1),collapse=""),"for (int t",i,"=0; t",i," <= floor(n/",i,"); t",i,"++) {"))
+  }
+
+  ##Correct sum
+  theSum <- paste0("(",paste0(paste0(1:n,"*t",1:n, collapse="+"),")"))
+  str <- rbind(str,paste0(paste0(rep(" ",n+1),collapse=""),paste0("if (",theSum," == n) {")))
+  output <- paste0("t",1:n, collapse=" << \",\" << ")
+  str <- rbind(str,paste0(paste0(rep(" ",n+2),collapse=""),paste0("Rcpp::Rcout << ",output," << std::endl;")))
+  str <- rbind(str,paste0(paste0(rep(" ",n+1),collapse=""),paste0("}")))
+
+  ##Close the loops
+  for (i in n:1) {
+    ##Sum too large - stop
+    theSum <- paste0("(",paste0(paste0(n:(n-i+1),"*t",n:(n-i+1), collapse="+"),")"))
+    str <- rbind(str,paste0(paste0(rep(" ",i+1),collapse=""),paste0("if (",theSum," > n) { break; }")))
+
+    ##Close parenthesis
+    str <- rbind(str, paste0(paste0(rep(" ",i),collapse=""),"}"))
+  }
+  str <- rbind(str, "}")
+  return(str)
+}
+
+######################################################################
+## This calculates the probability for at least one collision in a set
+## of n individuals sampled iid. from a vector of length N with
+## occurrence probabilities as given by the vector p. This is an instance
+## of the birthday problem with unequal occurrence probabilities.
+##
+## Parameters:
+##  @param n Size of the set
+##  @param prob Occurrence probabilities. The length of @prob determines N.
+##  @method A string describing which computational method to use. "R" (the default) works in acceptable time up to n's of about 30. The "Rcpp" options works for larger n of moderate size, e.g., n=60 takes about 3 minutes.
+##
+## Returns:
+##  A list containing the following elements:
+##    @prob The probability for at least one collision
+##    @tList A matrix containing all compositions of singletons, duobletons,    ##           each row has the property sum(row * 1:n) == n.
+##    ...
+######################################################################
+
+pbirthday_up <- function(n, prob, method=c("R","Rcpp","mase1992")) {
+  ##Check the arguments
+  method <- match.arg(method, c("R","Rcpp","mase1992"))
+  if (!is.integer(n)) stop("n has to be an integer.")
+  if (n>60 & (method %in% c("R","Rcpp"))) {
+    warning("n is pretty large. This might take a while. Possibly consider using the 'mase1992' to compute an approximate result.")
+  }
+
+  ##P-symmetric funcs
+  P <- sapply(seq_len(n), function(x) sum(prob^x))
+
+  if (method == "mase1992") {
+    sigma <- c(1,
+               sigma_n1 <- exp( -facpoly(n,2)/2 * P[2]),
+               exp( facpoly(n,3) * ( -P[2]^2/2 + P[3]/3)),
+               exp( facpoly(n,4) * ( -5/6*P[2]^3 * P[2]*P[3] - 1/4*P[4])),
+               exp( facpoly(n,5) * ( -7/4*P[2]^4 + 3*P[2]^2*P[3] - P[2]*P[4] + 1/5*P[5] - 1/2*P[3]^2)))
+    ##Make sure we don't need to use facpoly(n,x) if n < x
+    idx <- min(n,5)
+    res <- cumprod(sigma)[idx]
+    return(list(prob=1 - res, tList=NA, P=NA,a=NA))
+  }
+
+  if (method == "R") {
+    ##Make function to compute list of coefs
+    source(textConnection(make_tListFunc_syntax(n=n)))
+    ##Compute coefs
+    tList <- compute_tList()
+  }
+
+  if (method == "Rcpp") {
+    writeLines(make_tListFunc_syntax_rcpp(n=n),file((theCppFile = paste0(tempfile(),".cpp"))))
+    Rcpp::sourceCpp(file=theCppFile)
+
+    ##Run program and store std output to file
+    theTempFile <- tempfile()
+    sink(theTempFile)
+    f <- make_tList_rcpp()
+    sink()
+    tList <- read.table(file=theTempFile,sep=",")
+    if (ncol(tList) != n) { stop("Column numbers and r don't match.") }
+  }
+
+  ##Verify results
+  stopifnot(rowSums(tList * matrix(1:n,ncol=n,nrow=nrow(tList),byrow=TRUE)) == n)
+
+  ##Might be numerical unstable for large n?
+  coefFun <- function(t) {
+    factorial(n)*(-1)^(n+sum(t)) / prod( (1:n)^t * factorial(t))
+  }
+
+  a <- apply(tList, 1, coefFun)
+
+  Pprod <- apply(tList, 1, function(t) prod(P^ifelse(t>0,t,0)))
+
+  res <- list(prob=1 - sum(a * Pprod),tList=tList, P=P,a=a)
+  #Result
+  return(res)
+}
+```
+
+As an example, for $n=4$ all the necessary terms to sum can be found
+somewhat brute-force'ish by running through the following four nested
+for loops:
+```{r}
+##No so pretty
+cat(paste0(paste0(make_tListFunc_syntax(n=4),collapse="\n"),"\n"))
+```
+This function would then return the necessary sets for the $n=4$ case:
+```{r}
+source(textConnection(make_tListFunc_syntax(n=4)))
+compute_tList()
+```
+which can be processed further as in the @klotz1979 equation stated
+above in order to compute the probability of interest.
+
+In the accompanying R code of this blog post (click on the github logo
+in the above license statement to reach it) the above $n$ nested loops
+are constructed by the function `make_tListFunc_syntax`, which given
+$n$ generates the syntax of the necessary function nested loop
+function. Calling `source` on this syntax string then provides a
+proper R function to evaluate. A similar function
+`make_tListFunc_syntax_cpp` is provided to generate an equivalent C++
+function, which then using Rcpp's `sourceCpp` function can be turned
+into an R function. As a **side note**: The nested for loops for
+increasing $n$ quickly look foul, which earned it the predicate
+*possibly the best nested loop ever* in a comment of a
+[stackoverflow post](http://stackoverflow.com/questions/42130954/compiling-many-nested-loops-using-the-rcppcppfunction)
+concerned with the many nested loops breaking the `clang` compiler on
+MacOS.
+
+The above described syntax generation, evaluation and post-processing
+steps necessary to compute the desired probability as
+$1-P(\overline{C}_n)$ are all
+implemented in the function `pbirthday_up` (postfix: `up` for
+*u*nequal *p*ropabilities) in honour of R's `pbirthday` function.  A `method`
+argument allows the user to choose if the nested-loops should be
+computed using `"R"`, `"Rcpp"`. As an alternative to the this exact
+solution by @klotz1979 one can also compute an approximate solution
+described in @mase1992, which is of the impressive order
+$O(1)$ while being extremely accurate (use `method="mase1992"`).
+The R method works in
+acceptable time for $n$'s up to around 35, the Rcpp runs $n=60$ in
+less than three minutes; for larger $n$ the approximation is to be
+recommended if you don't like waiting.
+
+With all code in place we finally can provide Maëlle with the correct
+answer to her question:
+```{r,echo=TRUE}
+n <- 26L
+(p_theAnswer <- pbirthday_up(n=n, prob=newborn %$% p)$prob)
+```
+```{r}
+pb_up <- pbirthday_up(n=n, prob=newborn %$% p)
+save(file=file.path(filePath,"theAnswer.RData"),list=c("n","p_theAnswer","pb_up"))
+```
+In other words, the probability of having a name collision in a class
+of $n=`r n`$ is `r sprintf("%.1f%%",p_theAnswer*100)`. If local politics
+would decide to increase the maximum class size by one, the resulting
+probability for $n=27$
+would be:
+`r sprintf("%.1f%%",100*pbirthday_up(n=n+1L, prob=newborn %$% p)$prob)`.
+One more reason against increasing [school class size](http://www.nzherald.co.nz/nz/news/article.cfm?c_id=1&objectid=11288618)?
+
+
+### Numerical Comparisons
+
+We first test our `pbirthday_up` function on the classical birthday
+problem with equal probabilities:
+```{r,echo=TRUE, warning=FALSE, message=FALSE}
+c(pbirthday=pbirthday(n=26L, 365),
+  klotz1979_R=pbirthday_up(n=26L, rep(1/365, 365), method="R")$prob,
+  klotz1979_Rcpp=pbirthday_up(n=26L, rep(1/365, 365), method="Rcpp")$prob,
+  mase1992=pbirthday_up(n=26L, rep(1/365, 365), method="mase1992")$prob)
+```
+works like a **dream**!
+
+```{r, warning=FALSE, message=FALSE, results='hide', cache=TRUE}
+n <- 40L
+##Speed compare
+timeR <- system.time(print(pbirthday_up(n=n, prob=newborn %$% p)$prob))
+timeRcpp <- system.time(print(pbirthday_up(n=n, prob=newborn %$% p, method="Rcpp")$prob))
+timeMase1992 <- system.time(print(pbirthday_up(n=n, prob=newborn %$% p, method="mase1992")$prob))
+```
+
+Speed-wise, the R looping approach takes `r sprintf("%0.f",timeR[3])`s to compute the
+result for $n=`r n`$. The Rcpp approach on the other hand works in just
+`r sprintf("%.0f",timeRcpp[3])`s. The approximation by @mase1992 only takes
+`r sprintf("%.1f",timeMase1992[3])` s. To assess the quality of the
+approximation we consider a range of different $n$:
+
+```{r,cache=TRUE, warning=FALSE, message=FALSE,results='hide'}
+birthday <- data.frame(n=c(1,5,seq(10,50,by=5)))
+birthday <- birthday %>% rowwise %>% do( {
+  n <- as.integer(.$n)
+  p <- newborn %$% p
+  p_k <- pbirthday_up(n=n, prob=p, method=ifelse(n<=35,"R","Rcpp"))$prob
+  p_m <- pbirthday_up(n=n, prob=p, method="mase1992")$prob
+  data.frame(n=n,p=c(p_k,p_m), abs=abs(p_m-p_k), method=c("exact_klotz1979","approx_mase1992"))
+})
+```
+
+```{r, APPROXVSEXACT, warning=FALSE, message=FALSE}
+##Show the result as a function of n
+ggplot( birthday, aes(x=n, y=p, color=method)) + geom_line() + ylab("Probability") + ggtitle(paste0("Probability of at least two kids with the same first name in a class of n")) + scale_y_continuous(labels=scales::percent) + scale_color_discrete(name="Method")
+```
+
+It's hardly possible to see the difference between the approximation
+and the exact solution. For better comparison, we also show the
+absolute error between the approximate solution and the exact
+solution:
+
+```{r, ABSERROR, warning=FALSE, message=FALSE}
+b2 <- birthday %>% filter(n>1) %>% group_by(n) %>% summarise(abs=max(abs))
+ggplot( b2, aes(x=n, y=abs)) + geom_line() + ylab("Absolute error")
+```
+
+## Discussion
+
+```{r,results='hide'}
+theAnswer <- load(file.path(filePath, "theAnswer.Rdata"))
+```
+We calculated that the probability of a name-collision in a class of
+$n=`r n`$ kids born in Berlin 2016 is
+`r sprintf("%.0f%%",100*p_theAnswer)`. Furthermore, we showed that clever
+mathematical approximations are better than brute-force computations, that
+stack-exchange rules and that Rcpp can speed up your R program
+considerably. Furthermore, you have been shown the best nested for loop
+ever! Finally, in honour of
+[Jerome Klotz](https://www.secfac.wisc.edu/senate/2007/0305/1976(mem_res).pdf)
+a screenshot of the
+Acknowledgements section of the
+@klotz1979 technical report:
+
+<center>
+```{r,results='asis',echo=FALSE}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"klotz1979.png"),")")
+```
+</center>
+<p>
+<p>
+
+## Literature
