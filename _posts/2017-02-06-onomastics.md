@@ -337,7 +337,7 @@ tables for girls and boys, respectively:
 
 <center>
 <!-- html table generated in R 3.3.2 by xtable 1.8-2 package -->
-<!-- Sat Feb 11 23:52:31 2017 -->
+<!-- Mon Feb 13 22:41:16 2017 -->
 <table border=5, padding=10, style="width=100%">
 <tr> <th> ucrank (among girls) </th> <th> first names (girls) </th> <th> ucrank (among boys) </th> <th> first names (boys) </th>  </tr>
   <tr> <td align="center">   1 </td> <td align="center"> Marie, Sophie </td> <td align="center">   1 </td> <td> Alexander </td> </tr>

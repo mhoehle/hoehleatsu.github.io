@@ -10,10 +10,10 @@ comments: true
 ##If default fig.path, then set it.
 if (knitr::opts_chunk$get("fig.path") == "figure/") {
   knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
-  knitr::opts_chunk$set(fig.path="figure/source/2017-02-11-bday/")
+  knitr::opts_chunk$set(fig.path="figure/source/2017-02-13-bday/")
 }
 fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
-filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2017-02-11-bday/"
+filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2017-02-13-bday/"
 
 knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=4,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2) # autodep=TRUE
 options(width=90)
@@ -26,9 +26,18 @@ library("magrittr")
 theme_set(theme_bw())
 ```
 
-```{r,results='hide'}
-theAnswer <- load(file.path(filePath, "theAnswer.Rdata"))
+```{r,echo=FALSE,results='hide'}
+##Load the store results
+theFile <- file.path(filePath, "theAnswer.Rdata")
+if (file.exists(theFile)) {
+  theAnswer <- load(file.path(filePath, "theAnswer.Rdata"))
+} else {
+  n <- 26L
+  p_theAnswer <- 0.34
+  pb_up <- list(prob=1, tList=matrix(NA, nrow=10,ncol=10), P=NA,a=NA)
+}
 ```
+
 ## Abstract
 
 Continuing the analysis of first names given to newborns in Berlin
@@ -329,7 +338,7 @@ which can be processed further as in the @klotz1979 equation stated
 above in order to compute the probability of interest.
 
 In the accompanying
-[R code of this blog post](https://github.com/hoehleatsu/hoehleatsu.github.io/blob/master/_source/2017-02-11-bday.Rmd)
+[R code of this blog post](https://github.com/hoehleatsu/hoehleatsu.github.io/blob/master/_source/2017-02-13-bday.Rmd)
 the above $n$ nested loops
 are constructed by the function `make_tListFunc_syntax`, which given
 $n$ generates the syntax of the necessary function nested loop
