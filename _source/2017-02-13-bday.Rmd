@@ -63,8 +63,8 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"APPROXVS
 
 The previous post
 [Naming Uncertainty by the Bootstrap](http://staff.math.su.se/hoehle/blog/2017/02/06/onomastics.html)
-contained an analysis of the first names given to newborns in
-Berlin 2016. For instance, Marie and Alexander were
+contained an analysis of first names given to newborns in
+Berlin 2016 [@opendataberlinNames2016]. For instance, Marie and Alexander were
 the top names among girls and boys, respectively. In a comment
 [Maëlle](http://www.masalmon.eu/) asked *what's the resulting
 probability that there will be kids with the same first name in a school
@@ -140,7 +140,7 @@ pbirthday(n=26, classes=nrow(newborn))
 ```{r,echo=FALSE, results='hide'}
 (N <- nrow(newborn))
 ```
-Less than `r sprintf("%0.f%%",100*pbirthday(n=26, classes=nrow(newborn)))`!
+Less than `r sprintf("%0.f%%",ceiling(100*pbirthday(n=26, classes=nrow(newborn))))`!
 However, we expect this probability to be much higher, if we start to
 take the unequal occurrence probabilities into account. So let's do it!
 
@@ -182,144 +182,13 @@ number of such terms to sum is much lower than in the previous
 expression, e.g., for $N=`r nrow(newborn)`$
 and $n=`r n`$ the number of terms is `r nrow(pb_up$tList)`.
 
-```{r}
-#Function implementing the calculation of factorial polynomials
-facpoly <- function(x, m) {
-  exp(lfactorial(x) - lfactorial(x-m))
-}
 
-##Make syntax for nested for loop function in R
-make_tListFunc_syntax <- function(n) {
-  str <- NULL
-  str <- rbind(str, "compute_tList <- function() {")
-  str <- rbind(str, paste0("n <- ",n))
-  str <- rbind(str, "tList <- NULL")
-  for (i in n:1) {
-    str <- rbind(str,paste0(paste0(rep(" ",n-i),collapse=""),"for (t",i," in 0:floor(n/",i,")) {"))
-  }
-  str <- rbind(str,paste0(paste0(rep(" ",n),collapse=""),paste0("t <- c(",paste0("t",1:n,collapse=","),")")))
-  str <- rbind(str,paste0(paste0(rep(" ",n),collapse=""),"if (sum( (1:n)*t) == n) tList <- rbind(tList, t)"))
-  for (i in n:1) {
-    ##Sum too large, then stop summing
-    str <- rbind(str,paste0(paste0(rep(" ",i),collapse=""),"if (sum( (n:(n-",i,"+1)*t[n:(n-",i,"+1)])) > n) break;"))
+The above computations have been made available in the R package
+[`birthdayproblem`]((https://github.com/hoehleatsu/birthdayproblem))
+available from github:
 
-    ##Done
-    str <- rbind(str, paste0(paste0(rep(" ",i-1),collapse=""),"}"))
-  }
-  str <- rbind(str, "return(tList)")
-  str <- rbind(str, "}")
-  return(str)
-}
-
-##Make syntax for nested for loop function in Rcpp
-make_tListFunc_syntax_rcpp <- function(n) {
-  str <- NULL
-  str <- rbind(str, "#include <Rcpp.h>")
-  str <- rbind(str, "// [[Rcpp::export]]")
-  str <- rbind(str, 'void make_tList_rcpp() {')
-  str <- rbind(str, paste0('int n = ',n,";"))
-  str <- rbind(str, "std::cout << std::endl;")
-  for (i in n:1) {
-    str <- rbind(str,paste0(paste0(rep(" ",n-i+1),collapse=""),"for (int t",i,"=0; t",i," <= floor(n/",i,"); t",i,"++) {"))
-  }
-
-  ##Correct sum
-  theSum <- paste0("(",paste0(paste0(1:n,"*t",1:n, collapse="+"),")"))
-  str <- rbind(str,paste0(paste0(rep(" ",n+1),collapse=""),paste0("if (",theSum," == n) {")))
-  output <- paste0("t",1:n, collapse=" << \",\" << ")
-  str <- rbind(str,paste0(paste0(rep(" ",n+2),collapse=""),paste0("Rcpp::Rcout << ",output," << std::endl;")))
-  str <- rbind(str,paste0(paste0(rep(" ",n+1),collapse=""),paste0("}")))
-
-  ##Close the loops
-  for (i in n:1) {
-    ##Sum too large - stop
-    theSum <- paste0("(",paste0(paste0(n:(n-i+1),"*t",n:(n-i+1), collapse="+"),")"))
-    str <- rbind(str,paste0(paste0(rep(" ",i+1),collapse=""),paste0("if (",theSum," > n) { break; }")))
-
-    ##Close parenthesis
-    str <- rbind(str, paste0(paste0(rep(" ",i),collapse=""),"}"))
-  }
-  str <- rbind(str, "}")
-  return(str)
-}
-
-######################################################################
-## This calculates the probability for at least one collision in a set
-## of n individuals sampled iid. from a vector of length N with
-## occurrence probabilities as given by the vector p. This is an instance
-## of the birthday problem with unequal occurrence probabilities.
-##
-## Parameters:
-##  @param n Size of the set
-##  @param prob Occurrence probabilities. The length of @prob determines N.
-##  @method A string describing which computational method to use. "R" (the default) works in acceptable time up to n's of about 30. The "Rcpp" options works for larger n of moderate size, e.g., n=60 takes about 3 minutes.
-##
-## Returns:
-##  A list containing the following elements:
-##    @prob The probability for at least one collision
-##    @tList A matrix containing all compositions of singletons, duobletons,    ##           each row has the property sum(row * 1:n) == n.
-##    ...
-######################################################################
-
-pbirthday_up <- function(n, prob, method=c("R","Rcpp","mase1992")) {
-  ##Check the arguments
-  method <- match.arg(method, c("R","Rcpp","mase1992"))
-  if (!is.integer(n)) stop("n has to be an integer.")
-  if (n>60 & (method %in% c("R","Rcpp"))) {
-    warning("n is pretty large. This might take a while. Possibly consider using the 'mase1992' to compute an approximate result.")
-  }
-
-  ##P-symmetric funcs
-  P <- sapply(seq_len(n), function(x) sum(prob^x))
-
-  if (method == "mase1992") {
-    sigma <- c(1,
-               sigma_n1 <- exp( -facpoly(n,2)/2 * P[2]),
-               exp( facpoly(n,3) * ( -P[2]^2/2 + P[3]/3)),
-               exp( facpoly(n,4) * ( -5/6*P[2]^3 * P[2]*P[3] - 1/4*P[4])),
-               exp( facpoly(n,5) * ( -7/4*P[2]^4 + 3*P[2]^2*P[3] - P[2]*P[4] + 1/5*P[5] - 1/2*P[3]^2)))
-    ##Make sure we don't need to use facpoly(n,x) if n < x
-    idx <- min(n,5)
-    res <- cumprod(sigma)[idx]
-    return(list(prob=1 - res, tList=NA, P=NA,a=NA))
-  }
-
-  if (method == "R") {
-    ##Make function to compute list of coefs
-    source(textConnection(make_tListFunc_syntax(n=n)))
-    ##Compute coefs
-    tList <- compute_tList()
-  }
-
-  if (method == "Rcpp") {
-    writeLines(make_tListFunc_syntax_rcpp(n=n),file((theCppFile = paste0(tempfile(),".cpp"))))
-    Rcpp::sourceCpp(file=theCppFile)
-
-    ##Run program and store std output to file
-    theTempFile <- tempfile()
-    sink(theTempFile)
-    f <- make_tList_rcpp()
-    sink()
-    tList <- read.table(file=theTempFile,sep=",")
-    if (ncol(tList) != n) { stop("Column numbers and r don't match.") }
-  }
-
-  ##Verify results
-  stopifnot(rowSums(tList * matrix(1:n,ncol=n,nrow=nrow(tList),byrow=TRUE)) == n)
-
-  ##Might be numerical unstable for large n?
-  coefFun <- function(t) {
-    factorial(n)*(-1)^(n+sum(t)) / prod( (1:n)^t * factorial(t))
-  }
-
-  a <- apply(tList, 1, coefFun)
-
-  Pprod <- apply(tList, 1, function(t) prod(P^ifelse(t>0,t,0)))
-
-  res <- list(prob=1 - sum(a * Pprod),tList=tList, P=P,a=a)
-  #Result
-  return(res)
-}
+```{r,echo=TRUE,results="hide",warning=FALSE,message=FALSE}
+devtools::install_github("hoehleatsu/birthdayproblem")
 ```
 
 As an example, for $n=4$ all the necessary terms to sum can be found
@@ -327,11 +196,11 @@ somewhat brute-force'ish by running through the following four nested
 for loops:
 ```{r}
 ##No so pretty
-cat(paste0(paste0(make_tListFunc_syntax(n=4),collapse="\n"),"\n"))
+cat(paste0(paste0(birthdayproblem:::make_tListFunc_syntax(n=4),collapse="\n"),"\n"))
 ```
 This function would then return the necessary sets for the $n=4$ case:
 ```{r}
-source(textConnection(make_tListFunc_syntax(n=4)))
+source(textConnection(birthdayproblem:::make_tListFunc_syntax(n=4)))
 compute_tList()
 ```
 which can be processed further as in the @klotz1979 equation stated
@@ -340,11 +209,11 @@ above in order to compute the probability of interest.
 In the accompanying
 [R code of this blog post](https://github.com/hoehleatsu/hoehleatsu.github.io/blob/master/_source/2017-02-13-bday.Rmd)
 the above $n$ nested loops
-are constructed by the function `make_tListFunc_syntax`, which given
+are constructed by the function `birthdayproblem:::make_tListFunc_syntax`, which given
 $n$ generates the syntax of the necessary function nested loop
 function. Calling `source` on this syntax string then provides a
 proper R function to evaluate. A similar function
-`make_tListFunc_syntax_cpp` is provided to generate an equivalent C++
+`birthdayproblem:::make_tListFunc_syntax_cpp` is provided to generate an equivalent C++
 function, which then using Rcpp's `sourceCpp` function can be turned
 into an R function. As a **side note**: The nested for loops for
 increasing $n$ quickly look foul, which earned it the predicate
@@ -356,7 +225,7 @@ MacOS.
 The above described syntax generation, evaluation and post-processing
 steps necessary to compute the desired probability
 $1-P(\overline{C}_n)$ are all
-implemented in the function `pbirthday_up` (postfix: `up` for
+implemented in the function `birthdayproblem::pbirthday_up` (postfix: `up` for
 *u*nequal *p*ropabilities) in honour of R's `pbirthday` function.  A `method`
 argument allows the user to choose if the nested-loops should be
 computed using `"R"`, `"Rcpp"`. As an alternative to the this exact
@@ -372,10 +241,10 @@ With all code in place we finally can provide Maëlle with the correct
 answer to her question:
 ```{r,echo=TRUE}
 n <- 26L
-(p_theAnswer <- pbirthday_up(n=n, prob=newborn %$% p)$prob)
+(p_theAnswer <- birthdayproblem::pbirthday_up(n=n, prob=newborn %$% p)$prob)
 ```
 ```{r}
-pb_up <- pbirthday_up(n=n, prob=newborn %$% p)
+pb_up <- birthdayproblem::pbirthday_up(n=n, prob=newborn %$% p)
 save(file=file.path(filePath,"theAnswer.RData"),list=c("n","p_theAnswer","pb_up"))
 ```
 In other words, the probability of having a name collision in a class
@@ -383,34 +252,34 @@ of $n=`r n`$ is `r sprintf("%.1f%%",p_theAnswer*100)`. If local politics
 would decide to increase the maximum class size by one, the resulting
 probability for $n=27$
 would be:
-`r sprintf("%.1f%%",100*pbirthday_up(n=n+1L, prob=newborn %$% p)$prob)`.
+`r sprintf("%.1f%%",100*birthdayproblem::pbirthday_up(n=n+1L, prob=newborn %$% p)$prob)`.
 One more reason against increasing [school class size](http://www.nzherald.co.nz/nz/news/article.cfm?c_id=1&objectid=11288618)?
 
 
 ### Numerical Comparisons
 
-We first test our `pbirthday_up` function on the classical birthday
+We first test the `birthdayproblem` package's `pbirthday_up` function on the classical birthday
 problem with equal probabilities:
 ```{r,echo=TRUE, warning=FALSE, message=FALSE}
 c(pbirthday=pbirthday(n=26L, 365),
-  klotz1979_R=pbirthday_up(n=26L, rep(1/365, 365), method="R")$prob,
-  klotz1979_Rcpp=pbirthday_up(n=26L, rep(1/365, 365), method="Rcpp")$prob,
-  mase1992=pbirthday_up(n=26L, rep(1/365, 365), method="mase1992")$prob)
+  klotz1979_R=birthdayproblem::pbirthday_up(n=26L, rep(1/365, 365), method="R")$prob,
+  klotz1979_Rcpp=birthdayproblem::pbirthday_up(n=26L, rep(1/365, 365), method="Rcpp")$prob,
+  mase1992=birthdayproblem::pbirthday_up(n=26L, rep(1/365, 365), method="mase1992")$prob)
 ```
 works like a **dream**!
 
 ```{r, warning=FALSE, message=FALSE, results='hide', cache=TRUE}
 n <- 40L
 ##Speed compare
-timeR <- system.time(print(pbirthday_up(n=n, prob=newborn %$% p)$prob))
-timeRcpp <- system.time(print(pbirthday_up(n=n, prob=newborn %$% p, method="Rcpp")$prob))
-timeMase1992 <- system.time(print(pbirthday_up(n=n, prob=newborn %$% p, method="mase1992")$prob))
+timeR <- system.time(print(birthdayproblem::pbirthday_up(n=n, prob=newborn %$% p)$prob))
+timeRcpp <- system.time(print(birthdayproblem::pbirthday_up(n=n, prob=newborn %$% p, method="Rcpp")$prob))
+timeMase1992 <- system.time(print(birthdayproblem::pbirthday_up(n=n, prob=newborn %$% p, method="mase1992")$prob))
 ```
 
 Speed-wise, the R looping approach takes `r sprintf("%0.f",timeR[3])`s to compute the
 result for $n=`r n`$. The Rcpp approach on the other hand works in just
 `r sprintf("%.0f",timeRcpp[3])`s. The approximation by @mase1992 only takes
-`r sprintf("%.1f",timeMase1992[3])` s. To assess the quality of the
+`r sprintf("%.3f",timeMase1992[3])` s. To assess the quality of the
 approximation we consider a range of different $n$:
 
 ```{r,cache=TRUE, warning=FALSE, message=FALSE,results='hide'}
@@ -418,15 +287,15 @@ birthday <- data.frame(n=c(1,5,seq(10,50,by=5)))
 birthday <- birthday %>% rowwise %>% do( {
   n <- as.integer(.$n)
   p <- newborn %$% p
-  p_k <- pbirthday_up(n=n, prob=p, method=ifelse(n<=35,"R","Rcpp"))$prob
-  p_m <- pbirthday_up(n=n, prob=p, method="mase1992")$prob
+  p_k <- birthdayproblem::pbirthday_up(n=n, prob=p, method=ifelse(n<=35,"R","Rcpp"))$prob
+  p_m <- birthdayproblem::pbirthday_up(n=n, prob=p, method="mase1992")$prob
   data.frame(n=n,p=c(p_k,p_m), abs=abs(p_m-p_k), method=c("exact_klotz1979","approx_mase1992"))
 })
 ```
 
 ```{r, APPROXVSEXACT, warning=FALSE, message=FALSE}
 ##Show the result as a function of n
-ggplot( birthday, aes(x=n, y=p, color=method)) + geom_line() + ylab("Probability") + ggtitle(paste0("Probability of at least two kids with the same first name in a class of n")) + scale_y_continuous(labels=scales::percent) + scale_color_discrete(name="Method")
+ggplot( birthday, aes(x=n, y=p, color=method)) + geom_line(size=1.3) + ylab("Probability") + ggtitle(paste0("Probability of at least two kids with the same first name in a class of n")) + scale_y_continuous(labels=scales::percent) + scale_color_discrete(name="Method")
 ```
 
 It's hardly possible to see the difference between the approximation

@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Naming Uncertainty by the Bootstrap"
-tags: [rstats, stats, ranks, league table, data journalism,onomastics]
+tags: [rstats, stats, ranks, league table, data journalism, onomastics]
 bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
 ---
@@ -71,7 +71,7 @@ ignored when reporting the
 aspect of uncertainty can, however, also be more subtle. As an
 example, the city of Berlin recently released the official
 [2016 first name statistic](https://daten.berlin.de/datensaetze/liste-der-h%C3%A4ufigen-vornamen-2014)
-of **all newborns** in the city. The data are available at
+of **all newborns** in the city [@opendataberlinNames2016]. The data are available at
 [district level](https://en.wikipedia.org/wiki/Boroughs_and_neighborhoods_of_Berlin),
 which is helpful, because there are notable socio-economic and cultural
 differences between the districts. One could argue that since the data
@@ -337,7 +337,7 @@ tables for girls and boys, respectively:
 
 <center>
 <!-- html table generated in R 3.3.2 by xtable 1.8-2 package -->
-<!-- Mon Feb 13 22:41:16 2017 -->
+<!-- Sat Mar  4 23:30:30 2017 -->
 <table border=5, padding=10, style="width=100%">
 <tr> <th> ucrank (among girls) </th> <th> first names (girls) </th> <th> ucrank (among boys) </th> <th> first names (boys) </th>  </tr>
   <tr> <td align="center">   1 </td> <td align="center"> Marie, Sophie </td> <td align="center">   1 </td> <td> Alexander </td> </tr>

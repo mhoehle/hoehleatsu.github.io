@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Naming Uncertainty by the Bootstrap"
-tags: [rstats, stats, ranks, league table, data journalism,onomastics]
+tags: [rstats, stats, ranks, league table, data journalism, onomastics]
 bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
 ---
@@ -105,7 +105,7 @@ ignored when reporting the
 aspect of uncertainty can, however, also be more subtle. As an
 example, the city of Berlin recently released the official
 [2016 first name statistic](https://daten.berlin.de/datensaetze/liste-der-h%C3%A4ufigen-vornamen-2014)
-of **all newborns** in the city. The data are available at
+of **all newborns** in the city [@opendataberlinNames2016]. The data are available at
 [district level](https://en.wikipedia.org/wiki/Boroughs_and_neighborhoods_of_Berlin),
 which is helpful, because there are notable socio-economic and cultural
 differences between the districts. One could argue that since the data
@@ -188,8 +188,8 @@ names over the districts - particularly for girls.
 
 ```{r, WORDMAPCLOUD, echo=FALSE, warning=FALSE, fig.width=6,fig.height=6,dpi=100, message=FALSE, results='hide',cache=TRUE}
 ##Make an SpatialPolygon object containing the Bezirke
-##Data available from Berlin Open Data
-##http://daten.berlin.de/datensaetze/rbs-lor-lebensweltlich-orientierte-r%C3%A4ume-dezember-2015
+##The data are available from the Berlin Open Data portal
+##http://daten.berlin.de/datensaetze/rbs-lor-lebensweltlich-orientierte-r%C3%A4ume-dezember-2015 under the CC-BY license (http://creativecommons.org/licenses/by/3.0/de/
 map <- readOGR(dsn=file.path(filePath,"RBS_OD_LOR_2015_12/"),layer="RBS_OD_LOR_2015_12")
 distrMap <- gUnaryUnion(map, id=as(map,"data.frame")$BEZNAME)
 loc <- coordinates(distrMap)

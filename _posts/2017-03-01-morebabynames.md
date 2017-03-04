@@ -52,7 +52,7 @@ gridExtra::grid.arrange(p1, p2, ncol=2)
 
 <img src="http://staff.math.su.se/hoehle/blog/figure/source/2017-03-01-morebabynames/UNIQUENAMES-1.png" style="display: block; margin: auto;" />
 
-We see that the number of live-births remains at an *approximately* stable level the last 50 years, whereas the number of unique names kept increasing. Note that for reasons of privacy protection, only names with 5 or more occurrences in a given year, are contained in the data. We therefore investigate the proportion of babies, which apparently have been removed due to privacy protection of the names. This is done by investigating the sum of the proportions column for each year. If all names would be available, the sum per year would be 2 (1 for each gender). 
+We see that the number of live-births remains at an *approximately* stable level the last 50 years, whereas the number of unique names kept increasing. Note that for reasons of privacy protection, only names with 5 or more occurrences in a given year, are contained in the data. We therefore investigate the proportion of babies, which apparently have been removed due to privacy protection of the names. This is done by investigating the sum of the proportions column for each year. If all names would be available, the sum per year would be 2 (1 for each gender).
 
 
 ```r
