@@ -1,0 +1,251 @@
+---
+layout: post
+title: "Did Mary and John go West?"
+tags: [rstats, stats, data journalism, onomastics]
+bibliography: ~/Literature/Bibtex/jabref.bib
+comments: true
+---
+
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2017-03-06-spacetimenames/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- file.path("/","Users","hoehle","Sandbox", "Blog", "figure", "source", "2017-03-06-spacetimenames")
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=4,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2) # autodep=TRUE
+options(width=90)
+library("ggplot2")
+library("methods")
+library("magrittr")
+library("tidyr")
+library("readr")
+library("animation")
+library("dplyr")
+
+theme_set(theme_bw())
+```
+
+## Abstract
+
+As a final post in the *baby-names-the-data-scientist's-way* series, we
+use the US Social Security Administration 1910-2015 data to space-time
+visualize for each the most popular baby name for girls and boys,
+respectively. The code uses in parts the new simple features package
+(`sf`) in order to to get some first experience with the package.
+
+<center>
+```{r,results='asis',echo=FALSE}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"US-babynames-spacetime.gif"),")")
+```
+</center>
+
+{% include license.html %}
+
+## Introduction
+
+After a series of posts on
+[naming uncertainty](http://staff.math.su.se/hoehle/blog/2017/02/06/onomastics.html),
+[name collisions in classrooms](http://staff.math.su.se/hoehle/blog/2017/02/13/bday.html)
+and illustrating these
+[name collisions over time](http://staff.math.su.se/hoehle/blog/2017/03/01/morebabynames.html),
+it is time leave onomatology for now. However, the availability of the
+US social security baby name data at
+[state resolution](https://www.ssa.gov/oact/babynames/limits.html)
+requires one last effort: visualizing the top names per state for the
+years 1910-2015. Creating a map-based visualization also provides a
+nice opportunity to experiment with the new `sf` (simple features)
+package for spatial visualization.
+
+## Data Dancing
+
+We download the US social security data, which consists of a zip file
+containing a bunch of 51 text files - one for each state.
+
+```{r,cache=TRUE, results='hide'}
+#Download data
+tmpfile <- paste0(tempfile(),".zip")
+download.file("https://www.ssa.gov/oact/babynames/state/namesbystate.zip",destfile=tmpfile)
+unzip(tmpfile,exdir=file.path(filePath,"namesbystate"))
+```
+
+We then read these individual text files and bind them together into one
+large `data.frame`:
+```{r,echo=TRUE}
+##Get list of all file names containing state specific baby name data
+fList <- list.files(path=file.path(filePath,"namesbystate"), pattern=".TXT")
+
+##Read complete name list of each state
+names <- purrr::map_df(fList, .f=function(f) {
+  read_csv(file=file.path(filePath,"namesbystate",f), col_names=c("State","Sex","Year","Name","Count"),col_types=cols(col_character(), col_factor(c("M","F")), col_integer(), col_character(), col_integer()))
+})
+
+##Show result
+head(names, n=4)
+```
+
+With the complete data in place, it's easy to compute the top
+boy and girl name per state and year. For later use we convert this
+information into long-format.
+
+```{r,cache=TRUE, echo=TRUE}
+##Find top-1 names for each state by gender. Data are already sorted.
+topnames <- names %>% group_by(Year,State,Sex) %>% do({
+  head(.,n=1) %>% dplyr::select(Name)
+}) %>% spread(Sex, Name)
+```
+```{r}
+topnames %>% head(n=4)
+```
+
+## Map Massaging
+
+For the map visualization we use an US map from the R package
+[`fiftystater`](https://cran.r-project.org/web/packages/fiftystater/index.html)
+where Alaska and Hawaii have been re-located as map-insets. The
+process for doing the necessary transforms `sp`-style are described in
+the package
+[vignette](https://cran.r-project.org/web/packages/fiftystater/vignettes/fiftystater.html). We
+store the output of this transformation as a shapefile `usa.shp` with
+appropriate support files. Furthermore, a `lines.shp` shapefile was
+created which contains information on where to put the text labels for
+each state. This was easily edited interactively in
+[QGIS](http://www.qgis.org/en/site/).
+
+We then use the new `sf` package for loading these two shapefiles back
+into R:
+```{r, message=FALSE, results='hide',echo=TRUE}
+suppressMessages(library("sf"))
+usa <- st_read(file.path(filePath, "maps", "usa.shp"))
+textplacement <- st_read(file.path(filePath, "maps", "lines.shp"))
+```
+
+The `textplacement` information is converted to a `data.frame` where
+each row contains the state name and the coordinates of the start and
+endpoint of each line-segment - this corresponds to text location and
+geographical centroid of the region, respectively.
+
+```{r, echo=TRUE}
+location <- textplacement %>% split(.$State) %>% purrr::map_df(.f = function(x) {
+  pos <- st_geometry(x)[[1]]
+  data.frame(State=x$State, x1.loc=pos[1,1], x2.loc=pos[1,2], x1.center=pos[2,1],x2.center=pos[2,2])
+}) %>% ungroup
+```
+(Note: Is there a fancier way to extract the coordinates for the
+geometry of the `sf` objects while keeping the `data.frame` part
+alongside?)
+
+```{r,echo=FALSE,results='hide',fig.keep="none"}
+##Show result
+usa %>% st_geometry() %>% plot
+textplacement %>% st_geometry() %>% plot(add=TRUE,col="lightgray")
+location %>% dplyr::select(x1.center, x2.center) %>% points(pch=20,col="lightgray")
+text(location %$% x1.loc, location %$% x2.loc, location$State)
+```
+
+## State-Time Visualization
+
+By using the `animation::saveGIF` function we create an animation of
+the the top girl and boy name for each state for the sequence of years
+1910-2015.
+
+
+```{r, warning=FALSE, message=FALSE, cache=TRUE, results='hide'}
+##If you are unhappy about the colours, change them here
+palette <- c(F="darkred",M="blue")
+
+##Select animation range
+years <- 1910:2015
+##years <- 2013:2015 ; year <- 2015; state <- "HI"
+
+saveGIF(
+  for (year in years) {
+    ##Make a plot, just base-graphics nothing fancy.
+    par(mar=c(0,0,3.1,0))
+    usa %>% st_geometry() %>% plot(border=rgb(0.8,0.8,0.8))
+
+    ##Add lines - only proportional to size. Fancier way to do this for sf objects?
+    for (state in usa$STATE_ABBR) {
+      placement <- textplacement %>% filter(State==state)
+
+      if ( (!placement %$% identical) & (placement %$%  drawLine)) {
+        start <- st_geometry(placement)[[1]][2,]
+        vector <-  st_geometry(placement)[[1]][1,] -  st_geometry(placement)[[1]][2,]
+        if (sqrt(sum(vector^2) > 0.8)) {
+          end <- start + 0.7 * vector
+          lines(c(start[1],end[1]),c(start[2],end[2]),col=rgb(0.5,0.5,0.5,alpha=0.8))
+        }
+      }
+    }
+
+    ##Add top-1 name for each state
+    textloc2 <- inner_join(location, topnames %>% filter(Year == year),by="State")
+    text(textloc2 %$% x1.loc,textloc2 %$% x2.loc,textloc2 %$% M, col=palette["M"],pos=1,offset=0.2,font=1)
+    text(textloc2 %$% x1.loc,textloc2 %$% x2.loc,textloc2 %$% F, col=palette["F"],pos=3,offset=0.2,font=1)
+
+    title(paste0("Most common baby name per state in year ",year),adj=0.1,col.main=rgb(0.8,0.8,0.8),cex=1.5)
+  }, movie.name="US-babynames-spacetime.gif",ani.width=720, ani.height=420, interval=0.5)
+```
+
+```{r, results='asis', echo=FALSE, warning=FALSE}
+invisible(file.rename("US-babynames-spacetime.gif",file.path(fullFigPath,"US-babynames-spacetime.gif")))
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"US-babynames-spacetime.gif"),")")
+```
+
+## State-Time Cartogram
+
+We use the `Rcartogram` and `getcartr` packages to create an analogous cartogram
+- see the previous
+[Cartograms with R](http://staff.math.su.se/hoehle/blog/2016/10/10/cartograms.html)
+post for further details.  The total number of births per state in a
+given year is used as scaling variable for the cartogram.
+
+```{r, warning=FALSE,message=FALSE, cache=TRUE, results='hide'}
+##Install the R implementation of Cart by Gastner and Newman (2004)
+devtools::install_github("omegahat/Rcartogram")
+devtools::install_github('chrisbrunsdon/getcartr',subdir='getcartr')
+
+library(Rcartogram)
+library(getcartr)
+library(animation)
+
+saveGIF( {
+  ##Make a cartogram
+  par(mar=c(0,0,3.1,0))
+  for (year in years) {
+    ##Count number of births per state in that year
+    oneyear <- names %>% filter(Year == year)
+    aggr <- oneyear %>% group_by(State) %>% summarise(Count=sum(Count))
+
+    ##Make Cartogram (needs sp object)
+    usa_carto <- quick.carto(spdf=as(usa,"Spatial"),v=aggr$Count[pmatch(usa$STATE_ABBR,aggr$State)],res=256)
+
+    ##Show result
+    plot(usa_carto,border=rgb(0.8,0.8,0.8))
+
+    ##Add top-1 name for each state
+    location <- data.frame(State=usa_carto$STATE_ABBR, coordinates(usa_carto))
+    textloc2 <- inner_join(location, topnames %>% filter(Year == year),by="State")
+
+    text(textloc2 %$% X1,textloc2 %$% X2,textloc2 %$% M, col=palette["M"],pos=1,offset=0.2,font=1)
+    text(textloc2 %$% X1,textloc2 %$% X2,textloc2 %$% F, col=palette["F"],pos=3,offset=0.2,font=1)
+
+    title(paste0("Most common baby name per state in year ",year),adj=0.1,col.main=rgb(0.8,0.8,0.8),cex=1.5)
+  }
+}, movie.name="US-cartogram-babynames-spacetime.gif",ani.width=720, ani.height=420, interval=0.5)
+```
+
+```{r,results='asis',echo=FALSE, warning=FALSE}
+invisible(file.rename("US-cartogram-babynames-spacetime.gif",file.path(fullFigPath,"US-cartogram-babynames-spacetime.gif")))
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"US-cartogram-babynames-spacetime.gif"),")")
+```
+
+Its amazing to observe how births *go west* in the US during
+the considered time period.
+
+<!-- Note: This graphic is in need for some smart text placement, e.g., by
+ensuring that the bound box of the text is not in conflict with any
+other bounding box. -->

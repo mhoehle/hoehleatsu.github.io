@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "US Babyname Collisions 1880-2014"
+title: "US Baby Name Collisions 1880-2014"
 tags: [rstats, stats, data journalism, onomastics]
 bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
