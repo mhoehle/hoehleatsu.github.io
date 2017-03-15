@@ -13,9 +13,10 @@ comments: true
 
 As a final post in the *baby-names-the-data-scientist's-way* series, we
 use the US Social Security Administration 1910-2015 data to space-time
-visualize for each the most popular baby name for girls and boys,
-respectively. The code uses in parts the new simple features package
-(`sf`) in order to to get some first experience with the package.
+visualize for each state the most popular baby name for girls and boys,
+respectively. The code uses in parts the simple features package
+(`sf`) in order to to get some first experience with the new approach
+for handling spatial maps.
 
 <center>
 ![]({{ site.baseurl }}/figure/source/2017-03-06-spacetimenames/US-babynames-spacetime.gif )
@@ -30,9 +31,9 @@ After a series of posts on
 [name collisions in classrooms](http://staff.math.su.se/hoehle/blog/2017/02/13/bday.html)
 and illustrating these
 [name collisions over time](http://staff.math.su.se/hoehle/blog/2017/03/01/morebabynames.html),
-it is time leave onomatology for now. However, the availability of the
+it is time to leave onomatology for now. However, the availability of the
 US social security baby name data at
-[state resolution](https://www.ssa.gov/oact/babynames/limits.html)
+[state level](https://www.ssa.gov/oact/babynames/limits.html)
 requires one last effort: visualizing the top names per state for the
 years 1910-2015. Creating a map-based visualization also provides a
 nice opportunity to experiment with the new `sf` (simple features)
@@ -109,7 +110,7 @@ created which contains information on where to put the text labels for
 each state. This was easily edited interactively in
 [QGIS](http://www.qgis.org/en/site/).
 
-We then use the new `sf` package for loading these two shapefiles back
+We then use the `sf` package for loading these two shapefiles back
 into R:
 
 ```r

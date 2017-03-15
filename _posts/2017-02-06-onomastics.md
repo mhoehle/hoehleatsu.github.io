@@ -114,7 +114,9 @@ babies seem to have an empty first name (but the sex is known). We decided to
 keep these `NA` names in the analysis, because at the time of writing
 it was unclear, if this is a data recording problem (e.g. a delay of the
 December 2016 kids) or actually allowed. An email inquiry with the data
-providing agency can hopefully shed some more light on this.
+providing agency revealed that an empty name is the result of the naming authority [declining a chosen first name](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=http%3A%2F%2Fwww.berliner-zeitung.de%2Feltern-wollen-seit-einem-jahr-ihre-tochter-jona-nennen--doch-das-standesamt-lehnt-den-namen-ab-baby-namenlos-16740670&edit-text=) in the
+interest of the kid. In this case the baby remains nameless on the birth
+certificate until the dispute is resolved before court.
 
 We can now look at the top-5-names in Berlin for each gender:
 
@@ -336,8 +338,8 @@ tables for girls and boys, respectively:
 
 
 <center>
-<!-- html table generated in R 3.3.2 by xtable 1.8-2 package -->
-<!-- Sat Mar  4 23:30:30 2017 -->
+<!-- html table generated in R 3.3.3 by xtable 1.8-2 package -->
+<!-- Wed Mar 15 22:45:53 2017 -->
 <table border=5, padding=10, style="width=100%">
 <tr> <th> ucrank (among girls) </th> <th> first names (girls) </th> <th> ucrank (among boys) </th> <th> first names (boys) </th>  </tr>
   <tr> <td align="center">   1 </td> <td align="center"> Marie, Sophie </td> <td align="center">   1 </td> <td> Alexander </td> </tr>
