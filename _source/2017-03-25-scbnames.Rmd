@@ -19,26 +19,27 @@ filePath <- file.path("/","Users","hoehle","Sandbox", "Blog", "figure", "source"
 knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=4,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2) # autodep=TRUE
 options(width=90)
 
-library(dplyr)
-library(ggplot2)
-library(magrittr)
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(magrittr))
 
 theme_set(theme_bw())
 ```
 
 ## Abstract
 
-Judging on the amount of blog posts, many data scientists seem to be
-concerned with scraping data from various media sources (Wikipedia,
-twitter). However, one should be aware that well structured and high
-quality dataset are available through state and country statistics
-offices. Increasingly these are offered to the public through direct
-database access, e.g., using a REST API. We illustrate the usefulness
-of such an approach by accessing data from Statistics Sweden.
+Judging from recent R-Bloggers posts, it appears that many data
+scientists are concerned with scraping data from various media sources
+(Wikipedia, twitter, etc.). However, one should be aware that well
+structured and high quality datasets are available through state's and
+country's bureau of statistics. Increasingly these are offered to the
+public through direct database access, e.g., using a REST like API. We
+illustrate the usefulness of such an approach by accessing data from
+Statistics Sweden.
 
 <center>
 ```{r,results='asis',echo=FALSE}
-cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"COLLISION26.png"),")")
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"COLLISION26-1.png"),")")
 ```
 </center>
 
@@ -46,17 +47,18 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"COLLISIO
 
 ## Introduction
 
-Scandinavian countries are well known to be world-class when it comes
-to public registries. So when in need for reliable population data,
-this is the place to look. As an example, we access Statistics Sweden
-data by API using the `pxweb` package developed by
+Scandinavian countries are world-class when it comes to public
+registries. So when in need for reliable population data, this is the
+place to look. As an example, we access Statistics Sweden data by
+their API
+using the `pxweb` package developed by
 [\@MansMeg](https://twitter.com/MansMeg),
 [\@antagomir](https://twitter.com/antagomir) and
 [\@LCHansson](https://twitter.com/LCHansson).  Love was the first
 speaker at a Stockholm R-Meetup some
 [years ago](https://www.meetup.com/StockholmR/events/105738342/),
-where I also gave a talk. Funny how such R-Meetups become useful many years
-after!
+where I also gave a talk. Funny how such R-Meetups become useful many
+years after!
 
 ```{r,echo=TRUE, message=FALSE,results='hide'}
 library(pxweb)
@@ -68,18 +70,17 @@ library(pxweb)
 
 By browsing the Statistics Sweden (in Swedish: Statistiska
 Centralbyrån (SCB)) data using their
-[web interface](http://www.scb.se/en/finding-statistics/)
-one sees that they have two relevant first name datasets: one
-containing the *tilltalsnamn* of newborns udinrg 1998-2016 and one for
+[web interface](http://www.scb.se/en/finding-statistics/) one sees
+that they have two relevant first name datasets: one containing the
+*tilltalsnamn* of newborns for each year during 1998-2016 and one for
 the years 2004-2016. **Note**: A
 [*tilltalsnamn*](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=https%3A%2F%2Fsv.wikipedia.org%2Fwiki%2FTilltalsnamn&edit-text=&act=url)
 in Sweden is *the* first name (of several possible first names) by
 which a person is usually addressed. About 2/3 of the persons in the
 Swedish name registry indicate which of their first names is their
-tilltalsnamn. For the remaining persons the tilltalsnamn is
-automatically chosen to be
-[their initial first name](http://www.scb.se/hitta-statistik/statistik-efter-amne/befolkning/amnesovergripande-statistik/namnstatistik/produktrelaterat/Fordjupad-information/fragor-och-svar-om-namnstatistiken/#fem).
-**Also note:** For reasons of data protection, the 1998-2016 dataset
+tilltalsnamn. For the remaining persons it is automatically implied
+that their tilltalsnamn is the [first of the first names](http://www.scb.se/hitta-statistik/statistik-efter-amne/befolkning/amnesovergripande-statistik/namnstatistik/produktrelaterat/Fordjupad-information/fragor-och-svar-om-namnstatistiken/#fem).
+**Also note:** For reasons of data protection the 1998-2016 dataset
 contains only first names used 10 or more times in a given year, the
 2004-2016 dataset contains only first names used 2 or more times in a
 given year.
@@ -87,21 +88,25 @@ given year.
 
 Downloading such data through the SCB web-interface is cumbersome,
 because the downloads are limited to 50,000 data cells per
-query. Hence one has to do several manual queries to get hold of the
-relevant data. This is where the
+query. Hence, one has to do several manual queries to get hold of the
+relevant data. This is where their
 [API](http://www.scb.se/en_/About-us/Open-data-API/API-for-the-Statistical-Database-/)
 becomes a real time-saver. Instead of trying to fiddle with the API
 directly using `rjson` or `RJSONIO` we use the specially designed
-`pxweb` package.  One can either use the web-interface to determine
-the name of the desired data matrix to query or navigate directly
-through the api using `pxweb`:
+`pxweb` package to fetch the data.  One can either use the
+web-interface to determine the name of the desired data matrix to
+query or navigate directly through the api using `pxweb`:
 ```{r,echo=TRUE, eval=FALSE}
 d <- interactive_pxweb(api = "api.scb.se", version = "v1", lang = "en")
 ```
 
 and select *Population* followed by *Name statistics* and then
 `BE0001T04Ar` or `BE0001T04BAr`, respectively, in order to obtain the
-relevant data or api download url. This leads to the following code:
+relevant data and api download url.
+
+#### Downloading the first name data with `pxweb`
+
+This leads to the following R code for download:
 
 ```{r,cache=TRUE,echo=TRUE, message=FALSE}
 names10 <- get_pxweb_data(
@@ -113,14 +118,14 @@ names10 <- get_pxweb_data(
 ```
 
 For better usability we rename the columns a little and
-replace `NA` counts to zero.
+replace `NA` counts to be zero. For visualization we pick 5 random
+lines of the dataset.
 
 ```{r,echo=TRUE, message=FALSE}
-##Data dancing
 names10 <- names10 %>% select(-observations) %>%
   rename(firstname=`first name normally used`,counts=values) %>%
   mutate(counts = ifelse(is.na(counts),0,counts))
-##Look at 10 random lines
+##Look at 5 random lines
 names10 %>% slice(sample(seq_len(nrow(names10)),size=5))
 ```
 
@@ -137,11 +142,62 @@ names2 <- get_pxweb_data(
   rename(firstname=`first name normally used`,counts=values) %>%
   mutate(counts = ifelse(is.na(counts),0,counts))
 ```
-We now join the two datasets into one large `data.frame`:
-```{r,cache=TRUE,echo=TRUE, message=FALSE}
-names <- rbind(data.frame(names2,type="min02"), data.frame(names10,type="min10"))
+
+#### Imputing first names with only one use
+
+Since the `names2` dataset contains all first names with 2 or more uses in a
+given year it is possible to deduce how many first names are used only
+once by subtracting the total number of names in `names2` from the
+total number of live births per year.
+
+```{r,echo=TRUE, warning=FALSE}
+##Total number of newborns in the data per year
+names2_year <- names2 %>% group_by(year) %>% summarise(names=sum(counts))
+
+##Fetch number of live births per year from the corresponding data set
+births <- get_pxweb_data(
+  url = "http://api.scb.se/OV0104/v1/doris/en/ssd/BE/BE0101/BE0101H/FoddaK",
+  dims = list(Region = c('00'),
+              AlderModer = c('tot'),
+              Kon = c('*'),
+              ContentsCode = c('BE0101E2'),
+              Tid = c('*')), clean = TRUE)
+##Aggregate per year
+births_year <- births %>% group_by(year) %>% summarise(births=sum(values))
+
+##Join and compute difference, which is the number of names used exactly once.
+(names_join <- inner_join(names2_year, births_year, by="year") %>%
+  mutate(nNames1=births-names, propNames1=nNames1/births))
 ```
-and thus got everything in place to compute the name collision
+
+We notice that the proportion of names occurring exactly once increases
+substantially over the years - going from `r sprintf("%.1f%%",(names_join %>% filter(year==2004) %$%
+propNames1)*100)` in 2004 to `r sprintf("%.1f%%",(names_join %>%
+filter(year==2016) %$% propNames1)*100)` in 2016. It's not clear if
+the imputation by subtraction is 100% exact, but it does
+sound plausible that names have become more unique.
+
+#### Merging it all
+
+Based on the above we can create a `data.frame` containing the correct
+number of names used once.
+
+```{r,echo=TRUE,warning=FALSE}
+missing1names <- names_join %>% group_by(year) %>% do({
+  data.frame(firstname=paste0("Uniquename",.$year,"-",sprintf("%.5d",seq_len(.$nNames1))),year=.$year,counts=1L)
+}) %>% ungroup
+```
+
+We now join the three datasets into one large `data.frame` by
+```{r,cache=TRUE,echo=TRUE, warning=FALSE,message=FALSE}
+names <- rbind(data.frame(names10,type="min10"),
+               data.frame(names2,type="min02"),
+               data.frame(rbind(names2,missing1names),type="min01")) %>% as.tbl
+```
+
+#### Collision probabilities
+
+We thus got everything in place to compute the name collision
 probability over time using the `birthdayproblem` package (as shown in
 [previous posts](http://staff.math.su.se/hoehle/blog/2017/02/13/bday.html)).
 
@@ -152,9 +208,10 @@ collision <- names %>% group_by(year,type) %>% do({
 }) %>% ungroup %>% mutate(year=as.numeric(as.character(year)))
 ```
 
-And the resulting probabilities based on the two datasets (`min02`=at
-least two instances of the name in a given year, `min10`=at least ten
-instances of the name in a given year) can easily be visualized over time.
+And the resulting probabilities based on the three datasets `min02`
+(at least two instances of the name in a given year), `min10` (at
+least ten instances of the name in a given year) and the complete
+dataset `min01` can easily be visualized over time.
 
 ```{r,COLLISION26,echo=TRUE, message=FALSE}
 ggplot( collision, aes(x=year, y=p, color=type)) + geom_line(size=1.5) +
@@ -164,23 +221,35 @@ ggplot( collision, aes(x=year, y=p, color=type)) + geom_line(size=1.5) +
   scale_colour_discrete(name = "Dataset")
 ```
 
-The true probabilities, i.e. taking all tilltalsnamn into account, would be
-based on the hypothetical `min1` data set. These probabilities would
-be slightly, but not substantially, below the `min2` line. However,
-since not every newborn has their *tilltalsnamn* specified, it's not
-possible to deduce the total number of kids with a tilltalsnamn
-occurring exactly once in a year.  The same problem occurs, e.g., in
-the corresponding
-[UK and Wales data](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/datasets/babynamesenglandandwalesbabynamesstatisticsboys). Here, Table 6 is listing all first names with 3 or more uses, but
-not stating how many newborns have a name occurring once and twice,
-respectively.
+As seen in similar plots for other countries, there is a decline in
+the collision probability over time. Note also that the two curves are
+upper limits to the true collision probabilities. The true
+probabilities, i.e. taking all tilltalsnamn into account, have been
+computed based on the `min01` data set, which has been
+created by finding the difference between the total number of live
+births in a year and the total number of names in `names2`.
+
+
+## Summary
 
 With all due respect for the need to anonymise the name statistics,
-it's hard to understand why this summary figure is not automatically
-reported, so one would be able to at least compute correct totals or
-collision probabilities.  Altogether, I was quite happy to get proper
-individual name data so the collision probabilities are - opposite to
-some of my [previous blog analyses](http://staff.math.su.se/hoehle/blog/2017/02/13/bday.html) - exact!
+it's hard to understand why the summary figures of how many names with
+less than X uses, which have been removed due to privacy concerns, are
+not automatically reported. This would allow one to immediately
+compute correct totals and collision probabilities. The same problem
+occurs, e.g., in the corresponding
+[UK and Wales data](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/datasets/babynamesenglandandwalesbabynamesstatisticsboys). Here,
+Table 6 is listing all first names with 3 or more uses, but not
+stating how many newborns have a name occurring once and twice,
+respectively.
+
+Luckily, the missing number could be obtained for the Swedish data with a bit
+of data dancing and a simple subtraction. Based on these data the collision probabilities are - opposite to some of my
+[previous blog analyses](http://staff.math.su.se/hoehle/blog/2017/02/13/bday.html) -
+exact. Have a look at the
+[SCB data website](http://www.scb.se/en/finding-statistics/), maybe
+the data you are looking for can be found here!
+
 
 ```{r,eval=FALSE}
 ggplot( collision, aes(x=year, y=gini, color=type)) + geom_line(size=1.5) + scale_y_continuous(label=scales::percent,limits=c(0,1)) + xlab("Year") + ylab("Gini index")
