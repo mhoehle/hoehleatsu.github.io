@@ -79,7 +79,7 @@ Rcpp::cppFunction('NumericVector relrank(NumericVector x) {
   return output;
 }')
 
-rbind(x=x, y=y<-relrank(x)) 
+rbind(x=x, y=y<-relrank(x))
 ```
 
 ```{r,echo=FALSE,eval=FALSE}
@@ -104,7 +104,7 @@ Rcpp::cppFunction('NumericVector relrank_rcpp_novec(NumericVector x) {
      }
   }
   return output;
-}') 
+}')
 
 x2 <- rnorm(1e4)
 rbind(r=system.time(relrank_r(x2)),
@@ -160,8 +160,13 @@ ggplot(df, aes(x=i,y=phi)) + geom_line() + geom_point() +
 			annotate("text",x=line$x[1],y=0,label="r")
 ```
 
-We thus select the $r$, which gives the highest value of $\phi_n(r)$. In the example with
-$n=`r n`$ the best choice is $r=`r r`$; we therefore look at $r-1=`r r-1`$ candidates in order to get a *baseline* and then take the first candidate, which is better than this baseline. In the example:
+We thus select the $r$, which gives the highest value of
+$\phi_n(r)$. In the example with $n=`r n`$ the best choice is $r=
+`r r`$. We wrap these two steps into a function [`find_r(n)`](https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/2016-06-12-optimalChoice.Rmd), which given
+`n` returns the best choice `r`. In the example we therefore look at
+$r-1=$``r paste0("find_r(",n,")-1")``$=`r r-1`$ candidates in order to get
+a *baseline* and then take the first candidate, which is better than
+this baseline. In code this corresponds to:
 
 ```{r}
 (pickIdx <- which.max(relrank(x)[r:n] == 1 | (r:n == n)))

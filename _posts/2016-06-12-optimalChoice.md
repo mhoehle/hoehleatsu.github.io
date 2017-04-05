@@ -73,7 +73,7 @@ Rcpp::cppFunction('NumericVector relrank(NumericVector x) {
   return output;
 }')
 
-rbind(x=x, y=y<-relrank(x)) 
+rbind(x=x, y=y<-relrank(x))
 ```
 
 ```
@@ -126,8 +126,13 @@ We can illustrate $\phi_n(r)$ as a function of $r$:
 
 ![](http://staff.math.su.se/hoehle/blog/figure/source/2016-06-12-optimalChoice/PHIPLOT-1.png)
 
-We thus select the $r$, which gives the highest value of $\phi_n(r)$. In the example with
-$n=10$ the best choice is $r=4$; we therefore look at $r-1=3$ candidates in order to get a *baseline* and then take the first candidate, which is better than this baseline. In the example:
+We thus select the $r$, which gives the highest value of
+$\phi_n(r)$. In the example with $n=10$ the best choice is $r=
+4$. We wrap these two steps into a function [`find_r(n)`](https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/2016-06-12-optimalChoice.Rmd), which given
+`n` returns the best choice `r`. In the example we therefore look at
+$r-1=$`find_r(10)-1`$=3$ candidates in order to get
+a *baseline* and then take the first candidate, which is better than
+this baseline. In code this corresponds to:
 
 
 ```r
