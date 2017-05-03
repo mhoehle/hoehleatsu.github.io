@@ -26,7 +26,8 @@ local({
 ##    base.dir = '/Users/hoehle/Sandbox/Blog/',
 ##    base.url = 'http://hoehleatsu.github.io/'
       base.dir = '/Users/hoehle/Sandbox/Blog/',
-      base.url = 'http://staff.math.su.se/hoehle/blog/'
+##      base.url = 'http://staff.math.su.se/hoehle/blog/'
+      base.url = '{{ site.baseurl }}/'
     )
   }
   knitr::opts_knit$set(width = 70)

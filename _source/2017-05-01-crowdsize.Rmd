@@ -30,9 +30,9 @@ theme_set(theme_bw())
 
 Inspired by the recent **March For Science** we look into methods for
 the statistical estimation of the number of people participating in a
-demonstration organized as a march.  In particular, we provide data
-and R code to reproduce the **two on-the-spot counting method**
-analysis of @yip_etal2010 for the July 1 Marches in Hong Kong.
+demonstration organized as a march.  In particular, we provided R code
+to reproduce the **two on-the-spot counting method** analysis of
+@yip_etal2010 for the data of the July 1 March in Hong Kong 2006.
 
 <center>
 ```{r,results='asis',echo=FALSE,fig.cap="July 1 Marches in 2006, Hong Kong"}
@@ -44,9 +44,8 @@ cat(paste0("![](https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Hong_K
 
 ## Introduction
 
-With the poles of politics drifting apart, exercising your
-constitutional and democratic right to express support for a cause by
-demonstration has found renewed usage.  The
+Exercising your constitutional and democratic right to express support
+for a cause by demonstration has found renewed usage.  The
 [March for Science](https://en.wikipedia.org/wiki/March_for_Science)
 or the
 [People's Climate March](https://en.wikipedia.org/wiki/People%27s_Climate_March_(2017))
@@ -56,34 +55,53 @@ participating in such marches is *the* indicator by which the support
 of the cause is measured. Hence, crowd size estimates have always been
 subject to political interpretation and, hence, possible politically
 motivated bias. In this work we focus on what statistics has to offer
-with respect to finding the **true number** of participants.
+with respect to finding the **true number** of participants. A good
+overview of the challenges here is given in @watson_yip2011.
+The estimation of crowd size for moving crowds is a particular
+challenge here.
 
-As case study we replicate the analysis of @yip2010 concerned with the
-crowdsize estimation of the
+As case study we replicate the analysis of @yip_etal2010 on estimating
+the number of participants in the
 [1st of July Marches](https://en.wikipedia.org/wiki/Hong_Kong_1_July_marches#2006)
-in Hong Kong 2006. These 1st of July demonstrations have become an
-increasingly (both in size but also importance) way of
-demonstrating...  Below is shown the 3.6 km long demonstration route
-from Victoria Park to Government Headquarters as described by
+in Hong Kong. These series of demonstrations which since the handover
+to China in 1997 have been a yearly event to demonstrate for democracy
+and freedom of speech. Below is shown the 3.6 km long demonstration
+route from
+[Victoria Park](https://de.wikipedia.org/wiki/Victoria_Park_(Hongkong))
+to Government Headquarters for the 2006 demonstration as described by
 @yip_etal2010. A
 [youtube video](https://www.youtube.com/watch?v=8WQ2TAEquxM) of the
-2006 demonstration illustrates the above.
+2006 demonstration illustrates this better than by words.
 
 <center>
 ```{r,results='asis',echo=FALSE}
 cat(paste0("![Route of the 1st of July 2006 demonstration in Hong Kong. The two points A and B indicate the location of the two counting points. Courtesy goes to Open Street Map.]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"Route.png"),")")
 ```
 </center>
+<p>
 
+In order to estimate the number of participants a two on-the-spot
+counting method was devised by @yip_etal2010: Two points along the
+march were selected as shown in the figure: Point A denotes the
+location after which an individual is counted as being part of the
+march. In order to take into account that people join the march at a
+later point than A, a second point B is selected to adjust the count
+in A for such late entries. Three to four persons were stationed at
+each of the two points. Once the demonstration passed the respective
+point each of them started to count the number of people passing in a
+one-minute intervals. They counted for one minute every 5 minutes
+until the last person of the march had passed the counting point.
 
 ### Loading the Data
 
-We store the data displayed in Table 2 (Point A) and Table 3 (Point B)
-of @yip_etal2010 as two Excel-Files, which are read and combined into
-one dataframe both containing the columns `Y1`-`Y4`. Furthermore, we
-re-format the table's time specification to proper POSIX formatted
-date-times. Altogether, this yields a `tbl` with the first couple of
-lines looking as follows:
+We store the resulting counting data displayed in Table 2 and Table 3 of
+@yip_etal2010 as two Excel-Files. These are then in a data
+pre-processing step read and combined into one dataframe containing
+the columns `Y1`-`Y4`. Furthermore, we re-format the table's time
+specification to proper POSIX formatted date-times. The exact data
+dancing steps can be found in the accompanying
+[Rmd code of this post](https://github.com/hoehleatsu/hoehleatsu.github.io/blob/master/_source/2017-05-01-crowdsize.Rmd). Altogether, this
+yields a `tbl` with the first couple of lines looking as follows:
 
 ```{r, message=FALSE}
 ##Read data
@@ -92,77 +110,128 @@ pB <- readxl::read_excel(path=file.path(filePath,"pointB.xlsx")) %>% mutate(Poin
 
 ##Join into one data frame and make time into POSIX
 counts <- rbind(pA, pB) %>% mutate(Time_POSIX= as.POSIXct(paste0("2006-07-01 ",Time,":00"),tz="Hongkong") + 12*3600)
-head(counts)
+counts %>% select(-Time) %>% head
 ```
 
-We then compute a number of row-wise statistics for the up to four
-observations per time point. Instead of performing these computations
-manually we use the `matrixStats` package for this.
+We then compute a number of row-wise statistics for all columns
+containing the counts. Which columns contain the counts is specified by a
+regular expression `ccol_regexp`, which in our case would be `"^Y[0-9]+"`.
 
 ```{r}
 ##Regular expression for specification of the column names containing the counts
-ccol_spec <- "^Y[0-9]+"
+ccol_regexp <- "^Y[0-9]+"
 
 ##Note: matrixStats package function (e.g. rowVars) requires a matrix
-suppressPackageStartupMessages(require(matrixStats))
-counts <- counts %>% mutate(Mean = rowMeans(select(., matches(ccol_spec)), na.rm = TRUE),
-                 VarY = rowVars(as.matrix(select(., matches(ccol_spec))), na.rm = TRUE),
-                 m = rowCounts(!is.na(select(., matches(ccol_spec)))),
-                 se2Mean=VarY/m)
+counts <- counts %>% mutate(Mean = rowMeans(select(., matches(ccol_regexp)), na.rm = TRUE),
+                            hatVarY = matrixStats::rowVars(as.matrix(select(., matches(ccol_regexp))), na.rm = TRUE))
+
+##Convert to long format for ggplot visualization
+counts_long <- tidyr::gather(counts %>% select(Time_POSIX, matches(ccol_regexp),Point), Where, Counts, -Time_POSIX, -Point)
 ```
 
 ### Descriptive Statistics
 
-```{r,warning=FALSE}
-##Convert to long format
-counts_long <- tidyr::gather(counts %>% select(Time_POSIX, Y1,Y2,Y3,Y4,Point), Where, Counts, -Time_POSIX, -Point)
+```{r, warning=FALSE}
+point_summary <- function(counts, thePoint) {
+  summary <- counts_long %>% filter(Point == thePoint,!is.na(Counts)) %>%
+    summarise(n_counters=n_distinct(Where), n_timepoints=n_distinct(Time_POSIX))
 
+  total <- counts_long %>% filter(Point == thePoint) %>% group_by(Time_POSIX) %>%
+    summarise(Mean=mean(Counts,na.rm=TRUE)) %>% summarise(sum_of_the_mean_counts=sum(Mean))
+
+  bind_cols(data.frame(Point=thePoint),summary,total)
+}
+
+s <- purrr::map_df(c("A","B"), function(Point) point_summary(counts,Point))
+```
+
+The counts of the `r s %>% filter(Point == "A") %$% n_counters`
+counters at point A and the `r s %>% filter(Point == "B") %$%
+n_counters` counters at point B can easily be summarised in the
+following small table:
+
+<center>
+```{r}
+knitr::kable(s)
+```
+</center>
+
+A time series for the individual counts as well as their mean is shown
+below. One observes that at point B the intensity of the crowd was
+lower, as the observation had stretched over a larger distance. The
+later is seen from the time span between the first and last count for
+the two points: 1:45h for A vs. 2:45h for B.
+
+```{r,warning=FALSE}
 ##Make two illustrations
 ggplot(counts, aes(x=Time_POSIX, y=Mean, colour=Point)) + geom_line() + xlab("Time") + ylab("Mean of Counts") + geom_point(data=counts_long, aes(x=Time_POSIX, y=Counts)) + facet_wrap(~Point)
 ```
 
-## Estimating the Size of the Demo
+##  Two On-the-Spot Counting Method
 
-**two on-the-spot counting method**
+Below we give the mathematical details of the two on-the-spot counting
+method. Consider the counting point $X$ of the march, i.e. $X\in
+\{A,B\}$. Let $m_X$ be the number of counters at this point. Assume
+that the first people of the march pass $X$ at time point $a_X$ and
+that the people at the end of the march reach $X$ at time point
+$e_X$. The time unit could for example be in minutes. Furthermore,
+we counting is such that at regular intervals $c$ counting is
+performed for a time block of 1 unit. Let $k_X$ denote the number of
+different time points where observations are available. Hence, the
+$k_X$ observations at $X$ are
+available for the time points $a_X,a_X+c,a_X+2c,a_X+(k_X-1)c$. Denote
+by $Y_{X,j}(t)$ the count for period $t$ of the $j$'th person
+counting. Then
 
-Consider the counting at a particular point $X$ of the March. Let
-$m_X$ be the number of counters at this point. Assume that the
-beginning of the march passes $X$ at time point 1 and that the end of
-the march reaches $X$ at time point $\tau_X$ (measured for example in
-minutes). Assume the counting is such that regular interval $c$ one
-count for a time block of 1 unit. Hence, observations are available
-for the time points $a_X,a_X+c,a_X+2c,\ldots$. Denote by $Y_{X,j}(t)$
-the count for period $t$ of the $j$'th counter and let
-$\overline{Y}_X(t) = \sum_{i=1}^{k_X} Y_{X,j}(t)/m_X$ and
-$\widehat{\operatorname{Var}}(Y(t)) = \sum_{i=1}^{k_X} (Y_{X,j}(t) -
-\overline{Y}_X(t))^2 /(m_X-1)$ denote the average and variance of the
-observer's counts at time $t$.
+$$\overline{Y}_X(t) = \frac{1}{m_X} \sum_{i=1}^{m_X} Y_{X,i}(t)$$
 
+is the average of the observer's counts at point $X$ for the time
+interval $t$. By scaling up each observer's observation and averaging
+over the different observers we get an estimate for the number of
+participants at point $X$:
 
+$$ \hat{N}_X = \frac{e_X}{k_X} \sum_{j=1}^{k_X} \overline{Y}_X(a_X +
+(j-1)c), \quad X=\{A,B\} $$
 
-$$
-\hat{N}_X = \frac{\tau_X}{k_X} \sum_{j=1}^{k_X} \overline{Y}_X(a_X +
-(j-1)c), \quad X=\{A,B\}
-$$
-
-$$
-\widehat{\operatorname{Var}}(\hat{N}_X) =
-\frac{\tau_X^2}{k_X^2} \sum_{j=1}^{k_X}
-\widehat{\operatorname{Var}}(\overline{Y}_X(a_X + (j-1)c)) =
-\frac{\tau_X^2}{k_X^2} \sum_{j=1}^{k_X}
-\frac{\widehat{\operatorname{Var}}(Y_X(a_X + (j-1)c))}{m_X}
-$$
-
+In most cases one would have that
+$e_X/k_X=c$. In order to adjust the estimate at point $A$ by people
+who joined the march after point $A$ we perform an independent
+counting at point $B$ and additionally ask $m$ people at point $A$,
+whether they marched past point $A$ or not. Denoting $\hat{\phi}$ the
+fraction of people answering yes to this question the
+**two on-the-spot counting estimator** is
 $$
 \hat{N} = \hat{N}_A + (1-\hat{\phi}) \hat{N}_B.
 $$
 
+A confidence interval based on an asymptotic normal assumption can be
+obtained by
 $$
 \operatorname{se}(\hat{N}) =
 \sqrt{\widehat{\operatorname{Var}}(\hat{N}_A) + (1-\hat{\phi})^2
-\widehat{\operatorname{Var}}(\hat{N}_B) + \hat{N}_B^2 \frac{\hat{\phi}(1-\hat{\phi})}{m}}.
+\widehat{\operatorname{Var}}(\hat{N}_B) + \hat{N}_B^2
+\frac{\hat{\phi}(1-\hat{\phi})}{m}},
+$$
+where we have used that
+$$
+\widehat{\operatorname{Var}}(\hat{N}_X) =
+\frac{e_X^2}{k_X^2} \sum_{j=1}^{k_X}
+\widehat{\operatorname{Var}}(\overline{Y}_X(a_X + (j-1)c)) =
+\frac{e_X^2}{k_X^2} \sum_{j=1}^{k_X}
+\frac{\widehat{\operatorname{Var}}(Y_X(a_X + (j-1)c))}{m_X}
+$$
+and
+$$
+\widehat{\operatorname{Var}}(Y_X(t)) =
+\frac{1}{m_X-1}\sum_{i=1}^{m_X} (Y_{X,i}(t) - \overline{Y}_X(t)).
 $$
 
+### Implementation in R
+
+The above equations have been implemented as function `two_on_the_spot_N`
+in R, which given a `counts` data.frame computes the estimate and an
+corresponding confidence interval. The github code of this post
+contains the details.
 
 ```{r}
 ######################################################################
@@ -171,71 +240,99 @@ $$
 ##
 ## Parameters:
 ##
-## @paramcounts A data.frame containing columns Point, Mean, Var
-##
+## @param counts A data.frame containing columns Point, Mean, Var
+## @param ccol_regexp Regular expression for specification of the column names containing the counts
 ## @param phi_estim A vector of length two containing numerator and
 ## denominator of the survey on how many of the participants asked at
 ## point B report also having been at point A.
-## @param c
+## @param c Frequency at which observations are made, i.e. one observation for each c time epochs.
 ## @param conf.level Confidence level for the returned confidence interval
 ######################################################################
 
+two_on_the_spot_N <- function(counts,
+                              ccol_regexp="^Y[0-9]+",
+                              phi_estim, c=5, conf.level=0.95) {
 
-two_on_the_spot_N <- function(counts, phi_estim, c=5, conf.level=0.95) {
   ##Check that the necessary names are present in the data.frame
-  stopifnot(isTRUE(all(!is.na(pmatch(c("Point","Mean","VarY"), names(counts))))))
+  stopifnot(isTRUE(all(!is.na(pmatch(c("Point"), names(counts))))))
   stopifnot(isTRUE(all(!is.na(pmatch(c("A","B"), counts$Point)))))
 
-  xN <- counts %>% group_by(Point) %>% do({
+  ##Add mean and variances to the data frame
+  counts <- counts %>%
+    mutate(Mean = rowMeans(select(., matches(ccol_regexp)), na.rm = TRUE),
+           hatVarY = matrixStats::rowVars(as.matrix(select(., matches(ccol_regexp))), na.rm = TRUE),
+           m = matrixStats::rowCounts(!is.na(select(., matches(ccol_regexp))), na.rm = TRUE))
+
+  ##Compute summaries for each point as done in Yip et al. (2010)
+  N <- counts %>% group_by(Point) %>% do({
     ##How many observations in total
     k_X <- nrow(.)
-    ##An observation is made each c epochs:
-    c <- 5
     ##Total number of epochs covered. Assumption: Last observation is also extrapolated to become equivalent to c epochs
-    tau_X <- 1+(k_X-1)*c + (c-1)
+    tau_X <- 1 + (k_X-1)*c + (c-1)
     ##Compute estimate and its standard error
     Nhat_X <- tau_X / k_X * summarise(., sum(Mean))
-    se2_Nhat_X <- tau_X^2 / k_X^2 * summarise(., sum(VarY/m))
+    se2_Nhat_X <- tau_X^2 / k_X^2 * summarise(., sum(hatVarY/m))
     ##Return result
     data.frame(Nhat_X=as.numeric(Nhat_X),se2_Nhat_X=as.numeric(se2_Nhat_X))
   })
 
-
-  ##Compute the estimate
+  ##Compute the phi estimate
   m <- phi_estim[2]
-  phi.hat <- phi_estim[1]/phi_estim[2]
+  phi_hat <- phi_estim[1]/phi_estim[2]
 
-  N_hat <- (N %>% filter(Point=="A") %$% Nhat_X) + (1-phi.hat) * (N %>% filter(Point=="B") %$% Nhat_X)
+  ##Compute the N estimate
+  N_hat <- (N %>% filter(Point=="A") %$% Nhat_X) + (1-phi_hat) * (N %>% filter(Point=="B") %$% Nhat_X)
+
   ##Standard error
   se_N_hat <- sqrt( (N %>% filter(Point=="A") %$% se2_Nhat_X) +
-                    (1-phi.hat)^2 * (N %>% filter(Point=="B") %$% se2_Nhat_X) +
-                    (N %>% filter(Point=="B") %$% Nhat_X * phi.hat*(1-phi.hat)/m))
+                    (1-phi_hat)^2 * (N %>% filter(Point=="B") %$% se2_Nhat_X) +
+                    (N %>% filter(Point=="B") %$% Nhat_X * phi_hat*(1-phi_hat)/m))
 
   ##95% Confidence interval based on asymptotic normal
   ci <- N_hat + c(ci_lower=-1,ci_upper=1)*qnorm(1-(1-conf.level)/2)* as.numeric( se_N_hat)
 
-  return(list(estimate=N_hat, ci=ci, N=N, se_N_hat=se_N_hat))
+  ##Done
+  return(list(estimate=N_hat, ci=ci, se_N_hat=se_N_hat, phi_hat=phi_hat))
 }
+```
 
-##Proportions
-N <- two_on_the_spot_N(counts, phi_estim=c(437,480))
+We can now use the above data and the additional information that
+among 480 interviewed persons at point B, 437 reported to also have
+passed point A. In other words $\hat{\phi}$=`r sprintf("%.0f%%",437/480*100)`.
+
+```{r,echo=TRUE}
+##Compute the two on the spot estimate based on the data in counts
+N <- two_on_the_spot_N(counts, phi_estim=c(437,480),conf.level=0.95)
 
 ##Rounded version
 with(N, round(c(estimate=estimate,ci)/100)*100)
 ```
 
+Our estimate for the number of participants of the demonstration is
+thus around `r paste0(round(N$estimate/100)*100)` with a 95%
+confidence interval of `r paste0(round(N$ci/100)*100,collapse="-")`.
+For comparison the author's state that the Hong Kong Police estimate
+was around 28000 whereas the organizers claimed a size of 58000.
+
 ## Discussion
 
+We were able to reproduce the results of @yip_etal2010 using the
+article's data (up to some rounding issues). An R function is now
+available for supporting the mobile crowd estimation in the future. It
+will be interesting to data synthesize such traditional counting
+approaches with more modern data sources such as mobile phone or
+twitter data [@botta_etal2015].
 
-[Critical Mass](https://en.wikipedia.org/wiki/Critical_Mass_(cycling))
-
-QED.
 
 ![](https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Hong_Kong_1_July_march.jpg/640px-Hong_Kong_1_July_march.jpg)
 <br>
 [Picture Source](https://en.wikipedia.org/wiki/File:Hong_Kong_1_July_march.jpg):
 Ding Yuin Shan, Hong Kong, licensed under the Creative Commons Attribution 2.0 Generic
 license.
+
+<div align="right">
+QED.
+</div>
 
 
 
