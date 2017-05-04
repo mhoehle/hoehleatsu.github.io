@@ -112,7 +112,7 @@ table:
 
 <center>
 <!-- html table generated in R 3.3.3 by xtable 1.8-2 package -->
-<!-- Thu May  4 09:05:26 2017 -->
+<!-- Thu May  4 22:10:26 2017 -->
 <table border=1, padding=10, style="width=80%">
 <tr> <th> Point </th> <th> n_counters </th> <th> n_timepoints </th> <th> sum_of_the_mean_counts </th>  </tr>
   <tr> <td> A </td> <td align="right">   4 </td> <td align="right">  22 </td> <td align="right"> 4849.50 </td> </tr>
@@ -141,8 +141,8 @@ regular intervals $c$ one counts all people passing the point of
 observation within a time block of 1 unit - say 1 minute. Let $k_X$
 denote the number of time points where observations are
 available at $X$. Hence, the $k_X$ observations at $X$ are available for the
-time points $a_X,a_X+c,a_X+2c,a_X+(k_X-1)c$. Denote by $Y_{X,j}(t)$
-the $j$'th person's count at time $t$. Then
+time points $a_X,a_X+c,a_X+2c,a_X+(k_X-1)c$. Denote by $Y_{X,i}(t)$
+the $i$'th person's count at time $t$. Then
 
 $$\overline{Y}_X(t) = \frac{1}{m_X} \sum_{i=1}^{m_X} Y_{X,i}(t)$$
 
@@ -155,7 +155,7 @@ $$ \hat{N}_X = \frac{e_X}{k_X} \sum_{j=1}^{k_X} \overline{Y}_X(a_X +
 (j-1)c).$$
 
 In most cases one would have that
-$e_X/k_X=c$. If a counter thus counts 200 people for every
+$e_X/k_X=c$. As an example: If a counter thus counts 200 people for *every*
 1-minute-counting-block during two-hours, i.e. corresponding to 24
 observations - one every five minutes, her estimate for $N_X$
 would be 200$\cdot$ 24$\cdot$ 5= 24000.
@@ -196,16 +196,19 @@ $$
 \frac{1}{m_X-1}\sum_{i=1}^{m_X} (Y_{X,i}(t) - \overline{Y}_X(t)).
 $$
 
-A two-sided $(1-\alpha)\cdot 100\%$ CI is then constructed as
-$\hat{N} \pm z_{1-\alpha/2} \operatorname{se}(\hat{N})$. Since $N$ is
-expected to be at least of moderate size before one bothers counting
-this asymptotic CI should have decent coverage.
+A two-sided $(1-\alpha)\cdot 100\%$ CI is then constructed as $\hat{N}
+\pm z_{1-\alpha/2} \operatorname{se}(\hat{N})$, where $z_{1-\alpha/2}$
+is the $1-\alpha/2$ quantile of the standard normal distribution. To
+get a 95% CI the value is $z_{1-0.05/2}=1.96$.  Since $N$ is expected to
+be at least of moderate size before one bothers counting this
+asymptotic CI should have decent coverage.
 
 ### Implementation in R
 
-The above equations have been implemented as function `two_on_the_spot_N`
-in R, which given a `counts` data.frame computes the estimate and an
-corresponding confidence interval. The github code of this post
+The above equations have been implemented as function
+`two_on_the_spot_N` in R, which given a `counts` data.frame computes
+the estimate and a corresponding confidence interval. The
+[github code of this post](https://github.com/hoehleatsu/hoehleatsu.github.io/blob/master/_source/2017-05-04-crowdsize.Rmd)
 contains the details.
 
 
@@ -240,7 +243,7 @@ with(N, round(c(estimate=estimate,ci)/100)*100)
 Our estimate for the number of participants is thus around
 26400 with a 95% confidence interval of
 25600-27200.  For comparison the
-author's state that the Hong Kong Police estimate was around 28000
+authors state that the Hong Kong Police's estimate was around 28000,
 whereas the organizers claimed a size of 58000.
 
 ## Discussion
@@ -248,9 +251,9 @@ whereas the organizers claimed a size of 58000.
 We were able to reproduce the results of @yip_etal2010 using the
 article's data (up to some rounding issues). An R function is now
 available for supporting mobile crowd estimation in the future. It
-will be interesting to data synthesize such traditional counting
-approaches with more modern data sources such as mobile phone or
-twitter data [@botta_etal2015].
+will be interesting to synthesize the traditional and easy to
+implement counting approach described above with more modern data
+sources such as mobile phone or twitter data [@botta_etal2015].
 
 <center>
 ![](https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Hong_Kong_1_July_march.jpg/640px-Hong_Kong_1_July_march.jpg)
