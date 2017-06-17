@@ -112,7 +112,7 @@ table:
 
 <center>
 <!-- html table generated in R 3.3.3 by xtable 1.8-2 package -->
-<!-- Thu May  4 22:10:26 2017 -->
+<!-- Sat May  6 10:58:03 2017 -->
 <table border=1, padding=10, style="width=80%">
 <tr> <th> Point </th> <th> n_counters </th> <th> n_timepoints </th> <th> sum_of_the_mean_counts </th>  </tr>
   <tr> <td> A </td> <td align="right">   4 </td> <td align="right">  22 </td> <td align="right"> 4849.50 </td> </tr>
@@ -155,14 +155,14 @@ $$ \hat{N}_X = \frac{e_X}{k_X} \sum_{j=1}^{k_X} \overline{Y}_X(a_X +
 (j-1)c).$$
 
 In most cases one would have that
-$e_X/k_X=c$. As an example: If a counter thus counts 200 people for *every*
+$e_X/k_X=c$. As an example: If a counter counts 200 people for *every*
 1-minute-counting-block during two-hours, i.e. corresponding to 24
-observations - one every five minutes, her estimate for $N_X$
+observations (one every five minutes), her estimate for $N_X$
 would be 200$\cdot$ 24$\cdot$ 5= 24000.
 
 In order to adjust the estimate at point $A$ for people
 who joined the march after point $A$, we perform an independent
-counting at point $B$ and additionally ask $m$ people at point $A$,
+counting at point $B$ and additionally ask $m$ people at point $B$,
 whether they marched past point $A$ or not. Denoting $\hat{\phi}$ the
 fraction of people answering yes to this question the
 **two on-the-spot counting estimator** is

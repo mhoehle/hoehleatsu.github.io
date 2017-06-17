@@ -167,7 +167,7 @@ functions, showed that the above equation corresponds to
 
 $$
 P(\overline{C}_n) = n!
-\underset{\underset{\sum_{j=1}^n j \cdot t_j = n}{0\leq t_1,t_2,\ldots,<t_n \leq n}}{\sum \sum \cdots \sum}
+\underset{\underset{\sum_{j=1}^n j \cdot t_j = n}{0\leq t_1,t_2,\ldots,t_n \leq n}}{\sum \sum \cdots \sum}
 (-1)^{n + \sum_j t_j}
 \left(
 \prod_{j=1}^n \frac{ (P_j/j)^{t_j}}{t_j!}
