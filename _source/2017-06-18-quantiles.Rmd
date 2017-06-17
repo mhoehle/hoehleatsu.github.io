@@ -1,0 +1,384 @@
+---
+layout: post
+title: "Pay Attention to the Argument: Flint Water Crisis and Quantiles"
+tags: [rstats, stats, regulation, EPA]
+bibliography: ~/Literature/Bibtex/jabref.bib
+comments: true
+---
+
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2017-06-18-quantiles/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- file.path("/","Users","hoehle","Sandbox", "Blog", "figure", "source", "2017-06-18-quantiles")
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=4,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2) # autodep=TRUE
+options(width=90)
+
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(magrittr))
+suppressPackageStartupMessages(library(gridExtra))
+theme_set(theme_bw())
+```
+
+## Abstract
+
+If your tap water suddenly becomes brown while authorities claim
+everything is okay, you start to worry. @langkjaerbain2017 tells the
+[Flint Water Crisis](https://en.wikipedia.org/wiki/Flint_water_crisis)
+story from a statistical viewpoint. Essentially, interest is in
+whether the 90th percentile in a sample of lead concentration
+monitoring measurements is above or below a certain threshold. We
+illustrate how to perform the necessary calculations with R's quantile
+function and show that the type-argument of the function matters.
+
+<center>
+```{r,results='asis',echo=FALSE}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"SAWTOOTH-1.png"),")")
+```
+</center>
+
+{% include license.html %}
+
+## Introduction
+
+In recent article, @langkjaerbain2017 tells the story about the
+[Flint water crisis](https://en.wikipedia.org/wiki/Flint_water_crisis). In 2014 the city of Flint, Michigan, USA, decided to change its water
+supply to Flint River. Due to insufficient treatment of the water with
+corrosion inhibitors, the lead concentration in the drinking water
+increased as lead in the aging pipes leached into the water supply. This
+created serious health problems - as explained in this [short video summary](https://youtu.be/QnDQFivtCd0). In this blog post we investigate
+further the computation of the 90th percentile of the tap water lead
+concentration samples described in @langkjaerbain2017.
+Quantile estimation in this context has already been discussed in a recent blog entry
+[Quantiles and the Flint water crisis](https://blogs.sas.com/content/iml/2017/05/17/quantiles-flint-water-crisis.html)
+by
+[Rick Wicklin](https://blogs.sas.com/content/author/rickwicklin/),
+which originally caught my attention to the topic.
+
+The
+[Lead and Copper Rule](https://www.epa.gov/dwreginfo/lead-and-copper-rule)
+by the United States Environmental Protection Agency regulates the
+monitoring of drinking water in the US. The entire text of the rule is
+available as electronic code of federal regulation (e-CFR) Title 40:
+Protection of Environment,
+[Part 141 - National Primary Drinking Water Regulations](https://www.ecfr.gov/cgi-bin/text-idx?SID=531617f923c3de2cbf5d12ae4663f56d&mc=true&node=sp40.23.141.i&rgn=div6).
+In particular the regulation defines a sampling plan for collecting
+tap water samples. The size of the sample depends on the number of
+people the water system serves. In case this number is bigger than
+100,000 a sample of 100 sites is needed. If there are 10,001-100,000
+people served, then a sample from 60 sites is needed. For
+systems serving fewer than 10,000 sizes of 40, 20, 10 and 5 are
+defined - see [§141.86(c)](https://www.ecfr.gov/cgi-bin/text-idx?SID=531617f923c3de2cbf5d12ae4663f56d&mc=true&node=sp40.23.141.i&rgn=div6#se40.25.141_186) of the rule for details. Of interest
+for this blog post is that action needs to be taken, if too many of the
+samples are above a given threshold of 15 part per billion (ppb):
+
+<center>
+```{r,results='asis',echo=FALSE,fig.cap="CFR 40:141"}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"ecfr141.png"),")")
+```
+</center>
+<FONT COLOR="bbbbbb">Figure: Excerpt of [CFR 40 §141.80](https://www.ecfr.gov/cgi-bin/text-idx?SID=531617f923c3de2cbf5d12ae4663f56d&mc=true&node=sp40.23.141.i&rgn=div6#se40.25.141_180) with the quantile calculation
+highlighted in yellow.</FONT>
+<p>
+We note the explicit duality in the CFR between *in more than 10%* and the 90%
+quantile as stated in the text. However, we also note that it is not
+clear how to proceed, if the number calculated in (c)(3)(ii) is not an
+integer. Since the CFR itself only operates with sizes 100, 60, 40, 20, 10 and 5
+this is not per-se a problem because 0.9 times the CFR sample sizes always
+gives an integer number. But if one for some reason does not
+obtain exactly the required number this quickly can become an issue as
+we shall see below.
+
+## The Flint Data
+
+The data of the Flint monitoring are presented in the figure on p. 20
+of @langkjaerbain2017. Alternatively, they can also be taken directly from the Blog entry
+[Quantiles and the Flint water crisis](https://blogs.sas.com/content/iml/2017/05/17/quantiles-flint-water-crisis.html)
+by [Rick Wicklin](https://blogs.sas.com/content/author/rickwicklin/).
+
+
+```{r,echo=TRUE}
+##Read flint water monitoring data (the column lead is the measurement)
+flint <- read.csv(file=file.path(filePath,"flint.csv"))
+##Sort the measured lead values in ascending order
+lead  <- sort(flint$lead)
+##Number of observations
+n <- length(lead)
+```
+
+```{r, HISTOGRAM}
+ggplot(flint, aes(x=lead)) + geom_histogram(breaks=seq(0,110,by=1)) + ylab("Number of samples") + xlab("Lead Concentration (ppb)") + scale_x_continuous(breaks = scales::pretty_breaks(n = 11)) + geom_vline(xintercept=15, color="indianred2",lty=2)
+```
+
+The proportion of observations above the 15 ppb threshold is
+```{r,echo=TRUE}
+mean(lead > 15)
+```
+
+In other words, the proportion `r sprintf("%.1f%%",100*mean(lead>15))`
+is above the 10% action threshold and, hence, something needs to be
+done. However, as @langkjaerbain2017 describes, the story is a little
+more complicated, because two of the values above 15 were removed with
+the argument that they originated from sites which are not covered by the sampling plan,  which is supposed to only contain private households at high
+risk, i.e. with lead pipelines. As one can read in the article this
+step is considered highly controversial, in particular because a consequence was that with
+these two values removed the proportion of critical observations fell
+below the 10% action threshold.  For this blog entry, we will, however, work
+with the full $n=`r n`$ sample and focus on the quantile aspect of the
+calculation.
+
+## Percentages and Quantiles
+
+Let $n$ denote the size of the selected sample, which in our case is
+$n=`r n`$. If more than 10% of the sample is to be above 15 ppb, $\lfloor 0.1\cdot n +
+1\rfloor$ of the samples need to be above 15 ppb. We shall denote this
+the **number of critical samples**. If we divide this number by $n$ we
+get the actual proportion of critical samples needed before action. It
+is worthwhile noting the difference between this critical proportion
+and the 10% threshold illustrated by the sawtooth curve in the figure
+below. The explanation for these sawtooth step-spikes is the discreteness
+of the decision problem (i.e. $x$ out of $n$).
+
+```{r, SAWTOOTH, message=FALSE}
+##Function to determine the number of critical samples
+critical <- function(n) { floor(0.1*n+1) }
+
+df <- data.frame(n=seq_len(100)) %>% mutate(crit=critical(n),prop_crit=crit/n)
+
+p1 <- ggplot(df, aes(x=n, y=crit)) + geom_step() + scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) + scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) + ylab("Number of critical samples")
+
+p2 <- ggplot(df, aes(x=n, y=crit/n)) + geom_step() + scale_y_continuous(breaks = scales::pretty_breaks(n = 10),labels=scales::percent) + scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) + ylab("Proportion of critical samples") + geom_hline(yintercept=0.1,lty=2,col="indianred2")
+
+##Plot next to each other
+grid.arrange(p1, p2, ncol=2)
+```
+
+Turning to the equivalent *90% quantile is above 15 ppm* decision
+criterion of the CFR, one will need to determine the 90% quantile from
+the finite sample of lead concentration measurements. How to estimate
+quantiles with statistical software is discussed in the excellent
+survey of @hyndman_fan1996. Here, they describe the nine different
+quantile estimators implemented in R's `quantile` function. The
+estimators are all based on the
+[order statistic](https://en.wikipedia.org/wiki/Order_statistic) of
+the sample, i.e. let $x_{(1)} < x_{(2)} < \cdots < x_{(n)}$ denote the
+ordered lead concentration measurements. Then the simplest estimator for the $p\cdot 100\%$ quantile is
+
+$$
+\hat{x}_p = \min_{k} \left\{\hat{F}(x_{(k)}) \geq p\right\} =
+x_{(\lceil n \cdot p\rceil)},
+$$
+
+```{r}
+p <- 0.9
+```
+
+where $\hat{F}$ is the
+[empirical cumulative distribution](https://en.wikipedia.org/wiki/Empirical_distribution_function)
+function of the sample and $\lceil y \rceil$ denotes the smallest
+integer greater than or equal to $y$. This method corresponds to R's
+`type=1`. For our application $p$ would be `r p` and the 90% quantile
+for the Flint data is
+```{r,echo=TRUE}
+c("manual.90%"=lead[ceiling(n*p)], R=quantile(lead, probs=p, type=1))
+```
+which is above the action threshold of 15 ppb. It is also important to note that when
+$x_{(\lceil n \cdot `r p`\rceil)} > 15\> \text{ppb}$ then a total $n - \lceil n \cdot `r p`\rceil + 1$
+samples are above 15 ppm. In other words the proportion of samples
+above 15 ppm is
+$$ \frac{n - \lceil n \cdot `r p`\rceil + 1}{n}.$$
+To
+show the duality between the *more than 10% critical samples* and the `r 100*p`%
+quantile being above 15 ppm we thus need to show that $(n - \lceil n
+\cdot `r p`\rceil + 1)/n = (\lfloor 0.1\cdot n + 1\rfloor)/n$. This is
+possible since the following
+[relations hold for the floor and ceiling functions](https://en.wikipedia.org/wiki/Floor_and_ceiling_functions):
+$$ \begin{align*}
+- \lceil y \rceil &= \lfloor -y \rfloor \quad \text{and} \\
+n + \lfloor y \rfloor &= \lfloor n + y \rfloor,
+\end{align*}
+$$
+with $n$ being an integer and $y$ any real number. Thus,
+$$
+(n+1) - \lceil n \cdot 0.9\rceil = (n+1) + \lfloor -n \cdot 0.9\rfloor =
+\lfloor (n+1) -  n \cdot 0.9\rfloor = \lfloor 0.1n+1 \rfloor.
+$$
+
+**Important conclusion**: We have thus shown that with the `type=1`
+quantile method we have the duality between having more than 10%
+critical samples and the 90th percentile of the measurements being
+above 15 ppm.
+
+### Other Quantile Types
+
+```{r,results='hide'}
+##Function to compute
+index_qp_1 <- function(n,p) ceiling(n*p)
+
+##Add equivalent columns from type=1 quantile
+df %<>% mutate(n_above15ppm = n - index_qp_1(n=n,p=p)+1, prop_above15ppm=n_above15ppm/n)
+
+##Check that result really is the same
+with(df, all.equal(prop_crit, prop_above15ppm))
+```
+
+Since $\hat{F}$ has jumps of size $1/n$ the
+actual value of $\hat{F}(\hat{x}_{p})$ can end up being somewhat
+larger than the desired $p$. Therefore, @hyndman_fan1996 prefer
+estimators interpolating between two adjacent order statistics. Also because such estimators have a lower
+mean squared error in most cases [@dielman_etal1994]. As an
+example of such an extended estimator, the `type=5` quantile estimator
+is defined by letting $h=p n + 1/2$ and then computing:
+$$
+\hat{x}_p = x_{\lfloor h \rfloor} + (h - \lfloor h \rfloor) (x_{\lfloor h
+\rfloor + 1} - x_{\lfloor h \rfloor}).
+$$
+
+Doing this either manually or using the `quantile` function
+one obtains:
+```{r,echo=TRUE}
+## Small function to manually compute the type=5 p*100th quantile
+## for the sample x
+manual_quantile_5 <- function(x, p) {
+  h <- length(x)*p + 0.5
+  x <- sort(x)
+  return(x[floor(h)] + (h - floor(h))* (x[floor(h)+1] - x[floor(h)]))
+}
+
+c("manual.90%"=manual_quantile_5(lead, p=0.9), R=quantile(lead, probs=0.9,type=5))
+```
+
+Instead of reading the above or using the R code one can also instead watch a
+more
+[didactic whiteboard explanation](https://youtu.be/9pql00zr700)
+by Professor [Christopher Gardiner](http://www.emich.edu/math/faculty/cgardiner.php) on how to calculate the 90% quantile
+using a `type=5` argument for the Flint sample. However, the important
+point of the above calculations is that this type is **of limited interest**, because the Lead and Copper Rule implicitly defines that one has to use the
+`type=1` quantile. To make this point even more explicit, we use sampling
+with replacement from the Flint data to construct a dataset, where the
+90% `type=5`-quantile is above 15 ppm, but the percentage of samples
+above the 15 ppm threshold is less than 10%.
+
+```{r, echo=TRUE}
+##Function to compute the proportion critical as well as the 90% quantile
+##using type (type)-quantiles. Returns the quantile as well as the proportion
+##above the 15 ppm threshold
+prop_critical_and_q90 <- function(x, type=5) {
+  q90 <- as.numeric(quantile(x, type=type,probs=p))
+  prop <- mean(x>15)
+  c(q90=q90,prop= prop)
+}
+
+##Make 100 datasets by sampling with replacement
+r <- data.frame(seed=seq_len(100)) %>% rowwise %>% do({
+  set.seed(.$seed)
+  newdata <- sample(lead, replace=TRUE)
+  as.data.frame(seed=.$seed, t(prop_critical_and_q90(newdata)))
+})
+
+##Check which datasets violate the duality between quantile and
+##percentage above threshold assumption
+r %<>% mutate(violates_duality =  q90 > 15 & prop < 0.1)
+
+##Do the stats for this dataset
+(five <- r %>% filter(violates_duality) %>% slice(1:5))
+```
+
+We note that some of the lines in the above output are artifacts of
+lacking numerical precision: the quantile is only above 15 due to
+numerical imprecision in the calculation of the `type=5` quantile:
+
+```{r,echo=TRUE}
+print(five$q90, digits=20)
+```
+
+This shows that regulatory business with
+[floating point arithmetic](https://en.wikipedia.org/wiki/Floating-point_arithmetic)
+is tricky. As a step towards fixing this problem, one could redefine
+the greater and less than operators, respectively, to only compare up to
+possible numerical precision:
+
+```{r,echo=TRUE}
+##Function to do numerical safe greater than comparision
+"%greater%" <- function(x,y) {
+  equal_up_to_numerical_precision <- isTRUE(all.equal(x,y))
+  return( (x > y) & !(equal_up_to_numerical_precision) )
+}
+
+##Function to do numerical safe less than  comparision
+"%less%" <- function(x,y) {
+  equal_up_to_numerical_precision <- isTRUE(all.equal(x,y))
+  return( (x < y) & !(equal_up_to_numerical_precision) )
+}
+
+##Add the new column, which does < and > comparisons only up to
+##numerical precision
+r %<>% mutate(violates_duality_numsafe =  (q90 %greater% 15) & (prop %less% 0.1))
+
+##Show five violation candidates for this corrected dataset
+(five <- r %>% filter(violates_duality_numsafe) %>% slice(1:5))
+```
+
+```{r,results='hide'}
+q90_all <- sapply(1:9, function(method) { quantile(lead, type=method, probs=p) })
+```
+
+
+## Discussion
+
+To summarize the findings: The type of quantile estimation used in practice matters. It is not clear what
+to do, if $0.9\cdot n$ is not integer in the estimation of the 90% quantile under the Lead
+and Copper Rule. For the Flint example the `r floor(n*p)`'rd sorted
+value is
+`r lead[floor(p*n)]` which is below threshold, whereas the
+`r ceiling(n*p)`'th value is
+`r lead[ceiling(p*n)]` which is above the threshold. If we use `type=1`
+then $\lceil `r n`\cdot `r p`\rceil=`r ceiling(p*n)`$ would be the
+correct value to take and the 90% quantile of the sample is estimated to be `r quantile(lead,type=1,probs=p)` ppb. This means that the 19 ppb vertical line in
+the figure of @langkjaerbain2017 is a little misleading as this appears to be
+the rounded `type=5` quantile.
+For the setting with $n=`r length(lead)`$ samples, both estimators are although above the action threshold of 15 ppb, so
+in the particular Flint application it does not
+matter so much which method to take. However, in other settings this might very well make a difference. So be careful with the type argument. As an example, the nine different types of
+R's `quantile` function provide estimates for the 90% quantile in the range `r sprintf("%.2f",min(q90_all))`-`r sprintf("%.2f",max(q90_all))` for the Flint data (`type=7` is the default in R).
+
+On another note, one can discuss if it is a good idea to rely on
+`type=1` quantile estimator in a regulation, because it is well known
+that this type does not have as good estimation properties as, e.g.,
+`type=5`. However, `type=1` is simpler to compute, ensures duality
+with the intuitive critical proportion, and has the property that the
+obtained value is always one also occurring in the sample. The later
+thus avoids the issue of numerical instability.
+
+Finally, the
+[blog post](https://blogs.sas.com/content/iml/2017/05/17/quantiles-flint-water-crisis.html)
+by Rick Wicklin addresses quantile estimation from an even more
+statistical viewpoint by computing confidence intervals for the
+quantile - a topic, which has been [previously treated theoretically](http://staff.math.su.se/hoehle/blog/2016/10/23/quantileCI.html) in this blog.
+It is worthwhile pointing out that the CFR does not know about
+confidence intervals. Currently, **estimation uncertainty** is only treated implicitly by specifying sample size as a function of number of people served by the water system. If one takes the additional estimation uncertainty into
+account the number of critical observations would need to be even higher than what is currently specified by the CFR. Whether we as water consumers would accept this additional "benefit of doubt" due to uncertainty treatment without modification of the threshold or the requested sample sizes needs careful debate.
+
+<center>
+```{r,results='asis',echo=FALSE,fig.cap="Flint"}
+cat(paste0("![](https://c1.staticflickr.com/9/8760/29032559971_6662607e05.jpg)"))
+```
+<br>
+<FONT COLOR="bbbbbb">Photo is copyright [George Thomas](https://www.flickr.com/photos/hz536n/29032559971/), available under a CC BY-NC-ND 2.0 license.</FONT>
+</center>
+<p>
+
+## Acknowledgments
+
+Thanks goes to Brian Tarran, editor of the Significance Magazine, for
+providing additional information about the quantile computation of the
+@langkjaerbain2017 article and for pointing out the Gardiner video.
+
+## References
+
