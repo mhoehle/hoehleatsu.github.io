@@ -187,7 +187,7 @@ where $\hat{F}$ is the
 [empirical cumulative distribution](https://en.wikipedia.org/wiki/Empirical_distribution_function)
 function of the sample and $\lceil y \rceil$ denotes the smallest
 integer greater than or equal to $y$. This method corresponds to R's
-`type=1`. For our application $p$ would be `r p` and the 90th percentil
+`type=1`. For our application $p$ would be `r p` and the 90th percentile
 for the Flint data is thus
 ```{r,echo=TRUE}
 c("manual.90%"=lead[ceiling(n*p)], R=quantile(lead, probs=p, type=1))
@@ -260,10 +260,10 @@ c("manual.90%"=manual_quantile_5(lead, p=0.9), R=quantile(lead, probs=0.9,type=5
 
 Instead of reading the above or using the R code one can also instead watch a
 more
-[didactic whiteboard explanation](https://youtu.be/9pql00zr700)
+[didactic whiteboard explanation](https://youtu.be/9pql00zr700) for [Michigan Radio](http://michiganradio.org/post/video-how-dropping-two-flints-lead-test-numbers-changed-things-state)
 by Professor
 [Christopher Gardiner](http://www.emich.edu/math/faculty/cgardiner.php)
-for [Michigan Radio](http://michiganradio.org/post/video-how-dropping-two-flints-lead-test-numbers-changed-things-state) on how to calculate the 90% quantile
+ on how to calculate the 90% quantile
 using a `type=5` argument for the Flint sample. However, the important
 point of the above calculations is that this quantile type is **of limited interest**, because the Lead and Copper Rule implicitly defines that one has to use the
 `type=1` quantile. To make this point even more explicit, we use sampling
@@ -356,6 +356,8 @@ might very well make a difference! So **be careful with the type
 argument of the quantile function**. As an example, the nine different types of
 R's `quantile` function provide estimates for the 90% quantile in the
 range from `r sprintf("%.2f",min(q90_all))` to `r sprintf("%.2f",max(q90_all))` for the Flint data.
+The default type argument in R is `type=7`, so if nothing else is specified
+when calling the quantile function `type=7` is what you get.
 
 On another note, one can discuss if it is a good idea to rely on the
 `type=1` quantile estimator in the rule, because it is well known
@@ -391,7 +393,7 @@ intervals for quantiles, join my 5 minute
 [lightning talk](https://user2017.sched.com/event/Axs8/better-confidence-intervals-for-quantiles?iframe=yes&w=100%&sidebar=yes&bg=no)
 on 6th of July at the
 [useR!2017 conference](https://user2017.brussels) in Brussels.
-
+<p>
 <center>
 ```{r,results='asis',echo=FALSE,fig.cap="Flint"}
 cat(paste0("![](https://c1.staticflickr.com/9/8760/29032559971_6662607e05.jpg)"))
