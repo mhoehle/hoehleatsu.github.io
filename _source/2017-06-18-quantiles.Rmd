@@ -33,7 +33,7 @@ everything is okay, you start to worry. @langkjaerbain2017 tells the
 [Flint Water Crisis](https://en.wikipedia.org/wiki/Flint_water_crisis)
 story from a statistical viewpoint: essentially the interest is in
 whether the 90th percentile in a sample of lead concentration
-measurements is above a certain threshold. We
+measurements is above a certain threshold or not. We
 illustrate how to perform the necessary calculations with R's quantile
 function and show that the type-argument of the function matters.
 
@@ -62,9 +62,9 @@ by
 [Rick Wicklin](https://blogs.sas.com/content/author/rickwicklin/).
 
 The
+monitoring of drinking water in the US is regulated by the
 [Lead and Copper Rule](https://www.epa.gov/dwreginfo/lead-and-copper-rule)
-by the United States Environmental Protection Agency regulates the
-monitoring of drinking water in the US. The entire text of the rule is
+of the United States Environmental Protection Agency.  The entire text of the rule is
 available as electronic code of federal regulation (e-CFR) Title 40:
 Protection of Environment,
 [Part 141 - National Primary Drinking Water Regulations](https://www.ecfr.gov/cgi-bin/text-idx?SID=531617f923c3de2cbf5d12ae4663f56d&mc=true&node=sp40.23.141.i&rgn=div6).
@@ -87,17 +87,19 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"ecfr141.
 highlighted in yellow.</FONT>
 <p>
 We note the explicit duality in the CFR between the *in more than 10%* and the 90%
-quantile as stated in the text. However, we also note that it is not
-clear how to proceed, if the number calculated in (c)(3)(ii) is not an
-integer. Since the CFR itself only operates with the samples sizes 100, 60, 40, 20, 10 and 5
-this is not per-se a problem because 0.9 times the CFR sample sizes always
+quantile in the text. However, we also note that it is not
+clear how to proceed, if the number calculated in (c)(3)(ii) is **not an
+integer**. This is not a problem per se, because the CFR itself only
+operates with samples sizes 100, 60, 40, 20, 10 and 5, where 0.9 times
+the sample size always
 gives an integer number. But if one for some reason does not
 obtain exactly the required number this quickly can become an issue as
 we shall see below.
 
 ## The Flint Data
 
-The data of the Flint monitoring are presented in the figure on p. 20
+The data of the spring 2015 Flint water supply monitoring conducted by
+the Michigan Department of Environmental Quality are presented in the figure on p. 20
 of @langkjaerbain2017. Alternatively, they can also be taken directly from the Blog entry
 [Quantiles and the Flint water crisis](https://blogs.sas.com/content/iml/2017/05/17/quantiles-flint-water-crisis.html)
 by [Rick Wicklin](https://blogs.sas.com/content/author/rickwicklin/).
@@ -128,17 +130,18 @@ more complicated, because two of the values above 15 were removed with
 the argument that they originated from sites which are not covered by
 the sampling plan. Only private households at high
 risk, i.e. with lead pipelines, are supposed to be sampled. As one can
-read in the article the removal is highly controversial, in particular because a consequence was that with
-these two values removed the proportion of critical observations fell
-below the 10% action threshold.  For this blog entry, we will, however, work
-with the full $n=`r n`$ sample and focus on the quantile aspect of the
+read in the article the removal is highly controversial, in particular, because the proportion of critical observations falls
+below the 10% action threshold when these two values are removed. For this blog entry, we will, however, work
+with the full $n=`r n`$ sample and focus on the **quantile aspect** of the
 calculation.
 
 ## Percentages and Quantiles
 
 Let $n$ denote the size of the selected sample, which in our case is
-$n=`r n`$. If more than 10% of the sample is to be above 15 ppb, $\lfloor 0.1\cdot n +
-1\rfloor$ of the samples need to be above 15 ppb. We shall denote this
+$n=`r n`$. If more than 10% of the sample is to be above 15 ppb, this
+means that $\lfloor 0.1\cdot n +
+1\rfloor$ of the samples need to be above 15 ppb, where $\lfloor y
+\rfloor$ denotes the largest integer less than or equal to $y$. We shall denote this
 the **number of critical samples**. If we divide this number by $n$ we
 get the actual proportion of critical samples needed before action. It
 is worthwhile noting the difference between this critical proportion
@@ -168,7 +171,7 @@ survey of @hyndman_fan1996. In their work they describe the nine different
 quantile estimators implemented in R's `quantile` function. The
 estimators are all based on the
 [order statistic](https://en.wikipedia.org/wiki/Order_statistic) of
-the sample, i.e. let $x_{(1)} < x_{(2)} < \cdots < x_{(n)}$ denote the
+the sample, i.e. let $x_{(1)} \leq x_{(2)} < \cdots \leq x_{(n)}$ denote the
 ordered lead concentration measurements. Then the simplest estimator for the $p\cdot 100\%$ quantile is
 
 $$
@@ -258,7 +261,9 @@ c("manual.90%"=manual_quantile_5(lead, p=0.9), R=quantile(lead, probs=0.9,type=5
 Instead of reading the above or using the R code one can also instead watch a
 more
 [didactic whiteboard explanation](https://youtu.be/9pql00zr700)
-by Professor [Christopher Gardiner](http://www.emich.edu/math/faculty/cgardiner.php) on how to calculate the 90% quantile
+by Professor
+[Christopher Gardiner](http://www.emich.edu/math/faculty/cgardiner.php)
+for [Michigan Radio](http://michiganradio.org/post/video-how-dropping-two-flints-lead-test-numbers-changed-things-state) on how to calculate the 90% quantile
 using a `type=5` argument for the Flint sample. However, the important
 point of the above calculations is that this quantile type is **of limited interest**, because the Lead and Copper Rule implicitly defines that one has to use the
 `type=1` quantile. To make this point even more explicit, we use sampling
@@ -364,10 +369,28 @@ Finally, the
 [blog post](https://blogs.sas.com/content/iml/2017/05/17/quantiles-flint-water-crisis.html)
 by Rick Wicklin addresses quantile estimation from an even more
 statistical viewpoint by computing confidence intervals for the
-quantile - a topic, which has been [previously treated theoretically](http://staff.math.su.se/hoehle/blog/2016/10/23/quantileCI.html) in this blog.
-It is worthwhile pointing out that the CFR does not know about
-confidence intervals. Currently, **estimation uncertainty** is only treated implicitly by specifying sample size as a function of number of people served by the water system. If one takes the additional estimation uncertainty into
-account the number of critical observations would need to be even higher than what is currently specified by the CFR. Whether we as water consumers would accept this additional "benefit of doubt" due to uncertainty treatment without modification of the threshold or the requested sample sizes needs careful debate.
+quantile - a topic, which has been
+[previously treated theoretically](http://staff.math.su.se/hoehle/blog/2016/10/23/quantileCI.html)
+in this blog. Compliance to a given quantile
+threshold based on samples has also been treated in the entirely different
+context of digital elevation models [@hoehle_hoehle2009]. Typically,
+tests and the dual confidence intervals are in this regulation setting
+formulated in a reversed way, such that one needs to provide enough
+evidence to show that underlying 90th percentile is indeed below 15 ppm beyond
+reasonable doubt. An interesting question in this context is how large
+the sample needs to be in order to do this with a given certainty -
+see @hoehle_hoehle2009 for details. It is, however, worthwhile
+pointing out that the Lead and Copper Rule does not know about
+confidence intervals. Currently, **estimation uncertainty** is only
+treated implicitly by specifying sample size as a function of number
+of people served by the water system and then hard-thresholding the
+result at 15 ppm.
+
+**On a Personal Note**: If you want more details on the use of confidence
+intervals for quantiles, join my 5 minute
+[lightning talk](https://user2017.sched.com/event/Axs8/better-confidence-intervals-for-quantiles?iframe=yes&w=100%&sidebar=yes&bg=no)
+on 6th of July at the
+[useR!2017 conference](https://user2017.brussels) in Brussels.
 
 <center>
 ```{r,results='asis',echo=FALSE,fig.cap="Flint"}
