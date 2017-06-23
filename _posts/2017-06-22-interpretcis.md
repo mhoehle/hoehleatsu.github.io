@@ -35,10 +35,11 @@ turtles (which is pretty large).
 
 **[Statistician]:** Ok, that should be possible. Since your population
 is large, we do not need a finite population correction, Since your
-sample is also pretty large, let's therefore just go with the textbook
-large-sample confidence interval for a binomial proportion, that is $\hat{p}
-\pm 1.96 \sqrt{\hat{p}(1-\hat{p})/n}$. Don't worry about the equation,
-let's just use R and the `binom` package to compute the interval:
+sample is also pretty large, let's therefore go with the textbook
+large-sample confidence interval for a binomial proportion, that is
+$\hat{p} \pm 1.96 \sqrt{\hat{p}(1-\hat{p})/n}$, where
+$\hat{p}=x/n$. Don't worry about the equation, let's use R and
+the `binom` package to compute the interval:
 
 
 ```r
@@ -102,11 +103,10 @@ A graphic for the first 50 experiments shows their point estimates,
 corresponding intervals and how they overlap the true value or not:
 <img src="{{ site.baseurl }}/figure/source/2017-06-22-interpretcis/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
 
-The specific confidence interval `ci` we computed above is thus just
-one of many possible confidence intervals originating from above procedure.
+The specific confidence interval `ci` we computed above is thus just one of many possible confidence intervals originating from the above procedure.
 
 **[Client]:** Ok, I get that is what happens when you do it many
-times. But I just have this one experiment with x = 52 out of
+times. But I only have this one experiment with x = 52 out of
 n = 420 subjects having the trait of interest. Your above output does
 contain a very specific CI, with some very specific
 numbers, i.e. 9.2%- 15.5%.
@@ -129,7 +129,7 @@ true value of the proportion, right? Let's denote this $\theta$ with
 $0 \leq \theta \leq 1$.  We don't know the true value, but we might
 have some prior idea about the range of plausible values for it. Would
 you be willing to characterize your belief about this by a
-distribution for $\theta$?  This could be something as simple as just
+distribution for $\theta$?  This could be something as simple as
 assuming $\theta \sim U(0,1)$, i.e. you would assume that every value
 of $\theta$ between zero and one is equally probable initially. Then
 the interval we computed above denotes a 95% equal tail probability
@@ -185,7 +185,7 @@ prior_params
 Actually, you can interpret the above prior parameters as the number of
 turtles you have seen with the trait (12) and without
 the trait (116), respectively, before conducting your
-above investigation. The posterior parameters are then just
+above investigation. The posterior parameters are then
 12 + 52 = 64 turtles
 with the trait and 116 + 368 = 484 turtles without
 the trait. You get the credible interval based on this posterior in R by:
@@ -205,10 +205,10 @@ Graphically, your belief updating looks as follows:
 
 ```r
 ##Plot of the beta-posterior
-p2 <- binom::binom.bayes.densityplot(ci_bayes)
+p <- binom::binom.bayes.densityplot(ci_bayes)
 ##Add plot of the beta-prior
 df <- data.frame(x=seq(0,1,length=1000)) %>% mutate(pdf=dbeta(x, prior_params[1], prior_params[2]))
-p2 + geom_line(data=df, aes(x=x, y=pdf), col="darkgray",lty=2) +
+p + geom_line(data=df, aes(x=x, y=pdf), col="darkgray",lty=2) +
   coord_cartesian(xlim=c(0,0.25)) + scale_x_continuous(labels=scales::percent)
 ```
 
@@ -237,14 +237,14 @@ contains 95% of your subjective posterior density for the parameter.
 
 **[Client]:** ???
 
-**[Statistician]:** You might just want to skip all the details and
-  just write that the **95% Bayesian confidence interval** is 9.1%-
+**[Statistician]:** You might want to skip all the details and
+  write that the 95% **Bayesian confidence interval** is 9.1%-
 14.5%.
 
 **[Client]:** And what if the reviewers do not agree with my prior distribution?
 
 **[Statistician]:** Then return to your flat prior, i.e. the
-uniform. Nobody usually questions that even though you just told me
+uniform. Nobody usually questions that even though you told me
 that you don't believe in it yourself:
 
 ```r
