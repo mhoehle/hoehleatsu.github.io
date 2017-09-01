@@ -102,7 +102,7 @@ $$
 Note that it may not be possible to achieve the desired coverage exactly in this case. For now we prefer the conservative choice of having to attain **at least** the desired coverage. Note that for $1\leq r \leq n$ we have
 $$
 \begin{align*}
-P( x_{r} \leq x_p) &= P(\text{at least $r$ observations are smaller than or equal to $x_p$}) \\
+P( x_{(r)} \leq x_p) &= P(\text{at least $r$ observations are smaller than or equal to $x_p$}) \\
       &= \sum_{k=r}^{n} P(\text{exactly $k$ observations are smaller than or equal to $x_p$}) \\
       &= \sum_{k=r}^{n} {n \choose k} P(X \leq x_p)^k (1-P(X \leq x_p))^{n-k} \\
       &= \sum_{k=r}^{n} {n \choose k} p^k (1-p)^{n-k} \\

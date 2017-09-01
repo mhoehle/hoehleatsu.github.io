@@ -105,7 +105,7 @@ $$
 Note that it may not be possible to achieve the desired coverage exactly in this case. For now we prefer the conservative choice of having to attain **at least** the desired coverage. Note that for $1\leq r \leq n$ we have
 $$
 \begin{align*}
-P( x_{r} \leq x_p) &= P(\text{at least $r$ observations are smaller than or equal to $x_p$}) \\
+P( x_{(r)} \leq x_p) &= P(\text{at least $r$ observations are smaller than or equal to $x_p$}) \\
       &= \sum_{k=r}^{n} P(\text{exactly $k$ observations are smaller than or equal to $x_p$}) \\
       &= \sum_{k=r}^{n} {n \choose k} P(X \leq x_p)^k (1-P(X \leq x_p))^{n-k} \\
       &= \sum_{k=r}^{n} {n \choose k} p^k (1-p)^{n-k} \\
@@ -141,15 +141,15 @@ When it comes to confidence intervals for quantiles the set of alternative imple
 
 | Package::Function   |  Version | Description                                            |
 |---------------------|:--------:|--------------------------------------------------------|
-| [`MKMisc::quantileCI`](http://finzi.psych.upenn.edu/R/library/MKmisc/html/quantileCI.html)| 0.993 | Implements an exact but very slow $O(n^2)$ search as well as an asymptotic method approximating the exact procedure. Due to the method being slow it is not investigated further, but looking at it an `Rcpp` implementation of the nested loop might be able to speed up the performance substantially. |
+| [`MKMisc::quantileCI`](http://finzi.psych.upenn.edu/R/library/MKmisc/html/quantileCI.html)|  | Implements an exact but very slow $O(n^2)$ search as well as an asymptotic method approximating the exact procedure. Due to the method being slow it is not investigated further, but looking at it an `Rcpp` implementation of the nested loop might be able to speed up the performance substantially. |
 |   |   |  |
-| [`jmuOutlier::quantileCI`](http://finzi.psych.upenn.edu/R/library/jmuOutlier/html/quantileCI.html)  |  1.1  | Implements the exact method. |
+| [`jmuOutlier::quantileCI`](http://finzi.psych.upenn.edu/R/library/jmuOutlier/html/quantileCI.html)  |    | Implements the exact method. |
 |   |   |  |
-| [`envStats::eqnpar`](http://finzi.psych.upenn.edu/R/library/EnvStats/html/eqnpar.html)  | 2.1.1 | implements both an exact and an asymptotic interval  |
+| [`envStats::eqnpar`](http://finzi.psych.upenn.edu/R/library/EnvStats/html/eqnpar.html)  |  | implements both an exact and an asymptotic interval  |
 |   |   |  |
-| [`asht::quantileTest`](http://finzi.psych.upenn.edu/R/library/asht/html/quantileTest.html)| 0.6 | also implements an exact method |
+| [`asht::quantileTest`](http://finzi.psych.upenn.edu/R/library/asht/html/quantileTest.html)|  | also implements an exact method |
 |   |   |  |
-| [`Qtools::confint.midquantile`](http://finzi.psych.upenn.edu/R/library/Qtools/html/confint.midquantile.html) | 1.1 | operates on the mid-quantile (whatever that is). The method is not investigated further.
+| [`Qtools::confint.midquantile`](http://finzi.psych.upenn.edu/R/library/Qtools/html/confint.midquantile.html) |  | operates on the mid-quantile (whatever that is). The method is not investigated further.
 |   |   |  |
 <p>
 
@@ -159,20 +159,50 @@ the above mentioned procedures:
 
 ```r
 as.numeric(MKmisc::quantileCI(x=x, prob=p, method="exact",conf.level=0.95)$CI)
+```
+
+```
+## Error in loadNamespace(name): there is no package called 'MKmisc'
+```
+
+```r
 as.numeric(MKmisc::quantileCI(x=x, prob=p, method="asymptotic",conf.level=0.95)$CI)
+```
+
+```
+## Error in loadNamespace(name): there is no package called 'MKmisc'
+```
+
+```r
 as.numeric(jmuOutlier::quantileCI(x=x, probs=p, conf.level=0.95)[1,c("lower","upper")])
+```
+
+```
+## Error in loadNamespace(name): there is no package called 'jmuOutlier'
+```
+
+```r
 as.numeric(EnvStats::eqnpar(x=x, p=p, ci=TRUE, ci.method="exact",approx.conf.level=0.95)$interval$limits)
+```
+
+```
+## Error in loadNamespace(name): there is no package called 'EnvStats'
+```
+
+```r
 as.numeric(EnvStats::eqnpar(x=x, p=p, ci=TRUE, ci.method="normal.approx",approx.conf.level=0.95)$interval$limits)
+```
+
+```
+## Error in loadNamespace(name): there is no package called 'EnvStats'
+```
+
+```r
 as.numeric(asht::quantileTest(x=x,p=p,conf.level=0.95)$conf.int)
 ```
 
 ```
-## [1] -0.03377687  1.52483138
-## [1] -0.03377687  1.52483138
-## [1] -0.03377687  1.52483138
-## [1] 0.2212113 2.6786278
-## [1] -0.03377687  1.52483138
-## [1] -0.03377687  2.67862782
+## Error in loadNamespace(name): there is no package called 'asht'
 ```
 
 An impressive number of similar, but yet, different results! To add to the confusion here is
@@ -187,14 +217,26 @@ The package provides three methods for computing confidence intervals for quanti
 
 ```r
 quantileCI::quantile_confint_nyblom(x=x, p=p, conf.level=0.95,interpolate=FALSE)
+```
+
+```
+## Error in loadNamespace(name): there is no package called 'quantileCI'
+```
+
+```r
 quantileCI::quantile_confint_nyblom(x=x, p=p, conf.level=0.95,interpolate=TRUE)
+```
+
+```
+## Error in loadNamespace(name): there is no package called 'quantileCI'
+```
+
+```r
 quantileCI::quantile_confint_boot(x, p=p, conf.level=0.95,R=999, type=1)
 ```
 
 ```
-## [1] -0.03377687  2.67862782
-## [1] 0.07894831 1.54608644
-## [1] -0.0376499  1.2008637
+## Error in loadNamespace(name): there is no package called 'quantileCI'
 ```
 
 The first procedure with `interpolate=FALSE` implements the previously
@@ -240,12 +282,7 @@ quantile_confints(x, p=p, conf.level=0.95)
 ```
 
 ```
-##   jmuOutlier_exact EnvStats_exact EnvStats_asymp asht_quantTest nyblom_exact
-## 1      -0.03377687      0.2212113    -0.03377687    -0.03377687  -0.03377687
-## 2       1.52483138      2.6786278     1.52483138     2.67862782   2.67862782
-##   nyblom_interp        boot
-## 1    0.07894831 -0.03377687
-## 2    1.54608644  1.26565726
+## Error in loadNamespace(name): there is no package called 'jmuOutlier'
 ```
 
 In order to evaluate the various methods and implementations we
@@ -406,8 +443,40 @@ quantile of the standard normal distribution based on the above sample
 of size $n$=25 say this in less than 1000 words.
 
 
+```
+## Error in loadNamespace(name): there is no package called 'quantileCI'
+```
 
-<img src="http://staff.math.su.se/hoehle/blog/figure/source/2016-10-23-quantileCI/FIRSTPICTURE-1.png" style="display: block; margin: auto;" />
+```
+## Error in loadNamespace(name): there is no package called 'quantileCI'
+```
+
+```
+## Error in pmatch(ci1, x): object 'ci1' not found
+```
+
+```
+## Error in pbinom(idx[1] - 1, prob = p, size = n): object 'idx' not found
+```
+
+```
+## Error in eval(expr, envir, enclos): object 'p_tail' not found
+```
+
+```
+## Error in eval(expr, envir, enclos): object 'idx' not found
+```
+
+```
+## Error in pbinom(idx[1] + 1 - 1, prob = p, size = n): object 'idx' not found
+```
+
+
+```
+## Error in sprintf("Exact %0.f%% CI (%.1f%% coverage)", (1 - alpha) * 100, : object 'cov1' not found
+```
+
+<img src="{{ site.baseurl }}/figure/source/2016-10-23-quantileCI/FIRSTPICTURE-1.png" style="display: block; margin: auto;" />
 
 # Appendix
 
