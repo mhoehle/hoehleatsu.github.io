@@ -37,8 +37,8 @@ package to simplify the comparison of the two results.
 
 
 <center>
-```{r,results='asis',echo=FALSE,fig.cap="Daffodil"}
-cat(paste0("![](https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/A_Perfect_Pair_Daffodills_%28Narcissus%29_-_8.jpg/320px-A_Perfect_Pair_Daffodills_%28Narcissus%29_-_8.jpg)"))
+```{r,results='asis',echo=FALSE,fig.cap="Daffodills"}
+cat(paste0("![Daffodills](https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/A_Perfect_Pair_Daffodills_%28Narcissus%29_-_8.jpg/320px-A_Perfect_Pair_Daffodills_%28Narcissus%29_-_8.jpg)"))
 ```
 </center>
 
@@ -49,7 +49,7 @@ cat(paste0("![](https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/A_Perf
 If you are a statistician working in climate science, data driven
 journalism, official statistics, public health, economics or any
 related field working with *real* data, chances are that you have to
-perform analyses, where you know there is a zero tolerance for errors.
+perform analyses, where you know there is zero tolerance for errors.
 The easiest way to ensure the correctness of such an analysis is to
 check your results over and over again (the **iterated 2-eye
 principle**). A better approach is to pair-program the analysis by
@@ -62,14 +62,13 @@ how to ensure the quality of your code. However, when it comes to
 pair-programming analyses, surprisingly many steps remain manual. The
 `daff` package provides the equivalent of a `diff` statement on data
 frames and we shall illustrate its use by automatizing the comparison
-step of the statistical proof-calculation ping-pong.
+step of the statistical proof-calculation ping-pong process.
 
 ## Case Story
 
-Ada and Bob have to proof-calculate the quadrennial official
+Ada and Bob have to proof-calculate their country's quadrennial official
 statistics on the total income and number of employed people in
-[fitness centers](https://www.destatis.de/DE/Publikationen/Qualitaetsberichte/Dienstleistungen/SonstDienstleistungsbereiche2010.pdf?__blob=publicationFile)
-in their country. A sample of fitness centers is asked to fill out a
+[fitness centers](https://www.destatis.de/DE/Publikationen/Qualitaetsberichte/Dienstleistungen/SonstDienstleistungsbereiche2010.pdf?__blob=publicationFile). A sample of fitness centers is asked to fill out a
 questionnaire containing their yearly sales volume, staff costs and number
 of employees. For this post we will ignore the complex survey part of
 the problem and just pretend that our sample corresponds to the
@@ -78,7 +77,7 @@ the following data are available to Ada and Bob.
 
 ```{r,message=FALSE}
 fitness <- readr::read_csv(file.path(filePath,"fitness.csv"))
-kable(fitness) %>% kable_styling(bootstrap_options = c("striped", "hover"))
+kable(fitness) %>% kable_styling(bootstrap_options = c("striped"))
 ```
 
 Here `Id` denotes the unique identifier of the sampled fitness center,
@@ -120,7 +119,7 @@ ada
 
 ### Bob
 
-Bob has a dark past as database developer and only since recently experiences
+Bob has a dark past as database developer and, hence, only recently experienced
 the joys of R. He therefore chooses a no-SQL-server-necessary [`SQLite` within
 R](https://www.r-bloggers.com/r-and-sqlite-part-1/) approach:
 
@@ -154,19 +153,22 @@ package, which was recently presented by [\@edwindjonge](https://twitter.com/edw
 ```{r, echo=TRUE}
 library(daff)
 diff <- diff_data(ada, bob)
+diff$get_data()
+```
+
+After Ada's and Bob's serve, the two realize that their results just
+agree for one region ('E'). *Note*: Currently, `daff` has the
+semi-annoying feature of not being able to show all the diffs when
+printing, but just `n` lines of the head and tail. As a consequence,
+for the purpose of this post, we overwrite the printing function such
+that it always shows all rows with differences.
+
+```{r,echo=TRUE}
 print.data_diff <- function(x) x$get_data() %>% filter(`@@` != "")
 print(diff)
 ```
 
-*Note*: Currently, `daff` has the semi-annoying feature of not being
-able to show all the diffs when printing, but just `n` lines of the
-head and tail. As a consequence, for the purpose of this post, we
-overwrite the printing function such that it always shows all rows with
-differences.
-
-After Ada's and Bob's serve, the two realize that their results just
-agree for one region ('E'). They therefore decide to first focus on
-agreeing on the number of units per region.
+The two decide to first focus on agreeing on the number of units per region.
 
 ```{r}
 diff$get_data() %>% filter(`@@` != "") %>% select(`@@`, Region, NoOfUnits)
@@ -174,7 +176,7 @@ diff$get_data() %>% filter(`@@` != "") %>% select(`@@`, Region, NoOfUnits)
 
 One obvious reason for the discrepancies appears to be that Bob has
 results for an extra `<NA>` region. Therefore, Bob takes another look at his
-management of missing values and decided to improve his code by:
+management of missing values and decides to improve his code by:
 
 #### Pong Bob
 ```{r, echo=TRUE}
@@ -196,13 +198,13 @@ diff2 %>% print()
 
 Better. Now the `NA` region is gone, but still quite some differences
 remain. *Note*: You may at this point want to stop reading and try
-yourself to fix the analysis (data and code are available from the
-[github repo]()).
+yourself to fix the analysis - the [data](https://github.com/hoehleatsu/hoehleatsu.github.io/blob/master/figure/source/2017-09-01-proofpingpong/fitness.csv) and [code](https://github.com/hoehleatsu/hoehleatsu.github.io/blob/master/_source/2017-09-01-proofpingpong.Rmd) are available from the
+github repository.
 
-#### Pong
+#### Pong Bob
 
-Here is how the story continues. Bob notices that he forgot to handle
-possible duplicate records and massages the SQL query to improve on this.
+Now Bob notices that he forgot to handle the duplicate records and
+massages the SQL query as follows:
 
 ```{r}
 #https://stackoverflow.com/questions/14802507/find-first-row-from-join-or-group
@@ -222,14 +224,20 @@ diff3 <- diff_data(ada, bob3, ordered=FALSE,count_like_a_spreadsheet=FALSE)
 diff3 %>% print()
 ```
 
-#### Ping
-Looking at this code and comparing with Ada, Bob is sort of envious
-that she was able to just use the `group_by` and `top_n` function.
+#### Ping Ada
+
+Comparing with Ada, Bob is sort of envious
+that she was able to just use `dplyr`'s `group_by` and `top_n` functions.
 However, `daff` shows that there still is one difference left. By
 looking more carefully at Ada's code it becomes clear that she
-accidentally (?) leaves out one unit in D. The reason is her too
+accidentally leaves out one unit in region D. The reason is the too
 liberate use of `na.omit`, which also removes the one entry with an
-`NA` in just one of the not so important columns. Here is her modified code:
+`NA` in one of the not so important columns. However, they discuss the
+issue, if one really wants to include partial records or not, because
+summation in the different columns then is over a different number of
+units. After consulting with the standard operation procedure (SOP)
+for these kind of surveys they decide to include the observation where
+possible. Here is Ada's modified code:
 
 ```{r, echo=TRUE}
 ada2 <- fitness %>% filter(!is.na(Region)) %>% group_by(Region,Id) %>% top_n(1,Version) %>%
@@ -242,7 +250,7 @@ ada2 <- fitness %>% filter(!is.na(Region)) %>% group_by(Region,Id) %>% top_n(1,V
 (diff_final <- diff_data(ada2,bob3)) %>% print()
 ```
 
-#### Ping
+#### Pong Ada
 Oops, forgot to take care of the `NA` in the summation:
 
 ```{r,echo=TRUE}
@@ -253,16 +261,17 @@ ada3 <- fitness %>% filter(!is.na(Region)) %>% group_by(Region,Id) %>% top_n(1,V
             `Sales Volume`=sum(`Sales Volume`),
             `Staff Costs`=sum(`Staff Costs`),
             People=sum(People,na.rm=TRUE))
-(diff_final <- diff_data(ada3,bob3)) %>% print()
+diff_final <- diff_data(ada3,bob3)
+length(diff_final$get_data()) == 0
 ```
 
 ## Conclusion
 
-Finally, their results agree and they move on to production. Their
+Finally, their results agree and they move on to production and their
 results are published in a
-[nice report](https://www.destatis.de/DE/Publikationen/Thematisch/DienstleistungenFinanzdienstleistungen/KostenStruktur/KostenstrukturFitness2020163109004.pdf?__blob=publicationFile)?
+[nice report](https://www.destatis.de/DE/Publikationen/Thematisch/DienstleistungenFinanzdienstleistungen/KostenStruktur/KostenstrukturFitness2020163109004.pdf?__blob=publicationFile).
 
-[**Question 1:**] Do you agree with their results?
+**Question 1**: Do you agree with their results?
 
 ```{r,echo=TRUE}
 ada3
@@ -270,11 +279,13 @@ ada3
 
 As shown, the ping-pong game is quite manual and particularly
 annoying, if at some point someone steps into the office with a
-statement like 'Btw, I found some extra questionnaires, which need to
-be added to the analysis". However, the two now aligned analysis
-scripts an the corresponding daff-overlaying could be put into a
+statement like *Btw, I found some extra questionnaires, which need to
+be added to the analysis asap*. However, the two now aligned analysis
+scripts and the corresponding daff-overlay could be put into a
 script, which is triggered every time the data change. In case new
-discrepancies emerge as `nrow(diff$get_data()) > 0`, the two could
+discrepancies emerge as `length(diff$get_data()) > 0`, the two could
 then be automatically informed.
 
-[**Question 2:**]: Are you aware of any other good ways and tools to structure and automatize such a process? If so, please share your experiences as a Disqus comment below.
+**Question 2**: Are you aware of any other good ways and tools to
+  structure and automatize such a process? If so, please share your
+  experiences as a Disqus comment below.
