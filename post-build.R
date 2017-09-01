@@ -5,13 +5,15 @@ knitr::opts_knit$set(
                  )
 
 ##Make redirect file
-redir <- '<!DOCTYPE HTML>
+redir <- function(url) {
+paste0(
+'<!DOCTYPE HTML>
 <html lang="en-US">
     <head>
         <meta charset="UTF-8">
-        <meta http-equiv="refresh" content="1; url=../13/bday.html">
+        <meta http-equiv="refresh" content="1; url=',url,'">
         <script type="text/javascript">
-            window.location.href = "../13/bday.html"
+            window.location.href = "',url,'"
         </script>
         <title>Page Redirection</title>
     </head>
@@ -19,8 +21,13 @@ redir <- '<!DOCTYPE HTML>
         <!-- Note: do not tell people to \`click\` the link, just tell them that it is a link. -->
         If you are not redirected automatically, follow this <a href=\'http://example.com\'>link to example</a>.
     </body>
-</html>'
+</html>')
+}
 
 ##Make some redirects
 dir.create(file.path(knitr::opts_knit$get("base.dir"),"_site","2017","02","11"))
-writeLines(redir, con=file(file.path(knitr::opts_knit$get("base.dir"),"_site","2017","02","11","bday.html")))
+writeLines(redir(url="../13/bday.html"), con=file(file.path(knitr::opts_knit$get("base.dir"),"_site","2017","02","11","bday.html")))
+
+##Ping pong post
+dir.create(file.path(knitr::opts_knit$get("base.dir"),"_site","2017","09","01"))
+writeLines(redir(url="../02/pairprogramming.html"), con=file(file.path(knitr::opts_knit$get("base.dir"),"_site","2017","09","01","proofpingpong.html")))

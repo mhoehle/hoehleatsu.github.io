@@ -252,10 +252,10 @@ bob
 ## 5      E         1        33020       25010      7
 ```
 
-*Update*: An alternative for less syntactic overhead would have been the
-[`sqldf`](https://github.com/ggrothendieck/sqldf) package, which has a
-standard SQLite backend and automagically handles the import of the
-`data.frame` into the DB using the `RSQLite` pkg.
+*Update*: An alternative approach with less syntactic overhead would
+have been the [`sqldf`](https://github.com/ggrothendieck/sqldf)
+package, which has a standard SQLite backend and automagically handles
+the import of the `data.frame` into the DB using the `RSQLite` pkg.
 
 
 ```r
