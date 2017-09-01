@@ -5,7 +5,7 @@ knitr::opts_knit$set(
                  )
 
 ##Make redirect file
-  redir <- '<!DOCTYPE HTML>
+redir <- '<!DOCTYPE HTML>
 <html lang="en-US">
     <head>
         <meta charset="UTF-8">
@@ -20,5 +20,7 @@ knitr::opts_knit$set(
         If you are not redirected automatically, follow this <a href=\'http://example.com\'>link to example</a>.
     </body>
 </html>'
-  dir.create(file.path(knitr::opts_knit$get("base.dir"),"_site","2017","02","11"))
-  writeLines(redir, con=file(file.path(knitr::opts_knit$get("base.dir"),"_site","2017","02","11","bday.html")))
+
+##Make some redirects
+dir.create(file.path(knitr::opts_knit$get("base.dir"),"_site","2017","02","11"))
+writeLines(redir, con=file(file.path(knitr::opts_knit$get("base.dir"),"_site","2017","02","11","bday.html")))

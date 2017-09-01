@@ -270,7 +270,7 @@ r %<>% mutate(violates_duality =  q90 > 15 & prop < 0.1)
 ```
 
 ```
-## # A tibble: 5 × 3
+## # A tibble: 5 x 3
 ##     q90       prop violates_duality
 ##   <dbl>      <dbl>            <lgl>
 ## 1  15.0 0.09859155             TRUE
@@ -323,7 +323,7 @@ r %<>% mutate(violates_duality_numsafe =  (q90 %greater% 15) & (prop %less% 0.1)
 ```
 
 ```
-## # A tibble: 5 × 4
+## # A tibble: 5 x 4
 ##     q90       prop violates_duality violates_duality_numsafe
 ##   <dbl>      <dbl>            <lgl>                    <lgl>
 ## 1  16.2 0.09859155             TRUE                     TRUE
@@ -397,7 +397,7 @@ on 6th of July at the
 <center>
 ![](https://c1.staticflickr.com/9/8760/29032559971_6662607e05.jpg)
 <br>
-<FONT COLOR="bbbbbb">Photo is copyright [George Thomas](https://www.flickr.com/photos/hz536n/29032559971/), available under a CC BY-NC-ND 2.0 license.</FONT>
+<FONT COLOR="bbbbbb">Photo is copyright [George Thomas](https://www.flickr.com/photos/hz536n/29032559971/) under a CC BY-NC-ND 2.0 license.</FONT>
 </center>
 <p>
 

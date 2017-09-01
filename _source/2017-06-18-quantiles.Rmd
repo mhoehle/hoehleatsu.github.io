@@ -399,7 +399,7 @@ on 6th of July at the
 cat(paste0("![](https://c1.staticflickr.com/9/8760/29032559971_6662607e05.jpg)"))
 ```
 <br>
-<FONT COLOR="bbbbbb">Photo is copyright [George Thomas](https://www.flickr.com/photos/hz536n/29032559971/), available under a CC BY-NC-ND 2.0 license.</FONT>
+<FONT COLOR="bbbbbb">Photo is copyright [George Thomas](https://www.flickr.com/photos/hz536n/29032559971/) under a CC BY-NC-ND 2.0 license.</FONT>
 </center>
 <p>
 

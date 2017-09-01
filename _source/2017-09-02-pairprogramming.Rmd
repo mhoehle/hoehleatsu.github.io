@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "The Proof-Calculation Ping Pong"
+title: "Pair Programming Statistical Analyses"
 tags: [rstats, stats, quality]
 bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
@@ -10,10 +10,10 @@ comments: true
 ##If default fig.path, then set it.
 if (knitr::opts_chunk$get("fig.path") == "figure/") {
   knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
-  knitr::opts_chunk$set(fig.path="figure/source/2017-09-01-proofpingpong/")
+  knitr::opts_chunk$set(fig.path="figure/source/2017-09-02-pairprogramming/")
 }
 fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
-filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2017-09-01-proofpingpong")
+filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2017-09-02-pairprogramming")
 
 knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=4,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2) # autodep=TRUE
 options(width=90)
@@ -30,17 +30,22 @@ theme_set(theme_bw())
 
 ## Abstract
 
-The proof-calculation ping-pong is the process of iteratively
+Control calculation ping-pong is the process of iteratively
 improving a statistical analysis by comparing results from two
 independent analysis approaches until agreement. We use the `daff`
-package to simplify the comparison of the two results.
-
+package to simplify the comparison of the two results and illustrate
+its use by a case study with two statisticians ping-ponging an
+analysis using dplyr and SQL, respectively.
 
 <center>
-```{r,results='asis',echo=FALSE,fig.cap="Daffodills"}
-cat(paste0("![Daffodills](https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/A_Perfect_Pair_Daffodills_%28Narcissus%29_-_8.jpg/320px-A_Perfect_Pair_Daffodills_%28Narcissus%29_-_8.jpg)"))
+```{r,results='asis',echo=FALSE}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"pingpong.png"),")")
 ```
 </center>
+<br>
+<FONT COLOR="bbbbbb">Clip art is based on work by
+[Gan Khoon Lay](https://thenounproject.com/term/ping-pong/655102/)
+available under a CC BY 3.0 US license.</FONT>
 
 {% include license.html %}
 
@@ -62,18 +67,24 @@ how to ensure the quality of your code. However, when it comes to
 pair-programming analyses, surprisingly many steps remain manual. The
 `daff` package provides the equivalent of a `diff` statement on data
 frames and we shall illustrate its use by automatizing the comparison
-step of the statistical proof-calculation ping-pong process.
+step of the control calculation ping-pong process.
 
-## Case Story
+## The Case Story
 
-Ada and Bob have to proof-calculate their country's quadrennial official
-statistics on the total income and number of employed people in
-[fitness centers](https://www.destatis.de/DE/Publikationen/Qualitaetsberichte/Dienstleistungen/SonstDienstleistungsbereiche2010.pdf?__blob=publicationFile). A sample of fitness centers is asked to fill out a
-questionnaire containing their yearly sales volume, staff costs and number
-of employees. For this post we will ignore the complex survey part of
-the problem and just pretend that our sample corresponds to the
-population (complete inventory count). After the questionnaire phase,
-the following data are available to Ada and Bob.
+Ada and Bob have to calculate their country's quadrennial
+official statistics on the total income and number of employed people
+in
+[fitness centers](https://www.destatis.de/DE/Publikationen/Qualitaetsberichte/Dienstleistungen/SonstDienstleistungsbereiche2010.pdf?__blob=publicationFile). A
+sample of fitness centers is asked to fill out a questionnaire
+containing their yearly sales volume, staff costs and number of
+employees. The present exposition will for the sake of convenience
+ignore the complex survey part of the problem and just pretend that the
+sample corresponds to the population (complete inventory count).
+
+### The Data
+
+After the questionnaire phase, the following data are available to Ada
+and Bob.
 
 ```{r,message=FALSE}
 fitness <- readr::read_csv(file.path(filePath,"fitness.csv"))
@@ -119,16 +130,19 @@ ada
 
 ### Bob
 
-Bob has a dark past as database developer and, hence, only recently experienced
-the joys of R. He therefore chooses a no-SQL-server-necessary [`SQLite` within
-R](https://www.r-bloggers.com/r-and-sqlite-part-1/) approach:
+Bob has a dark past as a relational database management system (RDBMS)
+developer and, hence, only recently experienced the joys of R. He
+therefore chooses a no-SQL-server-necessary
+[`SQLite` within R](https://www.r-bloggers.com/r-and-sqlite-part-1/)
+approach. The hope is that in big data situation this might be a
+little more speedy than base R:
 
 ```{r, echo=TRUE}
 library(RSQLite)
 ## Create ad-hoc database
 db <- dbConnect(SQLite(), dbname = file.path(filePath,"Test.sqlite"))
 ##Move fitness data into the ad-hoc DB
-dbWriteTable(conn = db, name = "FITNESS", fitness, overwrite=TRUE, row.names=FALSE)
+dbWriteTable(conn = db, name = "fitness", fitness, overwrite=TRUE, row.names=FALSE)
 ##Query using SQL
 bob <- dbGetQuery(db, "
     SELECT Region,
@@ -136,16 +150,53 @@ bob <- dbGetQuery(db, "
            SUM([Sales Volume]) As [Sales Volume],
            SUM([Staff Costs]) AS [Staff Costs],
            SUM(People) AS People
-    FROM FITNESS
+    FROM fitness
     WHERE [Sales Volume] > 17500 GROUP BY Region
 ")
 bob
 ```
 
-### The Ping-Pong phase
+*Update*: An alternative for less syntactic overhead would have been the
+[`sqldf`](https://github.com/ggrothendieck/sqldf) package, which has a
+standard SQLite backend and automagically handles the import of the
+`data.frame` into the DB using the `RSQLite` pkg.
+
+```{r, echo=TRUE}
+##Load package
+suppressPackageStartupMessages(library(sqldf))
+##Ensure SQLite backend.
+options(sqldf.driver = "SQLite")
+##Same query as before
+bob <- sqldf("
+    SELECT Region,
+           COUNT(*) As NoOfUnits,
+           SUM([Sales Volume]) As [Sales Volume],
+           SUM([Staff Costs]) AS [Staff Costs],
+           SUM(People) AS People
+    FROM fitness
+    WHERE [Sales Volume] > 17500 GROUP BY Region
+")
+```
+
+Even shorter is the
+[direct use of SQL chunks](https://twitter.com/zevross/status/895663618158501888)
+in knitr using the variable `db` as connection and using the chunk
+argument `output.var=bob`:
+
+```{sql, connection= db, echo=TRUE, output.var="bobX"}
+SELECT Region,
+       COUNT(*) As NoOfUnits,
+       SUM([Sales Volume]) As [Sales Volume],
+       SUM([Staff Costs]) AS [Staff Costs],
+       SUM(People) AS People
+FROM fitness
+WHERE [Sales Volume] > 17500 GROUP BY Region
+```
+
+### The Ping-Pong Phase
 
 After Ada and Bob each have a result, they compare their
-resulting `data.frames`s using the
+resulting `data.frame` using the
 [`daff`](https://cran.r-project.org/web/packages/daff/index.html)
 package, which was recently presented by [\@edwindjonge](https://twitter.com/edwindjonge) at the [useR in Brussels](https://channel9.msdn.com/Events/useR-international-R-User-conferences/useR-International-R-User-2017-Conference/Daff-diff-patch-and-merge-for-dataframes).
 
@@ -157,20 +208,24 @@ diff$get_data()
 ```
 
 After Ada's and Bob's serve, the two realize that their results just
-agree for one region ('E'). *Note*: Currently, `daff` has the
-semi-annoying feature of not being able to show all the diffs when
-printing, but just `n` lines of the head and tail. As a consequence,
-for the purpose of this post, we overwrite the printing function such
-that it always shows all rows with differences.
+agree for the region E.
+
+*Note*: Currently, `daff` has the semi-annoying feature of not being
+able to show all the diffs when printing, but just `n` lines of the
+head and tail. As a consequence, for the purpose of this post, we
+overwrite the printing function such that it always shows all rows
+with differences.
 
 ```{r,echo=TRUE}
+##Small helper function for better printing
 print.data_diff <- function(x) x$get_data() %>% filter(`@@` != "")
-print(diff)
+
+diff %>% print()
 ```
 
-The two decide to first focus on agreeing on the number of units per region.
+The two decide to first agree on the number of units per region.
 
-```{r}
+```{r, echo=TRUE}
 diff$get_data() %>% filter(`@@` != "") %>% select(`@@`, Region, NoOfUnits)
 ```
 
@@ -179,17 +234,17 @@ results for an extra `<NA>` region. Therefore, Bob takes another look at his
 management of missing values and decides to improve his code by:
 
 #### Pong Bob
-```{r, echo=TRUE}
-bob2 <- dbGetQuery(db, "
-    SELECT Region,
-           COUNT(*) As NoOfUnits,
-           SUM([Sales Volume]) As [Sales Volume],
-           SUM([Staff Costs]) AS [Staff Costs],
-           SUM(People) AS People
-    FROM FITNESS
-    WHERE ([Sales Volume] > 17500 AND REGION IS NOT NULL)
-    GROUP BY Region
-")
+```{sql, connection= db, echo=TRUE, output.var="bob2"}
+SELECT Region,
+       COUNT(*) As NoOfUnits,
+       SUM([Sales Volume]) As [Sales Volume],
+       SUM([Staff Costs]) AS [Staff Costs],
+       SUM(People) AS People
+FROM fitness
+WHERE ([Sales Volume] > 17500 AND REGION IS NOT NULL)
+GROUP BY Region
+```
+````{r}
 diff2 <- diff_data(ada, bob2, ordered=FALSE,count_like_a_spreadsheet=FALSE)
 diff2 %>% print()
 ```
@@ -198,28 +253,29 @@ diff2 %>% print()
 
 Better. Now the `NA` region is gone, but still quite some differences
 remain. *Note*: You may at this point want to stop reading and try
-yourself to fix the analysis - the [data](https://github.com/hoehleatsu/hoehleatsu.github.io/blob/master/figure/source/2017-09-01-proofpingpong/fitness.csv) and [code](https://github.com/hoehleatsu/hoehleatsu.github.io/blob/master/_source/2017-09-01-proofpingpong.Rmd) are available from the
+yourself to fix the analysis - the [data](https://github.com/hoehleatsu/hoehleatsu.github.io/blob/master/figure/source/2017-09-02-pairprogramming/fitness.csv) and [code](https://github.com/hoehleatsu/hoehleatsu.github.io/blob/master/_source/2017-09-02-pairprogramming.Rmd) are available from the
 github repository.
 
 #### Pong Bob
 
 Now Bob notices that he forgot to handle the duplicate records and
-massages the SQL query as follows:
+apparently misunderstood the exact definition of the €17,500 exclusion limit.
+His massaged SQL query looks as follows:
 
 ```{r}
 #https://stackoverflow.com/questions/14802507/find-first-row-from-join-or-group
 ```
-```{r, echo=TRUE}
-bob3 <- dbGetQuery(db, "
-    SELECT Region,
-           COUNT(*) As NoOfUnits,
-           SUM([Sales Volume]) As [Sales Volume],
-           SUM([Staff Costs]) AS [Staff Costs],
-           SUM(People) AS People FROM
-    (SELECT Id, MAX(Version), Region, [Sales Volume], [Staff Costs], People FROM FITNESS GROUP BY Id)
-    WHERE ([Sales Volume] >= 17500 AND REGION IS NOT NULL)
-    GROUP BY Region
-")
+```{sql, connection= db, echo=TRUE, output.var="bob3"}
+SELECT Region,
+       COUNT(*) As NoOfUnits,
+       SUM([Sales Volume]) As [Sales Volume],
+       SUM([Staff Costs]) AS [Staff Costs],
+       SUM(People) AS People
+FROM (SELECT Id, MAX(Version), Region, [Sales Volume], [Staff Costs], People FROM fitness GROUP BY Id)
+WHERE ([Sales Volume] >= 17500 AND REGION IS NOT NULL)
+GROUP BY Region
+```
+```{r}
 diff3 <- diff_data(ada, bob3, ordered=FALSE,count_like_a_spreadsheet=FALSE)
 diff3 %>% print()
 ```
@@ -251,7 +307,7 @@ ada2 <- fitness %>% filter(!is.na(Region)) %>% group_by(Region,Id) %>% top_n(1,V
 ```
 
 #### Pong Ada
-Oops, forgot to take care of the `NA` in the summation:
+Oops, Ada forgot to take care of the `NA` in the summation:
 
 ```{r,echo=TRUE}
 ada3 <- fitness %>% filter(!is.na(Region)) %>% group_by(Region,Id) %>% top_n(1,Version) %>%
@@ -262,20 +318,16 @@ ada3 <- fitness %>% filter(!is.na(Region)) %>% group_by(Region,Id) %>% top_n(1,V
             `Staff Costs`=sum(`Staff Costs`),
             People=sum(People,na.rm=TRUE))
 diff_final <- diff_data(ada3,bob3)
+
+##Check if the results really are the same
 length(diff_final$get_data()) == 0
 ```
-
-## Conclusion
 
 Finally, their results agree and they move on to production and their
 results are published in a
 [nice report](https://www.destatis.de/DE/Publikationen/Thematisch/DienstleistungenFinanzdienstleistungen/KostenStruktur/KostenstrukturFitness2020163109004.pdf?__blob=publicationFile).
 
-**Question 1**: Do you agree with their results?
-
-```{r,echo=TRUE}
-ada3
-```
+## Conclusion
 
 As shown, the ping-pong game is quite manual and particularly
 annoying, if at some point someone steps into the office with a
@@ -286,6 +338,29 @@ script, which is triggered every time the data change. In case new
 discrepancies emerge as `length(diff$get_data()) > 0`, the two could
 then be automatically informed.
 
+**Question 1**: Now the two get the same results, do you agree with
+  them?
+
+```{r,echo=FALSE}
+ada3
+```
+
 **Question 2**: Are you aware of any other good ways and tools to
   structure and automatize such a process? If so, please share your
-  experiences as a Disqus comment below.
+  experiences as a Disqus comment below. Control calculations appear
+  quite common, but little structured code support appears to be
+  available for such processes.
+<p>
+<p>
+<center>
+```{r,results='asis',echo=FALSE,fig.cap="Daffodills"}
+cat(paste0("![Daffodills](https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/A_Perfect_Pair_Daffodills_%28Narcissus%29_-_8.jpg/320px-A_Perfect_Pair_Daffodills_%28Narcissus%29_-_8.jpg)"))
+```
+</center>
+<br>
+<FONT COLOR="bbbbbb">Photo is copyright
+[Johnathan J. Stegeman](https://en.wikipedia.org/wiki/Narcissus_(plant)#/media/File:A_Perfect_Pair_Daffodills_(Narcissus)_-_8.jpg)
+under the [GNU Free Documentation License, version 1.2](https://commons.wikimedia.org/wiki/Commons:GNU_Free_Documentation_License,_version_1.2).</FONT>
+
+
+
