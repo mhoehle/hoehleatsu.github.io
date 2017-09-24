@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Confidence Intervals without Your Collaborator's Tears"
-tags: [rstats, stats, regulation, EPA]
+tags: [rstats, stats, uncertainty]
 bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
 ---
@@ -33,12 +33,48 @@ Now I'd like to state a 95% confidence
 interval for what the proportion of the trait is in the population of
 turtles (which is pretty large).
 
-**[Statistician]:** Ok, that should be possible. Since your population
-is large, we do not need a finite population correction, Since your
-sample is also pretty large, let's therefore go with the textbook
-large-sample confidence interval for a binomial proportion, that is
-$\hat{p} \pm 1.96 \sqrt{\hat{p}(1-\hat{p})/n}$, where
-$\hat{p}=x/n$. Don't worry about the equation, let's use R and
+**[Statistician]:** Interesting, but no so fast. Before going into the
+statistical specifics I would like to talk about the
+representativeness of your sample. Can you explain in more detail what
+is the population of turtles you would like to make a statement about
+and how the sample was selected.
+
+**[Client]:** I'm surprised you care about turtles (*eyes start to
+glow*). My research area is the indo-pacific subpopulation of the
+[green sea turtle](https://en.wikipedia.org/wiki/Green_sea_turtle), in
+particular the one outside the Great Barrier Reef. The population is
+believed to be a few thousands large and we sample by catching
+turtles using the
+[rodeo method](https://www.youtube.com/watch?v=FnKcBZBaAW8) at
+specific feeding grounds. Each turtle was then tagged and a skin
+biopsy was taken. From the biopsy it was determined if the turtle is
+clinically unhealthy by measuring marker values and then check if its
+specific value was outside the presented reference interval.
+
+**[Statistician]:** Hmm, that's a lot of information. And what
+population do you want to make a statement about? All green turtles?
+
+**[Client]:** That would be nice, but no. There are genetic
+  differences between the varies subspecies so I would be happy just
+  to make a statement about the Great Barrier Reef population.
+
+**[Statistician]:** That sounds fair. You might get some bias by only
+  sampling from feeding grounds and I'm unsure about the spatial
+  design of your capture strategy.
+
+**[Client:]** We gave this a lot of thought and varied both the time
+  and site of sampling, but there is no hypothesis that there is great
+  spatial variation within the reef area.
+
+**[Statistician]:** Well, it's my job to check the representativeness
+of the sample, but it sounds like you already gave this great
+thought. From what you describe sampling appears to be without
+replacement. However, since your population is large (and also not
+really known), it appears acceptable to skip the finite population
+correction. Since your sample is also pretty large, let's therefore go
+with the textbook large-sample confidence interval for a binomial
+proportion, that is $\hat{p} \pm 1.96 \sqrt{\hat{p}(1-\hat{p})/n}$,
+where $\hat{p}=x/n$. Don't worry about the equation, let's use R and
 the `binom` package to compute the interval:
 
 
@@ -117,7 +153,9 @@ value or not. But since we do not know the true value it's a bit like
 Schrödinger's cat... To keep things very sketchy: The width of the
 interval gives you an indication of your estimation certainty, but the
 particular values are hard to interpret - except maybe as the critical
-limits in a corresponding hypothesis test.
+limits in a corresponding hypothesis test. The later can loosely be
+interpreted as the range of parameters consistent with the data, where
+*consistency* is defined by a pre-defined type-I error probability.
 
 **[Client]:** I'm sorry, but this is **useless**! You suggest to follow a
 common statistical protocol, you compute some numbers, but these numbers don't

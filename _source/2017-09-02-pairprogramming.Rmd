@@ -198,7 +198,9 @@ WHERE [Sales Volume] > 17500 GROUP BY Region
 After Ada and Bob each have a result, they compare their
 resulting `data.frame` using the
 [`daff`](https://cran.r-project.org/web/packages/daff/index.html)
-package, which was recently presented by [\@edwindjonge](https://twitter.com/edwindjonge) at the [useR in Brussels](https://channel9.msdn.com/Events/useR-international-R-User-conferences/useR-International-R-User-2017-Conference/Daff-diff-patch-and-merge-for-dataframes).
+package, which was recently presented by
+[\@edwindjonge](https://twitter.com/edwindjonge) at the
+[useR! 2017 conference](https://channel9.msdn.com/Events/useR-international-R-User-conferences/useR-International-R-User-2017-Conference/Daff-diff-patch-and-merge-for-dataframes).
 
 
 ```{r, echo=TRUE}
