@@ -1,0 +1,335 @@
+---
+layout: post
+title: "Incognito - Sequential Bayesian Identity Disclosure"
+tags: [rstats, stats, quality]
+bibliography: ~/Literature/Bibtex/jabref.bib
+comments: true
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2017-09-02-pairprogramming/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2017-09-02-pairprogramming")
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=4,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2) # autodep=TRUE
+options(width=90)
+
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(magrittr))
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(kableExtra))
+suppressPackageStartupMessages(library(rlang))
+options(knitr.table.format = "html")
+theme_set(theme_bw())
+```
+
+## Abstract
+
+We play the board game *Incognito*
+
+<center>
+```{r,results='asis',echo=FALSE}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"pingpong.png"),")")
+```
+</center>
+<br>
+
+{% include license.html %}
+
+## Introduction
+
+
+Let $I$ be the opponent's identity and $A$ the aspect. Let
+$$
+D_k=(I_{k,A},I_{k,B},I_{k,C},I_{k,D},A_{k,1},A_{k,2},A_{k,3},A_{k,4})'
+$$
+be the information the opponent offers the $i$'th time the person is asked about the idenity. Here, $I_{k,j}$ is an indicator variable showing whether in the $k$'th question the opponent claims to have identity $j$. Furthermore, $A_{k,j}$ is an indicator variable showing whether the opponent in the $k$'th question claims to have aspect $j$.
+
+## Ambassador asking for the identity
+
+For now we just assume the ambassador is used to ask about the opponent's
+identity, i.e. we only obtain information
+$D_k=(I_{k,A},I_{k,B},I_{k,C},I_{k,D})$. The opponent has to state one other possible identity on top their true identity $I$, i.e. that is 3 possible choices. In case the opponent chooses the identity we have ourself, then we know which one is their true identity. Can we set up our probability updating scheme to reflect this?
+
+First we set up a `data.frame` containing the possible answers the opponent can give. As these depend on the identity of the opponent, we add another column indicating the identity.
+
+```{r}
+##All posible ways to choose two out of four
+identities <- c("IA","IB","IC","ID")
+configs  <- combinat::combn(length(identities),2, simplify=FALSE, fun=function(x) {
+  as.data.frame(t(structure(seq_len(4) %in% x, names=identities)))
+})
+##Convert into data.frame
+df <- bind_rows(configs)
+
+##Join an identity column containing each possible identity
+##of the opponent.
+df_am <- data.frame(identity=identities) %>% tidyr::crossing(df)
+```
+
+### Likelihood
+
+$$
+P(D_k=(I_{k,A},I_{k,B},I_{k,C},I_{k,D})' \> |\> I=i) =
+\left\{
+  \begin{array}{ll}
+  \frac{1}{3} & \text{if } I_{k,i}=1 \\
+  0           & \text{otherwhise}
+  \end{array}
+\right.
+$$
+
+```{r}
+##Compute likelihood for each configuration
+df_am %<>% rowwise %>% do({
+  data.frame(., prob=if_else( .[[as.character(.$identity)]], 1/3, 0))
+})
+```
+
+
+## Belief Updating
+
+We use a Bayesian inference framework.
+
+### Prior
+We know our own identity $i_{\text{self}}$ and now get the information $D_k$ from the opponent. What do we learn from this? We start by formulating that the prior is
+$$
+P(I=i) = \frac{1}{3} \cdot I(i \neq i_{\text{self}}), \quad i=A,\ldots,D.
+$$
+
+```{r}
+##We know we have one identity, so prior on this for other player is zero.
+##Out of simplicity assume we are the first one.
+(prior <- c("A"=0, "B"=1/3, "C"=1/3, "D"=1/3))
+```
+
+### Posterior
+
+$$
+P(I=i\>|\>D_k) = \frac{P(D_k|\>I=i)P(I=i)}{P(D_k)} = \frac{P(D_k|\> I=i)P(I=i)}{\sum_{j=1}^4 P(D_k|\> I=j)P(I=j)}, \quad i=A,\ldots, D.
+$$
+
+Everything combined in one function.
+
+```{r BELIEFUPDATE}
+### Function to calculate the likelihood
+likelihood <- function(Dk, identity) {
+  if_else( Dk %>% select(!!identity) %>% .[[1]]== 1, 1/3, 0)
+}
+#############################################################
+## Function for sequentially updating the state information
+############################################################
+update <- function(prior, Dk) {
+  lik <- purrr::map_dbl(identities, ~likelihood(Dk, . ))
+  ##Compute P(I=i|D_k), i.e. our updated belief
+  lik * prior / sum(lik * prior)
+}
+
+
+##Sequence of updates
+p0 <- c("IA"=0, "IB"=1/3, "IC"=1/3, "ID"=1/3)
+D1 <- data.frame(IA=0,IB=1,IC=1,ID=0)
+(p1 <- update(p0, D1))
+D2 <- data.frame(IA=1, IB=1, IC=0,ID=0)
+(p2 <- update(p1, D2))
+```
+## Extend data into general format
+
+```{r}
+df_am_identity <- bind_cols(df_am, data.frame(A1=rep(FALSE, nrow(df_am)), A2=FALSE, A3=FALSE, A4=FALSE)) %>% merge(data.frame(aspect=paste0("A",1:4))) %>% select(identity, aspect, starts_with("I"), starts_with("A"), prob)
+
+df_am_aspect <- df_am_identity
+
+names(df_am_aspect) <- c("aspect", "identity", paste0("A",1:4), paste0("I",LETTERS[1:4]), "prob")
+levels(df_am_aspect$aspect) <- paste0("A",1:4)
+levels(df_am_aspect$identity) <- paste0("I",LETTERS[1:4])
+df_am_aspect %<>% select(identity, aspect, matches("^I+"),matches("^A+"), prob)
+
+df_am_all <- bind_rows(df_am_identity, df_am_aspect) %>% tidyr::unite(ia_comb, identity, aspect, remove=FALSE, sep="/") %>% mutate(q="am") %>% select(q, everything())
+df_am_all
+```
+
+
+## General question about identity or aspect
+
+A normal question consists of asking the opponent about either his identity or aspect. In response the opponent has to provide 3 information: if asked about the identity two of the informations have to concern the identity and one the aspect. Similarly, if asked about the aspect, one identity and two aspect informations have to be given. In other words, if the question is about identity, $D_k$ has to be such that
+$\sum_{j=A}^D I_{k,j} = 2$ and $\sum_{j=1}^4 A_{k,j} = 1$. Important is that at least one of the three informations provided needs to be true, i.e. if the opponent has identity $i$ and aspect $a$, then the provided information has to be such that
+$$
+\begin{align*}
+\sum_{j=A}^D I(I_{k,j}=i) I_{k,j} +  \sum_{j=1}^4 I(A_{k,j}=a) A_{k,j} \geq 1 &\Leftrightarrow
+I_{k,i} + A_{k,a} \geq 1.
+\end{align*}
+$$
+In code:
+
+```{r ASPECTS}
+##All posible ways to choose two out of four
+aspects <- c("A1","A2","A3","A4")
+configs  <- combinat::combn(length(identities),1, simplify=FALSE, fun=function(x) {
+  as.data.frame(t(structure(seq_len(4) %in% x, names=aspects)))
+})
+##Convert into data.frame
+df_aspect <- bind_rows(configs)
+
+##Join an aspect column containing each possible aspect
+##of the opponent.
+df_aspect <- data.frame(aspect=aspects) %>% tidyr::crossing(df_aspect)
+
+##Merge identity and aspect data frames
+df_all_identity <- merge(df %>% select(-prob), df_aspect) %>% select(identity, aspect, everything())
+
+df_all_aspect <- df_all_identity %>% select(aspect,identity,  matches("^A+",ignore.case=FALSE),matches("^I+",ignore.case=FALSE))
+names(df_all_aspect) <- c("identity","aspect",paste0("I",LETTERS[1:4]),paste0("A",1:4))
+levels(df_all_aspect$identity) <- c("IA","IB","IC","ID")
+levels(df_all_aspect$aspect) <- c("A1","A2","A3","A4")
+
+df_q_all <- bind_rows(cbind(q="I",df_all_identity), cbind(q="A",df_all_aspect))
+##Add combined column
+df_q_all %<>% tidyr::unite(ia_comb, identity, aspect, sep="/", remove=FALSE)
+```
+
+There are now a total of `df_q_all %>% nrow` possible data combinations the opponent can offer, when asked about identity. A similar number of additional combinations arise when asked about aspect due to the symmetry when exchanging identity for aspect and vice versa.
+
+### Likelihood
+
+For each combination of true opponent values $(i,a)$, the opponent can choose between one of a total of 15 (?) valid combinations:
+- Assuming the identity will be correct in the revealed information,the opponent has to choose one of three remaining identities for the second information about identity and needs to pick between one of four aspects to report (3*4=12 possible combinations).
+- Assuming the aspect of the revealed information is correct, *but not the identity*, then the opponent has to choose 2 of the 3 remaining identities for the identity part of the revealed information (`choose(3,2)`=`r choose(3,2)` combinations).
+
+Hence, the total number of possible valid combinations is 15. I.e. the likelihood for a valid combination is 1/15. For a given provided combination $D_k$ and $(i,a)$ we thus need to check if $D_k$ is valid given  $(i,a)$. If not the likelihood is zero, if valid, then the likelihood is 1/15.
+
+```{r LIKELIHOOD_ALL}
+df_q_all %<>% rowwise %>% do({
+  data.frame(., prob=if_else( .[[as.character(.$identity)]] + .[[as.character(.$aspect)]] >= 1, 1/15, 0))
+})
+
+##Check
+df_q_all %>% group_by(q, identity, aspect) %>% summarise(n(),sum(prob>0))
+```
+
+### Adding Ambassador questions
+
+```{r}
+df_all <- bind_rows(df_am_all, df_all)
+df_all %>% nrow
+4*4*(2^8)
+
+#intToBits(0:(4*4*(2^8)-1))
+# configs <- R.utils::intToBin(0:(2^8-1))
+# configs_w_truth <- paste0(as.character(outer(1:4,1:4, paste0)), rep(configs, each=16))
+# l <- strsplit(configs_w_truth,"")
+# M <- as.matrix(bind_rows(lapply(l, function(x) as.data.frame(t(as.integer(x))))))
+
+M <- as.matrix(expand.grid(identity=1:4,build=1:4,I1=0:1,I2=0:1,I3=0:1,I4=0:1,B1=0:1,B2=0:1,B3=0:1,B4=0:1))
+iRows <- 3:6
+bRows <- 7:10
+qI <- (rowSums(M[,iRows]) == 2) & (rowSums(M[,bRows]) == 1)
+qB <- (rowSums(M[,iRows]) == 1) & (rowSums(M[,bRows]) == 2)
+bI <- (rowSums(M[,iRows]) == 2) & (rowSums(M[,bRows]) == 0)
+bB <- (rowSums(M[,iRows]) == 0) & (rowSums(M[,bRows]) == 2)
+
+##Is conflicting to own identity
+is_conflict <- !((M[cbind(1:nrow(M),M[,1]+2)] == 1 ) | (M[cbind(1:nrow(M),M[,2]+6)] == 1 ))
+
+##Extract all valid answers
+Mprime <- data.frame(M, conflict=is_conflict, qI=qI, qB=qB, aI=aI, aB=aB) %>%
+  filter(qI | qB | aI | aB)
+
+##Compute likelihood for each valid answer (assuming indifference between choices)
+Mprime %<>% mutate(prob = if_else(conflict, 0, if_else(aI | aB, 1/3, 1/15)))
+
+##Additional column
+Mprime %<>% mutate(ib_comb=paste0("I",identity,"/B",build)) %>%
+  select(ib_comb, everything())
+```
+
+### Prior
+
+Prior now consists of the joint prior $P(I=i, A=a)$ for all 4*4=16 combinations of identity and aspect. For easier vector multiplication we flatted the table as follows:
+
+
+```{r}
+identities <- paste0("I",1:4)
+aspects <- paste0("B",1:4)
+ib_combs <- as.character(outer(identities, aspects, function(x,y) paste(x,y, sep="/")))
+prior <- structure(as.numeric(outer(c(0,1/3,1/3,1/3), c(0,1/3,1/3,1/3))),names=ib_combs)
+prior
+
+##Marginal probabilities
+p_marginal <- function(prior, what=c("I","B")) {
+  theFun <- function(x,y) { if (what=="I") paste(x) else paste(y) }
+  map <- as.character(outer(identities, aspects, theFun))
+  tapply(prior, map, sum)
+}
+
+
+p_marginal(prior, what="I")
+p_marginal(prior, what="B")
+```
+
+### Posterior
+
+$$
+P(I=i,B=b\>|\>D_k) = \frac{P(D_k|\>I=i,B=b)P(I=i,B=b)}{P(D_k)} = \frac{P(D_k|\> I=i,B=b)P(I=i,B=b)}{\sum_{j=1}^4 \sum_{c=1}^4 P(D_k|\> I=j,B=c)P(I=j,B=c)}, \quad i=1,\ldots, 4 \text{ and } b=1,...,4.
+$$
+```{r COMPUTEPOSTERIOR}
+#############################################################
+## Function for sequentially updating the state information
+############################################################
+update <- function(prior, Dk) {
+  ##Sanity check
+  stopifnot(names(prior) == ib_combs)
+
+  ##Configurations matching the observed data Dk
+  idx <- apply(Mprime[, grep("I+|B+", names(Mprime))], 1, function(x) all(x==Dk))
+
+  ##Extract likelihood and put it in same order as the ib_combs vector
+  ##in order for prior and likelihood vectors to match in ordder
+  vector_idx <- pmatch(ib_combs, Mprime[idx,]$ib_comb)
+  lik <- (Mprime[idx,]$"prob")[vector_idx]
+
+  ##Compute P(I=i,A=a|D_k), i.e. our updated belief
+  belief <- lik * prior / sum(lik * prior)
+  return(belief)
+}
+
+prior <- structure(as.numeric(outer(c(0,1/3,1/3,1/3), c(0,1/3,1/3,1/3))),names=ib_combs)
+(D1 <- data.frame(I1=1,I2=1,I3=0,I4=0,A1=0,A2=1,A3=0,A4=0))
+belief1 <- update(prior, D1)
+p_marginal(belief1, what="I")
+p_marginal(belief1, what="A")
+D2 <- data.frame(I1=0,I2=1,I3=0,I4=0,A1=1,A2=0,A3=0,A4=1)
+belief2 <- update(belief1, D2)
+p_marginal(belief2, what="I")
+p_marginal(belief2, what="A")
+D3 <- data.frame(I1=0,I2=0,I3=1,I4=0,A1=0,A2=1,A3=1,A4=0)
+belief3 <- update(belief2, D3)
+p_marginal(belief3, what="I")
+p_marginal(belief3, what="A")
+
+rbind(D1,D2,D3)
+
+#p_marginal(update(update(belief1, D1),D3), what="I")
+
+(DAM <- data.frame(I1=0,I2=1,I3=0,I4=1,A1=0,A2=0,A3=0,A4=0))
+belief <- update(prior, DAM)
+p_marginal(belief, what="I")
+p_marginal(belief, what="A")
+
+#From the game Truth was I=A and A=4. Player was I=4, A=2
+prior <- structure(as.numeric(outer(c(1/3,1/3,1/3,0), c(1/3,0,1/3,1/3))),names=ib_combs)
+D1 <- data.frame(I1=1,I2=0,I3=0,I4=0,A1=0,A2=1,A3=1,A4=0)
+D2 <- data.frame(I1=0,I2=0,I3=0,I4=0,A1=0,A2=0,A3=1,A4=1)
+D3 <- data.frame(I1=1,I2=1,I3=0,I4=0,A1=0,A2=0,A3=1,A4=0)
+belief <- update(update(update(prior, D1), D2), D3)
+p_marginal(belief, what="I")
+p_marginal(belief, what="A")
+```
+
+
+
