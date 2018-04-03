@@ -173,7 +173,7 @@ We can embed estimation uncertainty originating from the estimation of $R_0$ and
 
 
 
-![](http://staff.math.su.se/hoehle/blog/figure/source/2016-08-04-outbreakEnd/unnamed-chunk-8-1.png)
+![]({{ site.baseurl }}/figure/source/2016-08-04-outbreakEnd/unnamed-chunk-8-1.png)
 
 Altogether, the date where we would declare the outbreak
 to be over is found as:
@@ -184,8 +184,10 @@ c_threshold <- 0.05
 ```
 
 ```
-##            t     pi quantile.2.5% quantile.97.5%
-## 1 2015-07-21 0.0345        0.0253         0.0454
+## # A tibble: 1 x 4
+##   t              pi `quantile.2.5%` `quantile.97.5%`
+##   <date>      <dbl>           <dbl>            <dbl>
+## 1 2015-07-21 0.0345          0.0253           0.0454
 ```
 In other words, given the assumptions of the model and the chosen threshold, we would declare the outbreak to be over, if no new cases are observed by 2015-07-21.
 The adequate choice of $c$ as cut-off in the procedure in general depends on what is at stake. Hence, choosing $c=0.05$ without additional thought is more than arbitrary, but a more careful discussion is beyond the scope of this blog note.

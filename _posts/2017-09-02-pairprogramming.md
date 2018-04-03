@@ -207,11 +207,11 @@ ada
 ```
 ## # A tibble: 4 x 5
 ##   Region NoOfUnits `Sales Volume` `Staff Costs` People
-##    <chr>     <int>          <int>         <int>  <int>
-## 1      A         3          59623         43103     16
-## 2      B         1         119500         95691     19
-## 3      D         1          45860         32555      9
-## 4      E         1          33020         25010      7
+##   <chr>      <int>          <int>         <int>  <int>
+## 1 A              3          59623         43103     16
+## 2 B              1         119500         95691     19
+## 3 D              1          45860         32555      9
+## 4 E              1          33020         25010      7
 ```
 
 ### Bob
@@ -490,11 +490,11 @@ then be automatically informed.
 ```
 ## # A tibble: 4 x 5
 ##   Region NoOfUnits `Sales Volume` `Staff Costs` People
-##    <chr>     <int>          <int>         <int>  <int>
-## 1      A         3          59623         43103     16
-## 2      B         1         119500         95691     19
-## 3      D         2          70860         32655      9
-## 4      E         1          33020         25010      7
+##   <chr>      <int>          <int>         <int>  <int>
+## 1 A              3          59623         43103     16
+## 2 B              1         119500         95691     19
+## 3 D              2          70860         32655      9
+## 4 E              1          33020         25010      7
 ```
 
 **Question 2**: Are you aware of any other good ways and tools to
