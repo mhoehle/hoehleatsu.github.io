@@ -169,10 +169,10 @@ aqB <- (rowSums(M[,iRows]) == 0) & (rowSums(M[,bRows]) == 2)
 
 ##At least one of the provided information has to be correct,
 ##i.e. I_{k,i_true} or A_{k,b_true} has to be one.
-atleast1true  <- (M[cbind(1:nrow(M),M[,1]+2)] + M[cbind(1:nrow(M),M[,2]+6)]) >= 1
+atleast1  <- (M[cbind(1:nrow(M),M[,1]+2)] + M[cbind(1:nrow(M),M[,2]+6)]) >= 1
 
 ##Restrict matrix to all valid answers
-Mprime <- data.frame(M, atleast1true=atleast1true, pqI=pqI, pqB=pqB, aqI=aqI, aqB=aqB) %>%
+Mprime <- data.frame(M, atleast1=atleast1, pqI=pqI, pqB=pqB, aqI=aqI, aqB=aqB) %>%
   filter(pqI | pqB | aqI | aqB)
 
 ##Additional column containing the identity build combination
@@ -184,10 +184,10 @@ Mprime[sample(1:nrow(Mprime), size=3), ]
 ```
 
 ```
-##        ib identity build I1 I2 I3 I4 B1 B2 B3 B4 atleast1true   pqI  pqB   aqI   aqB
-## 777 I1/B3        1     3  0  0  1  0  1  0  0  1        FALSE FALSE TRUE FALSE FALSE
-## 540 I4/B3        4     3  0  0  0  1  1  0  1  0         TRUE FALSE TRUE FALSE FALSE
-## 505 I1/B3        1     3  0  1  0  0  1  0  1  0         TRUE FALSE TRUE FALSE FALSE
+##        ib identity build I1 I2 I3 I4 B1 B2 B3 B4 atleast1   pqI   pqB   aqI   aqB
+## 368 I4/B4        4     4  0  0  0  1  1  1  0  0     TRUE FALSE  TRUE FALSE FALSE
+## 364 I4/B3        4     3  0  0  0  1  1  1  0  0     TRUE FALSE  TRUE FALSE FALSE
+## 722 I2/B1        2     1  0  0  0  0  1  0  0  1     TRUE FALSE FALSE FALSE  TRUE
 ```
 
 #### Likelihood
@@ -230,7 +230,7 @@ allowing for a more readable way using the column names -- using a
 
 ```r
 ##Compute likelihood for each valid answer (assuming indifference between choices)
-Mprime %<>% mutate(prob = if_else(!atleast1true, 0,
+Mprime %<>% mutate(prob = if_else(!atleast1, 0,
                                   if_else(aqI | aqB, 1/3, 1/15)))
 ```
 
@@ -297,7 +297,7 @@ $$
 P(I=i,B=b\>|\>D_k) &= \frac{P(D_k|\>I=i,B=b)P(I=i,B=b)}{P(D_k)} \\
 &=
 \frac{P(D_k|\> I=i,B=b)P(I=i,B=b)}{\sum_{j=1}^4 \sum_{c=1}^4 P(D_k|\>
-I=j,B=c)P(I=j,B=c)},
+I=j,B=c)P(I=j,B=c)}.
 \end{align*}
 $$
 In code:
@@ -393,4 +393,4 @@ also helps to rule out some options for opponent 2.
 
 So what is next: If time permits, a shiny app allowing the user to fill in their
 worksheet and calculate and visualize the subsequent belief about each opponent's
-identity and build would be nice.
+identity and build.
