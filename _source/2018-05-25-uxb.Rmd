@@ -28,7 +28,7 @@ suppressPackageStartupMessages(library(knitr))
 suppressPackageStartupMessages(library(highriskzone))
 suppressPackageStartupMessages(library(spatstat))
 ## change npixel to 1000 to obtain even more hi-res plots
-spatstat::spatstat.options(npixel=250)
+spatstat::spatstat.options(npixel=500) #250
 
 options(knitr.table.format = "html")
 theme_set(theme_bw())
@@ -323,8 +323,12 @@ summariZe <- function(sim, print=TRUE) {
   #p_miss = fraction of unexploded (i.e. unobserved) bombs outside the zone
   summary <- sim %>% filter(!is.na(Type)) %>% group_by(Type) %>%
     summarise(p_out=mean(numbermiss>0),
-              numbermiss=mean(numbermiss), p_miss = mean(missingfrac), `1-p_miss`=1-p_miss,
-              numberobserved=mean(numberobserved), numberunobserved=mean(numberunobserved), totalnumber=mean(numberobserved+numberunobserved),area_zone=mean(arearegion)) %>%
+              numbermiss=mean(numbermiss),
+              p_miss = mean(missingfrac), `1-p_miss`=1-p_miss,
+              numberobserved=mean(numberobserved),
+              numberunobserved=mean(numberunobserved),
+              totalnumber=mean(numberobserved+numberunobserved),
+              area_zone=mean(arearegion)) %>%
     mutate(p_out_derived=1 - (1-p_miss)^numberunobserved,
            nZ=numberunobserved)
   if (print) summary %>% print(width=2000)
