@@ -12,10 +12,10 @@ comments: true
 ##If default fig.path, then set it.
 if (knitr::opts_chunk$get("fig.path") == "figure/") {
   knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
-  knitr::opts_chunk$set(fig.path="figure/source/2018-06-11-prc/")
+  knitr::opts_chunk$set(fig.path="figure/source/2018-06-14-prc/")
 }
 fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
-filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2018-06-11-prc")
+filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2018-06-14-prc")
 
 knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=4,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2) # autodep=TRUE
 options(width=90)
@@ -353,7 +353,7 @@ tab5 %>% kable(caption="Table 2: Table 5 in Merz et al. (2016) annotated with ou
 ```
 <p>
 Altogether, we observe that the results do not fully agree, but
-  are in most cases of the same magnitudee. Even when using the same prior
+  are in most cases of the same magnitude. Even when using the same prior
   odds there are still differences, which can be explained by
   the use of different polynomial  $\hat{y}(x)$ forms for NT,
   PAPP-A and β-HCG, because of problems reproducing the results with the
@@ -423,7 +423,7 @@ algorithm- contain the combined insights of 10+ scientific
 papers, transparency starts with a single easy-to-find accessible
 document coarsely describing the overall algorithm. The FMF software
 manual, which apparently is not accessible to the public, would have
-been a start. Even better would be an open-source reference implementation! To this data it remained
+been a start. Even better would be an open-source reference implementation! To this date it remained
 unclear how the standard NT, PAPP-A and β-HCG measurements
 entered the analysis and if additional components (ethnicity?  smoking
 status? nasal bone? heart rate? ductus flow?) entered the risk
