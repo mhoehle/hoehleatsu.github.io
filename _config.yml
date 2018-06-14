@@ -33,3 +33,5 @@ author:
   url:            http://www.math.su.se/~hoehle
 
 disqus_id: staffmathsusehoehleblog
+
+exclude: ['fts-appendix.Rmd']

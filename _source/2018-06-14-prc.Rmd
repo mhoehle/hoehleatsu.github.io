@@ -1,0 +1,472 @@
+---
+layout: post
+title: "Retracing Prenatal Testing Algorithms"
+tags: [rstats, stats, diagnostic test, Bayesian inference]
+bibliography: ~/Literature/Bibtex/jabref.bib
+header-includes:
+   - \usepackage{bm}
+comments: true
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2018-06-11-prc/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2018-06-11-prc")
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=4,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2) # autodep=TRUE
+options(width=90)
+
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(magrittr))
+suppressPackageStartupMessages(library(knitr))
+
+## Packages used for this post
+suppressPackageStartupMessages(library(trisomy21risk))
+suppressPackageStartupMessages(library(kableExtra))
+options(knitr.table.format = "html")
+theme_set(theme_bw())
+```
+
+## Abstract
+
+A good understanding of the statistical procedure used to calculate
+trisomy 21 (Down syndrome) risk in combined first trimester screening
+is a precondition for taking an informed decision on how to proceed
+with the screening results. For this purpose we implement the Fetal
+Medicine Foundation (FMF) Germany procedure described in
+@merz_etal2016.  To allow soon-to-become-parents an insight on what
+the procedure does and how sensitive conclusions are to perturbations,
+we wrote a small Shiny app as part of the R package `trisomy21risk` to
+visualize the results. We hope the tool can be helpful in the
+individual decision making process associated with first trimester
+screening.
+
+<center>
+```{r,results='asis',echo=FALSE,fig.cap="Obstetric ultrasonography"}
+cat(paste0("![](https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Feindiagnostik_%28Ultraschall%29.jpg/320px-Feindiagnostik_%28Ultraschall%29.jpg)"))
+```
+</center>
+
+{% include license.html %}
+
+
+## Introduction
+
+```{r}
+one2x <- 486
+```
+
+Biostatisticians predominantly analyse samples from populations of
+dead and diseased in the hope of substantiating answers to
+question aimed at preventing the adverse event in future
+individuals. Less common is the personalized $n=1$ case, where -based
+on historical data- one has to choose an optimal test sequence or
+treatment regime for a specific individual. However, when interpreting
+your own laboratory values that is what you have to do - implicitly or
+explicitly!
+
+In the case of first trimester
+[prenatal testing](en.wikipedia.org/wiki/Prenatal_testing) for
+[Down syndrome](https://en.wikipedia.org/wiki/Down_syndrome),
+aka. trisomy 21 (T21), parents are at the end of the screening routine
+given a piece of paper containing the results of a combined test. This
+consists of
+
+- the [nuchal translucency](https://en.wikipedia.org/wiki/Nuchal_scan)
+  (NT) measurement (in mm) of the fetus
+- concentration of the Pregnancy-associated plasma protein A
+  [(PAPP-A)](https://en.wikipedia.org/wiki/Pregnancy-associated_plasma_protein_A)
+  and the human chorionic gonadotropin
+  [(β-HCG)](https://en.wikipedia.org/wiki/Human_chorionic_gonadotropin)
+  hormone in the serum of the mother (measured in [miU](https://en.wikipedia.org/wiki/International_unit)/ml)
+- (optional) results for other markers (e.g. ethnicity, maternal
+smoking, fetal heart rate, visibility of the nasal bone on the
+ultrasound)
+
+From the biomarker values NT, PAPPA-A and β-HCG (and possibly
+additional markers) a risk for T21 is calculated and presented as an
+odds, say, 1:`r one2x`.  The question for the concerned
+soon-to-become-parents is now, whether to proceed with further tests -
+for example a DNA based approach in maternal blood plasma, a so called
+**non-invasive prenatal test** (NIPT) or, further down the line, an
+invasive
+[amniotic fluid test](https://en.wikipedia.org/wiki/Amniocentesis).
+Recommendations for when to perform which additional screening steps
+exist and are discussed with the supervising gynecologist, but at the
+end its your choice as soon-to-become-parents.
+
+The aim of this blog post is to illustrate how we failed to identify
+and understand the algorithm used to calculate the risk. As a
+consequence, we attempt a transparent and reproducible risk
+calculation algorithm based on the procedure described in
+@merz_etal2016. To enhance risk communication we wrote an interactive
+Shiny app to calculate the risk, perform sensitivity analyses and
+graph distributions. Even though we are not experts on prenatal
+screening and have no access to any data, we hope such tools can
+inspire the experts or even be helpful in the individual decision
+making process associated with first trimester screening.
+
+
+### What is the FMF Algorithm 2012?
+
+The first step in a scientific approach towards the problem is to
+understand, how the $y$ in the reported $1:y$ odds was determined. For
+this purpose the exemplary result report (in this case from a German
+prenatal diagnosis facility) contained a cryptic note to a "FMF
+Algorithm 2012". Unfortunately, no further reference to any scientific
+article, no link to a website with additional information nor any
+separate pamphlet was provided. Nevertheless, the soon-to-be-parents are
+assured that "The model for calculating the risk is based on intensive
+research work coordinated by the fetal medicine foundation (registered
+charity 1037116)". Cranking the google handle we found that there
+exists both an UK
+[Fetal Medicine Foundation](https://fetalmedicine.org) (FMF), which has the
+stated registered charity number, as well as a
+[Fetal Medicine Foundation Germany](https://www.fmf-deutschland.info/en/fmf-deutschland/). For
+reasons unclear to the outsider these two organizations use
+different risk algorithms: FMF-Germany uses a so called DoE-algorithm
+(DoE = Degree of extremeness) documented in the @merz_etal2008,
+@merz_etal2011 and @merz_etal2016 (open-access) sequence of papers. In
+contrast FMF-UK uses software following "The First Trimester Screening
+module 2012 algorithm", which uses so called MoMs (multiples of the
+median). What this entails we could only find in a
+[rogue access software manual](https://doclegend.com/queue/03-guide-for-the-first-trimester-screening-module_5a17d7fbd64ab28f8c88fe0e_pdf?queue_id=5b205c29d64ab23ffc4c2e34):
+the document contains a large body of references containing the
+details of the calculations - in particular @kagan_etal2008a and
+@kagan_etal2008b seem to cover the essentials components of the
+algorithm. However, for each component (nuchal translucency, β-HCG,
+PAPP-A, nasal bone, ductus venosus, heart rate, ...) further
+references are given without it being clear, if or how they enter the
+algorithm. As an example, the FMF 2012 algorithm seems to analyze the
+NT measurement by a mixture model approach described in
+@wright_etal2008 so the original approach in @kagan_etal2008a now
+seems obsolete. This might all be scientifically justified, but for an
+outsider it is impossible to retrace what is done: Even though we
+spent quite some time searching the FMF-UK website, which provides
+access to many of the FMF's 957 scientific publications and watched
+[videos about the algorithm](http://www.perkinelmer.co.uk/lab-products-and-services/maternal-fetal-health/FMF-risk-algorithm.html),
+we could not find a more coherent document on what the FMF 2012
+algorithm exactly is. Even the FMF
+[on-line risk calculator](https://fetalmedicine.org/research/assess/trisomies)
+does not contain a specific reference and seems to implement its own a
+variant of the algorithm
+([undocumented javascript source code](https://fetalmedicine.org/assets/b302e11a/js/_fmf.min.js?v=14397)).
+
+At this point it is instrumental to recall paragraph V.3.3 in the
+[German Gene Diagnostic Commission](https://www.rki.de/DE/Content/Kommissionen/GendiagnostikKommission/Richtlinien/RL-VorgeburtlicheRisikoabklaerung.pdf?__blob=publicationFile)
+guideline for prenatal screening. It demands that the algorithm for
+the computation of such risks to be *comprehensible, scientifically
+justified and published in a peer review process*. In particular the
+guideline stresses that *scientifically justified* means:
+
+<div class = "blackbox"> *Demanded is publication of the entire
+algorithm with detailed software specification, which precisely and
+comprehensible describes how the risks are calculated.*</div> <p>
+
+With such a strong statement by the guideline about the **transparency**
+and **reproducibility** of the algorithm the above hide-and-seek seems
+absurd.
+
+Since we at the time of testing (wrongly?) believed that the
+FMF-Germany algorithm was the one used in the lab report and its
+papers appeared comprehensible enough for a re-implementation, we
+decided to scrutinize the FMF-Germany algorithm further in order to
+understand the computations. Aim was to understand how components
+influenced the calculation, perform a sensitivity analysis and better
+understand the uncertainty associated with the reported risk. The FMF
+Algorithm 2012 was expected to be similar in style.
+
+## The FMF-Germany Procedure - PRC 3.0
+
+The procedure described in @merz_etal2016 entitled **Prenatal Risk
+Calculation** (PRC) uses a classic Bayesian diagnostic approach, where
+one computes a posterior odds for the fetus having T21 as
+
+$$
+\text{Posterior odds} = \text{Likelihood ratio} \cdot \text{Prior odds}
+$$
+
+In the context of T21 first trimester screening, the prior odds is
+known to depend on maternal age and gestational age (at the time of
+screening) of the fetus. Tables for this can be found in, e.g., Table
+4 of @snijders_etal1999, which is shown below in the form of odds
+$1:x$ for maternal age gaps of 5 years and selected
+[gestational ages](https://en.wikipedia.org/wiki/Gestational_age)
+(measured in weeks). The gestational weeks relevant for the first
+trimester screening are the gestational weeks 10-13. Using a linear
+interpolation we obtain values for maternal and gestational age not
+covered in the table - see the `trisomy21risk` package code for
+details.
+
+```{r}
+##Read background risk from Snijders et al. (1999) table.
+data("snijders_etal1999_t21")
+snijders_etal1999_t21 %>% filter(Age %in% c(20,25,30,35,40,45)) %>%
+  rename(`Maternal Age`=Age) %>%
+  kable(caption="Table 1: Background risk in matrix form for T21 for maternal age (in years) and gestational age (in weeks) by Snijders et al. (1999).") %>%
+  kable_styling(bootstrap_options = "striped", full_width = TRUE, position = "center")
+```
+<p>
+
+From the table we see that the background risk increases with maternal
+age and decreases with gestational age. The latter is related to the
+fact that a T21 fetus has an increased risk of spontaneous
+abortion. One criticism of using the maternal age as background risk
+is that age is merely a proxy for processes and complications not well
+understood. From a certain maternal age, it is thus almost impossible
+to get a test-negative result, even though most babies
+born by mothers that age are healthy [@schmidt_etal2007].
+
+The above formula for the posterior odds means that we can compute the
+posterior probability for T21 as
+$$
+\text{Posterior probability} = \left( 1 + \frac{1}{\operatorname{LR}_{joint}} \cdot \frac{1-\text{Prior probability}}{\text{Prior probability}} \right)^{-1}.
+$$
+The complicated part of the analysis is now to determine the joint
+likelihood ratio between the aneuploid pregnancies (i.e. T21
+pregnancies) vs. euploid pregnancies (i.e. non-T21
+pregnancies) as a
+function of the three biomarkers. In some cases additional continuous
+or binary markers indicating for example the smoking
+status, the visibility of the nasal bone on the ultrasound or the
+ductus venosus blood flow (expressed as pulsatility index) are used to
+distinguish further. For sake of exposition we use the
+presence of a nasal bone on the ultrasound as additional marker.
+
+In @merz_etal2011 and @merz_etal2016 the likelihood ratio between
+aneuploid and euploid pregnancies is broken down into individual
+components by assuming that the random variables describing the
+observed value for the four risk factors are independent given ploidy
+(i.e. the T21 status):
+
+$$
+\begin{align*}
+\operatorname{LR}_{joint} &= \frac{f_{\text{aneu}}(y_{\text{NT}}, y_{\beta\text{-HCG}}, y_{\text{PAPP-A}}, y_{\text{nasal bone}})}{f_{\text{eu}}(y_{\text{NT}}, y_{\beta\text{-HCG}}, y_{\text{PAPP-A}}, y_{\text{nasal bone}})} \\
+&=
+\left(
+  \frac{f_{\text{aneu}, \text{NT}}(y_{\text{NT}})}{f_{\text{eu}, \text{NT}}(y_{\text{NT}})}
+\right)
+\cdot
+\left(
+  \frac{f_{\text{aneu}, \beta\text{-HCG}}(y_{\beta\text{-HCG}}}{f_{\text{eu}, \beta\text{-HCG}}(y_{\beta\text{-HCG}})}
+\right)
+ \cdot
+ \left(
+  \frac{f_{\text{aneu}, \text{PAPP-A}}(y_{\text{PAPP-A}})}{f_{\text{eu}, \text{PAPP-A}}(y_{\text{PAPP-A}})}
+ \right)
+  \cdot
+\left(
+\frac{f_{\text{aneu}, \text{nasal bone}}(y_{\text{nasal bone}})}{f_{\text{eu}, \text{nasal bone}}(y_{\text{nasal bone}})}
+\right)\\
+&=  \operatorname{LR}_{\text{NT}} \cdot \operatorname{LR}_{\beta\text{-HCG}} \cdot \operatorname{LR}_{\text{PAPP-A}} \cdot \operatorname{LR}_{\text{nasal bone}}
+\end{align*}
+$$
+
+In the above, the $f$'s denote the respective probability density
+functions, which may depend on covariates such as gestational age (at
+the time of measuring) or the weight of the mother. In `r paste0("[Appendix 1]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"fts-appendix.html#appendix1)")`
+we look in detail at how the likelihood ratio is computed for the NT
+measurement. The procedure is then analogous for the β-HCG and
+PAPPA-A markers - one difference is, though, that @merz_etal2016
+extends the analysis to allow for these β-HCG and PAPPA serum markers
+to be collected at a gestational age 2-3 weeks earlier than the NT
+measurement, because the discrimination  is better for these
+biochemistry markers at this gestational age. Altogether, if the prior odds is given in the
+form $1:x$ then $\operatorname{LR}_{joint}$ is the factor
+multiplied onto $x$ to get the posterior odds in the form of
+$1:y$. That means that if $\operatorname{LR}_{joint}>1$ then the
+marker values are such that the risk for T21 increases.
+
+## R Implementation
+
+The `trisomy21` function in the `trisomy21risk` package performs all
+the computations to take one from the prior odds, covariates and
+biomarker values to the posterior odds.
+```{r, echo=TRUE}
+formalArgs(trisomy21risk::trisomy21)
+```
+In the above `age` (in years) and `weight` (in kg) refer to the
+mother, `crl` is the
+[crown-rump-length](https://en.wikipedia.org/wiki/Crown-rump_length)
+(measured in mm) at the time of the NT measurement and `crlbe` is the
+crown-rump-length at the time of the biomarker measurement.  The
+`pappa` and `betahCG` concentrations are both measured in
+miU/ml. Finally, `background` is the $x$ of the prior odds $1:x$.
+The function outputs a named list of which one element is the posterior odds
+(in the form of $1:y$).
+
+<div class="framedbox"> Philosophical note: The obtained posterior odds for the
+risk from the analysis is technically not really **your individual
+risk**, but the proportion in a population of, say, 1000 individuals
+with the same (measurable) covariate configuration as your own. As
+Bayesians we, however, feel a certain pain towards such a frequentist
+interpretation of the probability concept at the end of a Bayesian
+analysis. Believing that assumptions and model choice are subjective,
+we dare say that the obtained number has become
+**[your risk](https://t.co/iekXiiKGn1)** as soon as you have to deal
+with the number.</div> <p>
+
+We can now compare our results to, e.g., the 12 randomly selected
+patients listed in Tab. 5 of @merz_etal2016. Note that the first patient has
+a posterior odds of 1:486, which we used as example patient in the
+introduction. Results are compared in two ways:
+
+* using the background risk as specified in the `Background` column by
+  the paper and  comparing our result  (Column: `our_Post`) to the $y$
+  of the posterior odds stated in the paper (Column: `Post`).
+* Manually calculate the background risk using maternal age and
+  gestational age by interpolation of the Snijders table (Column:
+  `our_Background`) and compare our result (Column: `our_Post_Back`) with the result of the paper (Column: `Post`).
+
+```{r, echo=TRUE}
+##Load numbers from Tab. 5 of the paper (contains 12 patients)
+tab5 <- read.csv2(file.path(filePath,"merzetal2015-tab5.csv"))
+
+##Compute our own results for each patient
+tab5 %<>% rowwise %>% do({
+  ##Arguments for the call to the trisomy21 function
+  args <- list(age=.$Age, weight=.$Weight, crlbe=gestage2crl(.$CRLBE), crl=gestage2crl(.$CRL), nt=.$NT, pappa=.$PAPP_A, betahCG=.$beta_hCG, nasalbone="Unknown", background=.$Background)
+
+  ##Manually compute the prior odds
+  our_Background <- background_risk(age_mother=.$Age, gestage=.$CRL/7)
+
+  ##Call the trisomy function with the two type of background odds
+  post <- do.call("trisomy21",args=args)
+  post_back <- do.call("trisomy21",args=modifyList(args, list(background=our_Background)))
+
+  ##Return result
+  data.frame(., our_Post = post$onetox, our_Background=round(our_Background,digits=0), our_Post_Back=post_back$onetox)
+})
+```
+```{r}
+idxCol <- grep("our_", names(tab5))
+tab5 %>% kable(caption="Table 2: Table 5 in Merz et al. (2016) annotated with our manually computed results. Note: The gestational ages (CRL and CRLBE) are now suddenly measured in gestation week and not mm.") %>%
+  kable_styling(bootstrap_options = "striped", full_width = TRUE, position = "center", font_size=14) %>%
+  column_spec(column=idxCol[1], background = "lightblue") %>%
+  column_spec(column=idxCol[2], background = "lightblue") %>%
+  column_spec(column=idxCol[3], background = "lightblue")
+```
+<p>
+Altogether, we observe that the results do not fully agree, but
+  are in most cases of the same magnitudee. Even when using the same prior
+  odds there are still differences, which can be explained by
+  the use of different polynomial  $\hat{y}(x)$ forms for NT,
+  PAPP-A and β-HCG, because of problems reproducing the results with the
+  polynomials stated in @merz_etal2016 - see  `r paste0("[Appendix 2]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"fts-appendix.html#appendix2)")`.
+Furthermore, the interpolation of the background risks from the
+  Snijders table (Column: `our_Background`) deviates: Apparently, a different interpolation procedure is used by @merz_etal2016 - we could not find an explicit mentioning of how this part is done.
+
+## Shiny App
+
+For better illustration we have written a small Shiny app in order to
+get a better feeling of what the algorithm does, for example, by
+performing a sensitivity analysis where one changes one measurement
+value slightly. The App is available from:
+
+<center>
+[https://hoehle.shinyapps.io/t21app/](https://hoehle.shinyapps.io/t21app/)
+</center>
+<p>
+and can also be ran locally, by installing the [`trisomy21risk`](https://github.com/hoehleatsu/trisomy21risk) package from github:
+
+```{r, echo=TRUE, eval=FALSE}
+devtools::install_github("hoehleatsu/trisomy21risk")
+trisomy21risk::runExample()
+```
+
+#### Screenshots
+
+Computing the T21 risk:
+<center>
+```{r,results='asis',echo=FALSE}
+cat(paste0("<img src=\"{{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"shinyapp.png\" alt=\"Second screenshot from the Shiny App\"  width=\"85%\">"))
+```
+</center>
+
+As example: the NT measurement in the ultrasound image is subject to
+some measurement error - even the most skilled operator has
+difficulties obtaining errors smaller than 0.2 - 0.3 mm. With the app
+we can easily investigate how such measurement error influences
+the calculated risk. Another aspect to investigate is the influence of
+the background risk from maternal age.
+
+Visualizing the likelihood ratios:
+<center>
+```{r,results='asis',echo=FALSE}
+cat(paste0("<img src=\"{{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"shinyapp2.png\" alt=\"Second screenshot from the Shiny App\"  width=\"85%\">"))
+```
+</center>
+
+
+## Discussion
+
+With a cut-off of value of 1:150 for the posterior odds, @merz_etal2016 report a
+detection rate for T21 of 86.8% and a false positive rate of
+3.42%. The 1:150 is also the threshold they suggest for further
+invasive action. For posterior odds up to 1:500 the suggestion in
+@merz_etal2011 is to perform additional sonographic investigations in
+the second trimester.  Nowadays, one would typically perform a NIPT.
+
+Was the algorithm for the computation of the risk detailed and
+comprehensive as demanded by the Gene Diagnostic Commission? Well,
+since we -despite quite some effort- were not able to find a full
+description of the FMF 2012 algorithm and, as described in
+ `r paste0("[Appendix 2]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"fts-appendix.html#appendix2)")`,
+were not able to reproduce the numbers in @merz_etal2016, we say:
+no. As algorithms become more complex and -as for the FMF 2012
+algorithm- contain the combined insights of 10+ scientific
+papers, transparency starts with a single easy-to-find accessible
+document coarsely describing the overall algorithm. The FMF software
+manual, which apparently is not accessible to the public, would have
+been a start. Even better would be an open-source reference implementation! To this data it remained
+unclear how the standard NT, PAPP-A and β-HCG measurements
+entered the analysis and if additional components (ethnicity?  smoking
+status? nasal bone? heart rate? ductus flow?) entered the risk
+calculation. Similarly, publishing a statistical description of the
+FMF-Germany algorithm in open-access articles, e.g. such as
+@merz_etal2016, is a step in the right direction, however, some of the
+equations in the paper were either erroneous or intentionally kept so
+vague, the algorithm became impossible to reconstruct. Altogether,
+transparency and risk communication for this sensitive
+diagnostic procedure should be improved to meet guideline standards.
+
+What do you do with the obtained posterior risk once you have it? This
+is indeed a very personal decision, which make the shortcomings of
+statistics clear: Statisticians can annotate even the most unlikely
+event with a probability of happening, but the probability is rarely
+zero, so it's your personal threshold for *likely enough* balanced
+against the ethics and personal beliefs of what to do if, which determines your actions...  In this $n=1$ context the
+reported risk might merely be a hypothetical number - at most its
+rough magnitude is of interest. However, from a system perspective $n$
+is much larger, so everything possible should be done such that the
+probabilistic forecast is both calibrated and sharp and that the
+recipient(s) knows what this number entails.
+
+
+#### Postscript
+
+Further information about first trimester screening can be obtained
+from the [Fetal Medicine Foundation](https://fetalmedicine.org/).  In
+particular their
+[book](http://www.fetalmedicine.com/fmf/FMF-English.pdf) about the
+11-13 weeks scan (available in several languages) is very helpful
+[@FMF2004].  As mentioned the FMF-UK offers a web-based
+[trisomies risk assessment calculator](https://fetalmedicine.org/research/assess/trisomies).
+Similarly, the
+[FMF-Germany](https://www.fmf-deutschland.info/en/fmf-deutschland/)
+has their own website with information - apparently it is now also
+possible to obtain a demo version of their risk calculation software
+[PRC 3.0](https://www.fmf-deutschland.info/en/software/).
+
+## Appendix
+
+The mathematical details of the post and our troubles reproducing the
+results of @merz_etal2016 are described in two separate
+ `r paste0("[Appendixes]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"fts-appendix.html)")`,
+
+## Literature
