@@ -136,8 +136,8 @@ contrast FMF-UK uses software following "The First Trimester Screening
 module 2012 algorithm", which uses so called MoMs (multiples of the
 median). What this entails we could only find in a
 [rogue access software manual](https://doclegend.com/queue/03-guide-for-the-first-trimester-screening-module_5a17d7fbd64ab28f8c88fe0e_pdf?queue_id=5b205c29d64ab23ffc4c2e34):
-the document contains a large body of references containing the
-details of the calculations - in particular @kagan_etal2008a and
+the document contains a large body of references sketching the different
+analysis components - in particular @kagan_etal2008a and
 @kagan_etal2008b seem to cover the essentials components of the
 algorithm. However, for each component (nuchal translucency, β-HCG,
 PAPP-A, nasal bone, ductus venosus, heart rate, ...) further
