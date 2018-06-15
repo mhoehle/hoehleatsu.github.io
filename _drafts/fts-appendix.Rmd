@@ -219,13 +219,13 @@ p2 <- ggplot(nt_graph, aes(x=x, y=nt_merz)) + ylab("NT [mm]") + xlab("CRL-US [mm
 gridExtra::grid.arrange(p1, p2, ncol=2)
 ```
 
-We first suspected this discrepancy due to reported polynomial being rounded to five "significant digits - see e.g. the $x^5$ term of the polynomial - and contacted the authors about this. The reply was that further digits could not be provided, because a commercial software company holds the rights to the algorithm. Based on this answer we conducted a sensitivity analysis trying the smallest and largest possible value still yielding the same reported significant digits of the polynomial. The bands in the right hand figure show the smallest and largest possible value, which could be due to rounding. Based on this figure it becomes clear that rounding is not the problem. Either
+We first suspected this discrepancy due to the reported polynomial being rounded to five "significant digits"" - see e.g. the $x^5$ term of the polynomial - and contacted the authors about this. The reply was that further digits could not be provided, because a commercial software company holds the right to the algorithm. Based on this answer we conducted a sensitivity analysis trying the smallest and largest possible value yielding the same reported significant digits for each of the 7 terms of the polynomial. The bands in the right hand figure show the smallest and largest possible value of these $3^7=`r 3^7`$ combinations. Based on this figure it becomes clear that rounding is not the problem. Either
 
 1. some sort of transformation (e.g. between gestational age in weeks and CRL in mm) or
 2. a, later in the paper described 7th-square-root transformation
 3. or some other non-documented transformation
 
-is additionally applied to $x$ or $y$. We contacted the authors again with this finding asking them about which of the above applies, but unfortunately they either lacked the time to reply or chose not to reply. At least we never heard back... From a **scientific point of view** we found the
+is additionally applied to $x$ or $y$. We contacted the authors again with this finding asking them about which of the above applies, but unfortunately they either lacked the time to reply or chose not to reply. At least we never heard back. From a **scientific point of view** we find the
  excuse of a third-party-copyright-holder preventing transparency of the algorithm very disappointing. As a consequence, we inverse graphed the polynomial from Fig. 3 and became motivated to write a ShinyAapp reproducing the computations, because algorithms on such sensitive matters should be **transparent** and **reproducible**!
 
 
