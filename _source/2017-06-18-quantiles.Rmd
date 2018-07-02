@@ -398,9 +398,8 @@ on 6th of July at the
 ```{r,results='asis',echo=FALSE,fig.cap="Flint"}
 cat(paste0("![](https://c1.staticflickr.com/9/8760/29032559971_6662607e05.jpg)"))
 ```
-<br>
-<FONT COLOR="bbbbbb">Photo is copyright [George Thomas](https://www.flickr.com/photos/hz536n/29032559971/) under a CC BY-NC-ND 2.0 license.</FONT>
 </center>
+<FONT COLOR="bbbbbb">Photo is copyright [George Thomas](https://www.flickr.com/photos/hz536n/29032559971/) under a CC BY-NC-ND 2.0 license.</FONT>
 <p>
 
 ## Acknowledgments

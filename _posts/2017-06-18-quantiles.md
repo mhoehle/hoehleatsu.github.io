@@ -270,14 +270,17 @@ r %<>% mutate(violates_duality =  q90 > 15 & prop < 0.1)
 ```
 
 ```
+## Source: local data frame [5 x 3]
+## Groups: <by row>
+## 
 ## # A tibble: 5 x 3
-##     q90       prop violates_duality
-##   <dbl>      <dbl>            <lgl>
-## 1  15.0 0.09859155             TRUE
-## 2  15.0 0.09859155             TRUE
-## 3  16.2 0.09859155             TRUE
-## 4  15.0 0.09859155             TRUE
-## 5  15.8 0.09859155             TRUE
+##     q90   prop violates_duality
+##   <dbl>  <dbl> <lgl>           
+## 1  15.  0.0986 TRUE            
+## 2  15.  0.0986 TRUE            
+## 3  16.2 0.0986 TRUE            
+## 4  15.  0.0986 TRUE            
+## 5  15.8 0.0986 TRUE
 ```
 
 We note that some of the lines in the above output are artifacts of
@@ -323,14 +326,17 @@ r %<>% mutate(violates_duality_numsafe =  (q90 %greater% 15) & (prop %less% 0.1)
 ```
 
 ```
+## Source: local data frame [5 x 4]
+## Groups: <by row>
+## 
 ## # A tibble: 5 x 4
-##     q90       prop violates_duality violates_duality_numsafe
-##   <dbl>      <dbl>            <lgl>                    <lgl>
-## 1  16.2 0.09859155             TRUE                     TRUE
-## 2  15.8 0.09859155             TRUE                     TRUE
-## 3  15.8 0.09859155             TRUE                     TRUE
-## 4  16.2 0.09859155             TRUE                     TRUE
-## 5  16.2 0.09859155             TRUE                     TRUE
+##     q90   prop violates_duality violates_duality_numsafe
+##   <dbl>  <dbl> <lgl>            <lgl>                   
+## 1  16.2 0.0986 TRUE             TRUE                    
+## 2  15.8 0.0986 TRUE             TRUE                    
+## 3  15.8 0.0986 TRUE             TRUE                    
+## 4  16.2 0.0986 TRUE             TRUE                    
+## 5  16.2 0.0986 TRUE             TRUE
 ```
 
 
@@ -396,9 +402,8 @@ on 6th of July at the
 <p>
 <center>
 ![](https://c1.staticflickr.com/9/8760/29032559971_6662607e05.jpg)
-<br>
-<FONT COLOR="bbbbbb">Photo is copyright [George Thomas](https://www.flickr.com/photos/hz536n/29032559971/) under a CC BY-NC-ND 2.0 license.</FONT>
 </center>
+<FONT COLOR="bbbbbb">Photo is copyright [George Thomas](https://www.flickr.com/photos/hz536n/29032559971/) under a CC BY-NC-ND 2.0 license.</FONT>
 <p>
 
 ## Acknowledgments

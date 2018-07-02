@@ -10,36 +10,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-```{r,include=FALSE,echo=FALSE,message=FALSE}
-##If default fig.path, then set it.
-if (knitr::opts_chunk$get("fig.path") == "figure/") {
-  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
-  knitr::opts_chunk$set(fig.path="figure/source/2018-07-02-factfulness/")
-}
-fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
-filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2018-07-02-factfuless")
 
-knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=4,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2) # autodep=TRUE
-options(width=150)
-
-suppressPackageStartupMessages(library(tidyverse))
-suppressPackageStartupMessages(library(magrittr))
-suppressPackageStartupMessages(library(knitr))
-
-## Packages used for this post
-suppressPackageStartupMessages(require(reldist))
-suppressPackageStartupMessages(require(openxlsx))
-suppressPackageStartupMessages(require(gridExtra))
-suppressPackageStartupMessages(require(grid))
-suppressPackageStartupMessages(require(scales))
-suppressPackageStartupMessages(require(animation))
-
-##Configuration
-options(knitr.table.format = "html")
-theme_set(theme_minimal())
-#if there are more than n rows in the tibble, print only the first m rows.
-options(tibble.print_max = 10, tibble.print_min = 5)
-```
 
 ## Abstract:
 
@@ -47,9 +18,7 @@ We work out the math behind the so called income mountain plots used in the book
 tidyverse code. The trip includes a mixture of log-normals, the density transformation theorem, histogram vs. density and then skipping all those details again to make nice moving mountain plots.
 
 <center>
-```{r,results='asis',echo=FALSE,fig.cap="Animated Income Mountains"}
-cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"moving-mountains.gif"),")")
-```
+![]({{ site.baseurl }}/figure/source/2018-07-02-factfulness/moving-mountains.gif )
 </center>
 
 {% include license.html %}
@@ -70,9 +39,7 @@ many of the graphs from the book interactively and contains the data for downloa
  how incomes are distributed within individuals of a population:
 <p>
 <center>
-```{r,results='asis',echo=FALSE,fig.cap="Income mountain from Gapminder."}
-cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"gapminder-income-mountain.png"),")")
-```
+![]({{ site.baseurl }}/figure/source/2018-07-02-factfulness/gapminder-income-mountain.png )
 </center>
 <FONT COLOR="bbbbbb">Screenshot of the 2010 income mountain plot. Free material from [www.gapminder.org](https://www.gapminder.org).</FONT>
 <p>
@@ -88,7 +55,8 @@ the years and differences in the cost of living between countries is
 accounted for and can thus be compared - see the [Gapminder documentation](https://www.gapminder.org/data/documentation/gd001/) for further details. We download the
 [data from Gapminder](https://github.com/Gapminder-Indicators/gdppc_cppp/raw/master/gdppc_cppp-by-gapminder.xlsx) where they are available in *wide format* as Excel-file. For tidyverse handling we reshape them into *long format*.
 
-```{r DATA_GDPLOAD, echo=TRUE, message=FALSE}
+
+```r
 ##Download gdp data from gapminder - available under a CC BY-4 license.
 if (!file.exists(file.path(fullFigPath, "gapminder-gdp.xlsx"))) {
   download.file("https://github.com/Gapminder-Indicators/gdppc_cppp/raw/master/gdppc_cppp-by-gapminder.xlsx", destfile=file.path(fullFigPath,"gapminder-gdp.xlsx"))
@@ -103,55 +71,28 @@ gdp_long <- readxl::read_xlsx(file.path(fullFigPath, "gapminder-gdp.xlsx"), shee
 
 Furthermore, we rescale GDP per year to daily income, because this is the unit used in the book.
 
-```{r, echo=TRUE}
+
+```r
 gdp_long %<>% mutate(gdp = gdp / 365.25)
 ```
-Similar code segments are written for (see the [code](`r paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`) on github for details)
+Similar code segments are written for (see the [code](https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/2018-07-02-factfulness.Rmd) on github for details)
 
 * the gini (`gini_long`) and population (`pop_long`) data
 * the regional group (=continent) each country belongs two (`group`)
 
-```{r DATA_LOAD, echo=FALSE, results='hide', message=FALSE}
-if (!file.exists(file.path(fullFigPath, "gapminder-gini-v2.xlsx"))) {
-  download.file("https://docs.google.com/spreadsheets/d/1V9ueokiba2KKO0Un8UwJ73rBPr2Zub8j7bfT6Fi222E/export?format=xlsx", destfile=file.path(fullFigPath,"gapminder-gini-v2.xlsx"))
-}
-gini <- readxl::read_xlsx(file.path(fullFigPath, "gapminder-gini-v2.xlsx"), sheet=2) %>%
-  rename(country=`Row Labels`) %>% select(-`Geo code`, -indicator) %>% as.tbl()
-gini_long <- gini %>%
-  gather(key="year", value="gini", -country) %>%
-  mutate(year=as.character(as.numeric(year)))
 
-if (!file.exists(file.path(fullFigPath,"gapminder-pop.csv"))) {
-  download.file("https://docs.google.com/spreadsheet/pub?key=phAwcNAVuyj0XOoBL_n5tAQ&output=csv", destfile=file.path(fullFigPath, "gapminder-pop.csv"))
-}
-pop <- readr::read_csv(file=file.path(fullFigPath, "gapminder-pop.csv")) %>%
-  rename(country=`Total population`)
-pop_long <- pop  %>%  gather(key="year", value="population", -country) %>%
-  filter(!is.na(population))
-
-##Regions, see https://www.gapminder.org/gsdev
-if (!file.exists(file.path(fullFigPath,"gapminder-countrygroups.xls"))) {
-  download.file("https://www.gapminder.org/gsdev/files/popReg/en/list_country_groups_en.xls", destfile=file.path(fullFigPath, "gapminder-countrygroups.xls"))
-}
-groups <- readxl::read_xls(file.path(fullFigPath, "gapminder-countrygroups.xls"), sheet=1) %>%
-  rename(country=Entity, region=Region, code=ID)
-```
 The four data sources are then joined into one long tibble `gm`. For each year we also compute the fraction a country's population makes up of the world population that year (column `w`) as well as the fraction within the year and region the population makes up (column `w_region`) :
-```{r DATA_MERGE}
-##Merge data together
-gm <- inner_join(gini_long, gdp_long, by=c("country","year")) %>%
-  inner_join(pop_long, by=c("country","year")) %>%
-  inner_join(groups, by=c("country")) %>%
-  select(country, region, code, everything())
 
-##Add weights (by year) column and by year and region
-gm %<>% group_by(year) %>%
-  mutate(w=population/sum(population)) %>%
-  group_by(year, region) %>%
-  mutate(w_region = population/sum(population)) %>%
-  ungroup
-
-gm
+```
+## # A tibble: 15,552 x 9
+##   country     region code  year   gini   gdp population          w  w_region
+##   <chr>       <chr>  <chr> <chr> <dbl> <dbl>      <dbl>      <dbl>     <dbl>
+## 1 Afghanistan Asia   AFG   1800  0.305  1.65    3280000 0.00347    0.00518  
+## 2 Albania     Europe ALB   1800  0.389  1.83     410445 0.000434   0.00192  
+## 3 Algeria     Africa DZA   1800  0.562  1.96    2503218 0.00264    0.0342   
+## 4 Andorra     Europe AND   1800  0.4    3.28       2654 0.00000280 0.0000124
+## 5 Angola      Africa AGO   1800  0.477  1.69    1567028 0.00166    0.0214   
+## # ... with 1.555e+04 more rows
 ```
 
 
@@ -185,104 +126,36 @@ $$
 $$
 
 We can use this to determine the parameters of the log-normal for every country in each year.
-```{r XBARGINI2MUSIGMA}
-## Compute the parameters of the log-normal distribution from a specified
-## mean and gini-index.
-xbarg_2_musigma <- function(xbar,g) {
-  sigma <- 2/sqrt(2)*qnorm((g+1)/2)
-  mu <- log(xbar) - 1/2*sigma^2
-  return(c(mu=mu, sigma=sigma))
-}
-
-##Determine parameters of the log-normal modelling the gdp per country and year
-gm <- gm %>% group_by(country,year) %>% do({
-  ##Determine parameters of the log-normal distrib
-  theta <- xbarg_2_musigma(xbar=.$gdp, g=.$gini)
-  data.frame(., meanlog=theta[1], sdlog=theta[2], median=exp(theta[1]))
-}) %>% ungroup
-```
 
 
-```{r}
-n_country <- length(unique(gm$country))
-```
+
+
 
 ### Mixture distribution
 
 The income distribution of a **set of countries** is now given as a
-[Mixture distribution](https://en.wikipedia.org/wiki/Mixture_distribution) of log-normals, i.e. one component for each of the countries in the set with a weight proportional to the population of the country. As an example, the world income distribution would be a mixture of the `r n_country` countries in the Gapminder dataset, i.e.
+[Mixture distribution](https://en.wikipedia.org/wiki/Mixture_distribution) of log-normals, i.e. one component for each of the countries in the set with a weight proportional to the population of the country. As an example, the world income distribution would be a mixture of the 192 countries in the Gapminder dataset, i.e.
 
 $$
-f_{\text{mix}}(x) = \sum_{i=1}^{`r n_country`} w_i \>\cdot
+f_{\text{mix}}(x) = \sum_{i=1}^{192} w_i \>\cdot
 \>f_{\operatorname{LogN}}(x; \mu_i, \sigma_i^2), \quad\text{where}
-\quad w_i = \frac{\text{population}_i}{\sum_{j=1}^{`r n_country`} \text{population}_j},
+\quad w_i = \frac{\text{population}_i}{\sum_{j=1}^{192} \text{population}_j},
 $$
 and $f_{\operatorname{LogN}}(x; \mu_i, \sigma_i^2)$ is the density of the log-normal distribution with country specific parameters. Note that we could have equally used the mixture approach to define the income of, e.g., a continent region. With the above definition we define standard R-functions for computing the PDF
-(`dmix`), CDF (`pmix`), quantile function (`qmix`) and a function for sampling from the distribution (`rmix`) - see the [github code](`r paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`) for details.
+(`dmix`), CDF (`pmix`), quantile function (`qmix`) and a function for sampling from the distribution (`rmix`) - see the [github code](https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/2018-07-02-factfulness.Rmd) for details.
 
-```{r MIXFUNCS, echo=FALSE}
-#' Generate a sample of size n from the mixture distribution.
-#'
-#' @param x Value where to evaluate the density (can be a vector)
-#' @param meanLog Vector containing the individual meanlog parameters of each component
-#' @param sdLog Vector containing the individual sdlog parameters of each component
-#' @param Weight vector, should be the same length as meanlog and sum to one.
-#' @return A vector of length n.
 
-rmix <- function(n, meanlog, sdlog, w) {
-  ##Sanity checks
-  stopifnot( (length(meanlog) == length(sdlog)) & (length(meanlog) == length(w)) )
 
-  ##Sample component and then from its density
-  i <- sample(seq_len(length(meanlog)), size=n, prob=w, replace=TRUE)
-  rlnorm(n, meanlog=meanlog[i], sdlog=sdlog[i])
-}
 
-#' Density of the log-normal mixture
-dmix <- function(x, meanlog, sdlog, w) {
-  ##Sanity check
-  stopifnot( (length(meanlog) == length(sdlog)) & (length(meanlog) == length(w)) )
+We use the mixture approach to compute the density of the world income distribution obtained by "mixing" all 192
+log-normal distributions. This is shown below for the World income distribution of
+the year 2015. Note the $\log_2$ x-axis. This presentation
+is *Factfulness*' preferred way of illustrating the skew income distribution.
 
-  one_x <- function(x) sum(w*dlnorm(x, meanlog=meanlog, sdlog=sdlog))
-  sapply(x, one_x)
-}
-
-#' Cumulative density of the log-normal mixture
-pmix <- function(q, meanlog, sdlog, w) {
-  ##Sanity check
-  stopifnot( (length(meanlog) == length(sdlog)) & (length(meanlog) == length(w)) )
-
-  one_q <- function(q) sum(w*plnorm(q, meanlog=meanlog, sdlog=sdlog))
-  sapply(q, one_q)
-}
-
-##Quantile function of the log-normal mixture
-qmix <- function(p, meanlog, sdlog, w) {
-  ##Sanity check
-  stopifnot( (length(meanlog) == length(sdlog)) & (length(meanlog) == length(w)) )
-
-  ##Find one quantile numerically
-  one_p <- function(p) {
-    target <- function(x) {
-      pmix(x, meanlog=meanlog, sdlog=sdlog, w=w) - p
-    }
-    uniroot(target,lower=0, upper=1e99)$root
-  }
-  sapply(p, one_p)
-}
-```
-```{r GMRECENT, results='hide'}
+```r
 ##Restrict to year 2015
 gm_recent <- gm %>% filter(year == 2015) %>% ungroup
 
-```
-
-We use the mixture approach to compute the density of the world income distribution obtained by "mixing" all `r n_country`
-log-normal distributions. This is shown below for the World income distribution of
-the year `r mean(as.numeric(gm_recent$year), na.rm=TRUE)`. Note the $\log_2$ x-axis. This presentation
-is *Factfulness*' preferred way of illustrating the skew income distribution.
-```{r DMIXWORLD, echo=TRUE}
-<<GMRECENT>>
 ##Make a data frame containing the densities of each region for
 ##the gm_recent dataset
 df_pdf <- data.frame(log2x=seq(-2,9,by=0.05)) %>% 
@@ -311,77 +184,9 @@ mode_mix <- pdf_total %>%
   mutate(pdf_log2x = log(2) * x * pdf) %>% 
   filter(pdf_log2x == max(pdf_log2x)) %$% x
 ```
-```{r CHECKMIXTUREPROPERTIES, results='hide'}
-## Sanity check - this should be approximately 1!
-pdf_total2 <- pdf_total %>% 
-  mutate(xm1 = if_else(is.na(lag(x)),0, lag(x)), width=x-xm1,
-         # Check that computation in one go is the same as adding the 
-         # densities of the continent components on the original scale
-         pdf_direct=dmix(x, meanlog=gm_recent$meanlog, sdlog=gm_recent$sdlog, w=gm_recent$w),
-         pdf_the_same = isTRUE(all.equal(pdf, pdf_direct)))
-
-##This should be close to one (might need to expand the grid to get closer to one)
-sum(pdf_total2$pdf * pdf_total2$width)
-##This should be true all along the way
-stopifnot(all(pdf_total2$pdf_the_same))
-
-## Check summation property on the y-axis instead
-pdf_total_log2x <- pdf_total2 %>% 
-  mutate(xm1 = if_else(xm1==0,1e-2, xm1)) %>% 
-  mutate(log2x = log2(x), log2xm1 = log2(xm1), width=log2x - log2xm1, pdf = log(2) * x * pdf)
-
-##This should be close to one, depenends on what is used for xm1 =0.
-sum(pdf_total_log2x$pdf * pdf_total_log2x$width)
 
 
-
-############################################################
-## Investigate how big the difference is, if we sum the transformed densities on the log_2 scale opposite to summing
-## the untransformed densities onthe original scale.
-## Conclusion: Doesn't make a difference as can be seen from the change of variable formula stated above:
-##
-## f_Y(y) = 2^y log(2) f_mix(2^y) =
-##        = 2^y log(2) \sum_{i} w_i * f_i(2^y)
-##        = \sum_{i} w_i * (2^y log(2) * f_i(2^y))
-##        = \sum_{i} w_i f_{Y,i}(y)
-##
-## because f_{Y,i}(y) = (2^y log(2) * f_i(2^y)).
-###
-############################################################
-
-df_total <- pdf_region %>% group_by(x) %>%
-  summarise(region="Total",w=sum(w), 
-            pdfx_sum_dens_on_x = sum(w_pdf),
-            pdflog2_sum_dens_on_log2 = sum(log(2)*x*w_pdf)) %>% 
-  mutate(pdflog2_sum_dens_on_x = log(2) * x * pdfx_sum_dens_on_x,
-         isTheSame = isTRUE(all.equal(pdflog2_sum_dens_on_log2,pdflog2_sum_dens_on_x))) 
-
-all(df_total$isTheSame)
-```
-
-```{r DENSITYPLOTS}
-p1 <- ggplot(pdf_region %>% rename(Region = region), aes(x=x, y=log(2)*x*pdf, color=Region)) + geom_line() +
-  scale_x_continuous(trans='log2',
-                     breaks = trans_breaks("log2", function(x) 2^x),
-                     labels = trans_format("log2", math_format(2^.x))) +
-  xlab("Income [$/day]") +
-  ylab(expression(log(2) %.% x %.% pdf)) +
-  NULL
-
-##Weighted + summed
-p2 <- ggplot(pdf_region %>% rename(Region=region), aes(x=x, y=log(2)*x*w_pdf, color=Region)) +
-  geom_line(data=pdf_total, aes(x=x, y=log(2)*x*pdf), color="steelblue", lwd=1.5) +
-  geom_line() +
-  scale_x_continuous(trans='log2',
-                     breaks = trans_breaks("log2", function(x) 2^x,n=11),
-                     labels = trans_format("log2", function(x) ifelse(x<0, sprintf("%.1f",2^x), sprintf("%.0f",2^x)))) +
-  xlab("Income [$/day]") +
-  ylab(expression(w[region] %.% log(2) %.% x %.% pdf)) +
-  guides(color=FALSE) +
-  NULL
-
-grid.arrange(p1,p2, ncol=2)
-```
+<img src="{{ site.baseurl }}/figure/source/2018-07-02-factfulness/DENSITYPLOTS-1.png" style="display: block; margin: auto;" />
 
 For illustration we compute a mixture distribution for each region using all countries within region. This is shown in the left pane. Note: because a log-base-2-transformation is used for the x-axis, we need to perform a [change of variables](https://en.wikipedia.org/wiki/Probability_density_function#Dependent_variables_and_change_of_variables), i.e. we compute the density for $Y=\log_2(X)=g(X)$ where $X\sim f_{\text{mix}}$, i.e.
 $$
@@ -389,18 +194,19 @@ f_Y(y) = \left| \frac{d}{dy}(g^{-1}(y)) \right| f_X(g^{-1}(y)) = \log(2) \cdot 2
 $$
 
 In the right pane we then show the region specific densities each weighted by their population fraction. These are then summed up to yield the world income shown as a thick blue line.
-The median of the resulting world income distribution is  at `r sprintf("%.1f",median_mix)` \$/day, whereas the mean of the mixture is at an income of `r sprintf("%.1f",mean_mix)`\$/day and the mode (on the log-base-2 scale) is `r sprintf("%.1f",mode_mix)`\$/day. Note that the later is not transformation invariant, i.e. the value is not the mode of the income distribution, but of $\log_2(X)$.
+The median of the resulting world income distribution is  at 20.0 \$/day, whereas the mean of the mixture is at an income of 39.9\$/day and the mode (on the log-base-2 scale) is 17.1\$/day. Note that the later is not transformation invariant, i.e. the value is not the mode of the income distribution, but of $\log_2(X)$.
 
 To get the income mountain plots as shown in *Factfulness*, we additionally need to obtain number of people on the $y$-axis and not density. We do this by partitioning the x-axis into non-overlapping intervals and then compute the number of individuals expected to fall into a given interval with limits $[l, u]$. Under our model this expectation is
 
 $$n \cdot (F_{\text{mix}}(u)-F_{\text{mix}}(l)),$$
 
 where $F_{\text{mix}}$ is the CDF of the mixture
-distribution and $n$ is the total world population. The mountain plot below shows this for a given partition with $n=`r format(sum(gm_recent$population), big.mark=",")`$.
+distribution and $n$ is the total world population. The mountain plot below shows this for a given partition with $n=7,305,116,647$.
 Note that $2.5\cdot
 10^8$ corresponds to 250 mio people. Also note the $\log_2$ x-axis, and hence (on the linear scale) unequally wide intervals of the partitioning. Contrary to *Factfulness*', I prefer to make this more explicit by indicating the intervals explicitly on the x-axis of the mountain plot, because it is about number of people in certain **income brackets**.
 
-```{r PREPAREMOUNTAINDF, echo=TRUE}
+
+```r
 ##Function to prepare the data.frame to be used in a mountain plot
 make_mountain_df <- function(gm_df, log2x=seq(-2,9,by=0.25)) {
   ##Make a data.frame containing the intervals with appropriate annotation
@@ -434,41 +240,33 @@ make_mountain_df <- function(gm_df, log2x=seq(-2,9,by=0.25)) {
 ##Create mountain plot data set for gm_recent with default spacing.
 (people <- make_mountain_df(gm_recent)) 
 ```
-This can then be plotted with `ggplot2`:
-```{r TRUEMOUNTAINPLOT, echo=FALSE, fig.height=5}
-ggplot(people %>% rename(Region=region),
-       aes(x=interval,y=people, fill=Region)) + geom_col() +
-  geom_col(width=1) +
-  ylab("Number of individuals") + xlab("Income [$/day]") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
 ```
+## # A tibble: 176 x 13
+## # Groups:   region [4]
+##   region log2x     x   xm1 log2xm1 mid_log2  width width_log2 interval        interval_log2x      prob_mass   people year 
+##   <chr>  <dbl> <dbl> <dbl>   <dbl>    <dbl>  <dbl>      <dbl> <chr>           <chr>                   <dbl>    <dbl> <chr>
+## 1 Africa -1.75 0.297 0.25    -2      -1.88  0.0473       0.25 [   0.2-   0.3] [2^(-2.0)-2^(-1.8)]   0.00134 1586808. 2015 
+## 2 Africa -1.5  0.354 0.297   -1.75   -1.62  0.0563       0.25 [   0.3-   0.4] [2^(-1.8)-2^(-1.5)]   0.00205 2432998. 2015 
+## 3 Africa -1.25 0.420 0.354   -1.5    -1.38  0.0669       0.25 [   0.4-   0.4] [2^(-1.5)-2^(-1.2)]   0.00307 3639365. 2015 
+## 4 Africa -1    0.5   0.420   -1.25   -1.12  0.0796       0.25 [   0.4-   0.5] [2^(-1.2)-2^(-1.0)]   0.00448 5305674. 2015 
+## 5 Africa -0.75 0.595 0.5     -1      -0.875 0.0946       0.25 [   0.5-   0.6] [2^(-1.0)-2^(-0.8)]   0.00636 7537067. 2015 
+## # ... with 171 more rows
+```
+This can then be plotted with `ggplot2`:
+<img src="{{ site.baseurl }}/figure/source/2018-07-02-factfulness/TRUEMOUNTAINPLOT-1.png" style="display: block; margin: auto;" />
 
 In light of all the talk about gaps, it can also be healthy to plot the income distribution on the linear scale. From this it becomes obvious that linearly there indeed are larger absolute differences in income, but -as argued in the book- the exp-scale (base 2) incorporates peoples perception about the worth of additional income.
 
-```{r LINEARSCALE-MOUNTAINPLOT, warning=FALSE}
-ggplot(people %>% rename(Region=region),
-       aes(x=xm1,y=people, fill=Region, width=width)) +
-  geom_col() +
-  ylab("Number of individuals") + xlab("Income [$/day]") +
-  NULL
-```
+<img src="{{ site.baseurl }}/figure/source/2018-07-02-factfulness/LINEARSCALE-MOUNTAINPLOT-1.png" style="display: block; margin: auto;" />
 Because the intervals are not equally wide, only the height of the bars should be interpreted in this plot. However, the eye perceives area, which in this case is misguiding. Showing histograms with unequal bin widths is a constant dilemma between area, height, density and perception. The recommendation would be that if one wants to use the linear-scale, then one should use equal width linear intervals or directly plot the density. As a consequence, plots like the above are not recommended, but they make obvious the tail behaviour of the income distribution - a feature which is somewhat hidden by the log-base-2-scale plots.
 
-```{r LINEARDMIX, eval=FALSE}
-##Weighted + summed
-ggplot(pdf_region %>% rename(Region=region), aes(x=x, y=w_pdf, color=Region)) +
-  geom_line(data=pdf_total, aes(x=x, y=pdf), color="steelblue", lwd=1.5) +
-  geom_line() +
-  xlab("Income [$/day]") +
-  ylab(expression(w[region] %.% pdf)) +
-  #guides(color=FALSE) +
-  NULL
-```
+
 
 Of course none of the above plots looks as nice as the Gapminder plots, but they  have proper x and y-axes annotation and, IMHO, are clearer to interpret, because they do not mix the concept of density with the concept of individuals falling into income bins. As the bin-width converges to zero, one gets the density multiplied by $n$, but this complication of infinitesimal width bins is impossible to communicate. In the end this was the talent of Hans Rosling and Gapminder - to make the complicated easy and intuitive! We honor this by skipping the math^[Shown is the expected number of individuals in thin bins of size 0.01 on the log-base-2-scale. As done in Factfulness we also skip the interval annotation on the x-axis and, as a consequence, do without y-axis tick marks, which would require one to explain the interval widths.] and celebrate the result as the **art** it is!
 
-```{r ARTISTICMOUNTAINPLOT, echo=TRUE, fig.height=4, results="hide"}
+
+```r
 ##Make mountain plot with smaller intervals than in previous plot.
 ggplot_oneyear_mountain <- function(people, ymax=NA) {
   ##Make the ggplot
@@ -495,6 +293,8 @@ gm_recent %>%
   ggplot_oneyear_mountain()
 ```
 
+<img src="{{ site.baseurl }}/figure/source/2018-07-02-factfulness/ARTISTICMOUNTAINPLOT-1.png" style="display: block; margin: auto;" />
+
 ## Discussion
 
 Our replicated mountain plots do not exactly match those made by  Gapminder (c.f. the screenshot). It appears as if our distributions are located slightly more to the right. It is not entirely clear why there is a deviation, but one possible problem could be that we do the translation into income per day differently? I'm not an econometrician, so this could be a trivial blunder on my side, however, the values in this post are roughly of the same magnitude as the graph on p. 46 in @vanzanden_etal2011 mentioned in the [Gapminder documentation page](https://www.gapminder.org/data/documentation/income-mountains-dataset/), whereas the Gapminder curves appear too far to the left. It might be worthwhile to check [individual country results](https://docs.google.com/spreadsheets/d/1939CzZ5HHoLreb0YyopaWfNjJ9mnN27IhywI6-TuwZs/edit#gid=501532268) underlying the graphs to see where the difference is.
@@ -503,43 +303,10 @@ We end the post by animating the dynamics of the income mountains since 1950 usi
 Let the [world move forward](https://youtu.be/hVimVzgtD6w?t=8m12s)! It is not as bad as it seems. Facts matter.
 
 
-```{r ANIMATE, cache=TRUE, results='hide', message=FALSE}
-##Make mountain plot with smaller intervals than in previous plot.
-people_all <- gm %>% group_by(year) %>% do({
-  make_mountain_df(., log2x=seq(-2,9,by=0.01))
-})
 
-
-##Helper function to do the animation for a set of years.
-animation <- function(years) {
-  ##Largest bin to show
-  total <- people_all %>%
-    group_by(year,as.factor(mid_log2)) %>%
-    summarise(people=sum(people))
-  ymax <- max(total %$% people)
-
-  ##Show all on the same y-scale
-  for (theYear in years) {
-    people_all %>% filter(year == theYear) %>%
-      ggplot_oneyear_mountain(ymax=ymax)
-  }
-  invisible()
-}
-
-##Years to show
-years <- gm %>% filter(year >= 1950) %>% distinct(year) %$% year
-
-ani.options(interval=0.2)
-##Make an animate
-animation::saveGIF(animation(years),
-                   movie.name=file.path(fullFigPath, "moving-mountains.gif"),
-                   ani.width=600,ani.height=300)
-```
 
 <center>
-```{r,results='asis',echo=FALSE,fig.cap="Animated Income Mountains"}
-cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"moving-mountains.gif"),")")
-```
+![]({{ site.baseurl }}/figure/source/2018-07-02-factfulness/moving-mountains.gif )
 </center>
 
 
