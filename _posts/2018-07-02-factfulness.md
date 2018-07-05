@@ -120,7 +120,7 @@ where $\Phi$ denotes the CDF of the
 standard normal distribution, and by knowing that the expectation of the log-normal is $E(X) = \exp(\mu + \frac{1}{2}\sigma^2)$, it is possible to determine $(\mu,\sigma)$ as:
 
 $$
-\sigma = \frac{2}{\sqrt{2}} \Phi^{-1}\left(\frac{G+1}{2}\right)
+\sigma = \sqrt{2}\> \Phi^{-1}\left(\frac{G+1}{2}\right)
 \quad\text{and}\quad
 \mu = \log(\overline{x}) - \frac{1}{2} \sigma^2.
 $$
@@ -158,7 +158,7 @@ gm_recent <- gm %>% filter(year == 2015) %>% ungroup
 
 ##Make a data frame containing the densities of each region for
 ##the gm_recent dataset
-df_pdf <- data.frame(log2x=seq(-2,9,by=0.05)) %>% 
+df_pdf <- data.frame(log2x=seq(-2,9,by=0.05)) %>%
   mutate(x=2^log2x)
 
 pdf_region <- gm_recent %>% group_by(region) %>% do({
@@ -170,18 +170,18 @@ pdf_region <- gm_recent %>% group_by(region) %>% do({
 ## the original income scale and NOT the log_2 scale. However, one can show that in the special case the result on the log-base-2-scale is the same as summing the individual log-base-2 transformed densities (see hidden CHECKMIXTUREPROPERTIES chunk).
 
 pdf_total <- pdf_region %>% group_by(x) %>%
-  summarise(region="Total",w=sum(w), pdf = sum(w_pdf)) 
+  summarise(region="Total",w=sum(w), pdf = sum(w_pdf))
 
-## Expectation of the distribution 
+## Expectation of the distribution
 mean_mix <- gm_recent %>%
   summarise(mean=sum(w * exp(meanlog + 1/2*sdlog^2))) %$% mean
 
-## Median of the distribution 
+## Median of the distribution
 median_mix <- qmix(0.5, gm_recent$meanlog, gm_recent$sdlog, gm_recent$w)
 
 ## Mode of the distribution on the log2-scale (not transformation invariant!)
-mode_mix <- pdf_total %>% 
-  mutate(pdf_log2x = log(2) * x * pdf) %>% 
+mode_mix <- pdf_total %>%
+  mutate(pdf_log2x = log(2) * x * pdf) %>%
   filter(pdf_log2x == max(pdf_log2x)) %$% x
 ```
 
@@ -238,7 +238,7 @@ make_mountain_df <- function(gm_df, log2x=seq(-2,9,by=0.25)) {
 }
 
 ##Create mountain plot data set for gm_recent with default spacing.
-(people <- make_mountain_df(gm_recent)) 
+(people <- make_mountain_df(gm_recent))
 ```
 
 ```
@@ -288,7 +288,7 @@ ggplot_oneyear_mountain <- function(people, ymax=NA) {
 }
 
 ##Create the mountain plot for 2015
-gm_recent %>% 
+gm_recent %>%
   make_mountain_df(log2x=seq(-2,9,by=0.01)) %>%
   ggplot_oneyear_mountain()
 ```
@@ -297,9 +297,10 @@ gm_recent %>%
 
 ## Discussion
 
-Our replicated mountain plots do not exactly match those made by  Gapminder (c.f. the screenshot). It appears as if our distributions are located slightly more to the right. It is not entirely clear why there is a deviation, but one possible problem could be that we do the translation into income per day differently? I'm not an econometrician, so this could be a trivial blunder on my side, however, the values in this post are roughly of the same magnitude as the graph on p. 46 in @vanzanden_etal2011 mentioned in the [Gapminder documentation page](https://www.gapminder.org/data/documentation/income-mountains-dataset/), whereas the Gapminder curves appear too far to the left. It might be worthwhile to check [individual country results](https://docs.google.com/spreadsheets/d/1939CzZ5HHoLreb0YyopaWfNjJ9mnN27IhywI6-TuwZs/edit#gid=501532268) underlying the graphs to see where the difference is.
+Our replicated mountain plots do not exactly match those made by  Gapminder (c.f. the screenshot). It appears as if our distributions are located slightly more to the right. It is not entirely clear why there is a deviation, but one possible problem could be that we do the translation into income per day differently? I'm not an econometrician, so this could be a trivial blunder on my side, however, the values in this post are roughly of the same magnitude as the graph on p. 45 in @vanzanden_etal2011 mentioned in the [Gapminder documentation page](https://www.gapminder.org/data/documentation/income-mountains-dataset/), whereas the Gapminder curves appear too far to the left. It might be worthwhile to check [individual country data](https://docs.google.com/spreadsheets/d/1939CzZ5HHoLreb0YyopaWfNjJ9mnN27IhywI6-TuwZs/edit#gid=501532268) underlying the graphs to see where the difference is. <br>
+**Edit 2018-07-05:** I checked this and read the [documentation](https://www.gapminder.org/data/documentation/income-mountains-dataset/) again more carefully: Apparently, Gapminder uses *mean household income (or consumption) per person per day (measured in PPP$ 2011)* opposite to the *GDP/capita* used in the scientific literature they quote and for which you can download the data from their website. To me this was not clear when reading Factfulness and, unfortunately, there is no documentation for how exactly their mean household income value per individual is computed from the GDP/capita.^[The Gapminder [Household Income v1](http://www.gapm.io/ioihhinc) description is currently (as of 2018-07-05) blank and so is the link specified as reference [Gapminder [3]](gapm.io/elev) in *Factfulness*. The detailed data just contain the column `household_income` without further explanation. Altogether, a somewhat disappointing number of links in the book are currently still under construction. Reading the document [Data Sources used in Don’t Panic — End Poverty](https://www.gapminder.org/news/data-sources-dont-panic-end-poverty/) it appears to me that the GDP/capita are converted to household incomes by scaling all countries GDPs per capita until the global income log-normal mixture distribution is such that *11.3% of world population are below the extreme poverty line of 1.85$/day (in PPP 2011) in year 2015*. When I tried this rather ad-hoc approach I got a scale parameter of approximately  0.379 for the GDP, which corresponds to a shift of 1.402 to the left on the log-base-2 scale. This worked ok for the single benchmark of Sweden in 1970 that I tested.. Furthermore, Gapminder uses something they call **log-normal-topping** per country in order to get better tail behaviour. [Adventurous Excel-files](https://drive.google.com/drive/folders/11_k8_sTa7ycuprJjaORotbGVQyX1b_tx) not directly linked to in any explanation are used for the calculation and can be consulted for further details. The authors note themselves that they hope to convert these computations to python soon...😄] For the sake of illustrating the dynamics in the world income the difference in scale is not that important, though.
 
-We end the post by animating the dynamics of the income mountains since 1950 using `gganimate`. To put it in possibilistic terms: 
+We end the post by animating the dynamics of the income mountains since 1950 using `gganimate`. To put it in possibilistic terms:
 Let the [world move forward](https://youtu.be/hVimVzgtD6w?t=8m12s)! It is not as bad as it seems. Facts matter.
 
 
