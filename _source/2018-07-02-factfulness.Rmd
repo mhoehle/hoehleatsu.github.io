@@ -543,5 +543,28 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"moving-m
 ```
 </center>
 
+```{r FINDSCALEFACTOR, eval=FALSE}
+##Determine parameters of the log-normal modelling the gdp per country and year
+f <- function(scale, gm_df, target=0.113, poverty_limit=1.85) {
+  ##Scale all GDP in a very ad-hoc approach to get a more fitting proportion
+  ##below poverty limit.
+  foo <- gm_df %>% mutate(gdp=gdp * scale)
+  foo <- foo %>% select(-meanlog,-sdlog) %>% group_by(country,year) %>% do({
+    ##Determine parameters of the log-normal distrib
+    theta <- xbarg_2_musigma(xbar=.$gdp, g=.$gini)
+    data.frame(., meanlog=theta[1], sdlog=theta[2], median=exp(theta[1]))
+  })
+  pmix(poverty_limit, meanlog=foo$meanlog, sdlog=foo$sdlog, w=foo$w)  - target
+}
+
+scale <- uniroot(f, gm_df=gm %>% filter(year==2015), interval=c(0.001,0.999))$root
+scale
+sprintf("%.3f",scale)
+sprintf("%.3f",log2(scale))
+
+scale * 22054/365.25
+log2(scale)
+```
+
 
 ## Literature
