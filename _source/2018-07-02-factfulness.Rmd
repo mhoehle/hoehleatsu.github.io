@@ -566,5 +566,9 @@ scale * 22054/365.25
 log2(scale)
 ```
 
+```{r STORERESULTS}
+save(list=c("n_country", "gm", "rmix", "pmix", "dmix", "qmix"), file=file.path(fullFigPath, "factfulness.RData"))
+```
 
 ## Literature
+
