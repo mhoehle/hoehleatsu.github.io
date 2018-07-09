@@ -1,0 +1,334 @@
+---
+layout: post
+title: "World Income, Inequality and Murder"
+tags: [rstats, stats, economics, data visualization, income, equality]
+#  bibliography: ~/Literature/Bibtex/jabref.bib
+header-includes:
+   - \usepackage{bm}
+comments: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2018-07-09-gini/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2018-07-09-gini")
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2) # autodep=TRUE
+options(width=150)
+
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(magrittr))
+suppressPackageStartupMessages(library(knitr))
+
+## Packages used for this post
+suppressPackageStartupMessages(require(reldist))
+suppressPackageStartupMessages(require(gridExtra))
+suppressPackageStartupMessages(require(grid))
+suppressPackageStartupMessages(require(scales))
+
+##Configuration
+options(knitr.table.format = "html")
+theme_set(theme_minimal())
+#if there are more than n rows in the tibble, print only the first m rows.
+options(tibble.print_max = 10, tibble.print_min = 5)
+```
+
+## Abstract:
+
+We follow up on last weeks post on using Gapminder data to study the
+world's income distribution. In order to assess the inequality of the
+distribution we compute the Gini coefficient for the world's income
+distribution by Monte Carlo approximation and visualize the result as
+a time series. Furthermore, we animate the association between Gini
+coefficient and homicide rate per country using the new version of
+`gganimate`.
+
+<center>
+```{r,results='asis',echo=FALSE,fig.cap="Gini coeAnimated Income Mountains"}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"MURDERGINIPLOT-1.png"),")")
+```
+</center>
+
+{% include license.html %}
+
+
+## Introduction
+
+One of the main messages of the Chapter 'The Gap Instinct' of the book
+[*Factfulness*](https://www.gapminder.org/factfulness/) is that there
+is no justification of the 'we' and 'them' classification of countries
+anymore, because they have converged towards the same levels in key
+indicators such as life expectancy, child mortality, births per
+female. The difference between countries is, hence, not as many
+imagine it to be: there is less inequality and no real gap. While
+reading, I became curious about the following: **what if countries
+became more equal, but simultaneously inequality within countries
+became bigger?** This was also indirectly a Disqus comment by
+F. Weidemann to the post
+[*Factfulness: Building Gapminder Income Mountains*](http://staff.math.su.se/hoehle/blog/2018/07/02/factfulness.html).
+Aim of the present post is to investigate this hypothesis using the Gapminder data. Furthermore, we use the country specific Gini coefficients to investigate the association with the number of homicides in the country.
+
+```{r LOADDATA}
+dataPath <- file.path(knitr::opts_knit$get("base.dir"),"figure/source/2018-07-02-factfulness")
+load(file=file.path(dataPath, "factfulness.RData"))
+```
+
+## Gini coefficient
+
+There are  different ways to measure income inequality, both in
+terms of which response you consider and which statistical summary you
+compute for it. Not going into the details of these discussion we
+use the GDP/capita in
+[Purchasing Power Parities (PPP)](https://en.wikipedia.org/wiki/Purchasing_power_parity)
+measured in so called international dollars (fixed prices 2011). In
+other words, comparison between years and countries are possible,
+because the response is adjusted for inflation and differences in
+price of living.
+
+The
+[**Gini coefficient**](https://en.wikipedia.org/wiki/Gini_coefficient)
+is a statistical measure to quantify inequality. In what follows we
+shall focus on computing the Gini coefficient for a continuous
+probability distribution with a known probability density
+function. Let the probability density function of the non-negative
+continuous income distribution be defined by $f$, then the Gini
+coefficient is given as **half the relative mean difference**:
+
+$$
+G
+= \frac{1}{2\mu}\int_0^\infty \int_0^\infty |x-y| \> f(x) \> f(y) \>
+dx\> dy, \quad\text{where}\quad \mu = \int_{0}^\infty x\cdot f(x) dx.
+$$
+
+Depending on $f$ it might be possible to
+[solve these integrals analytically](https://en.wikipedia.org/wiki/Gini_coefficient#Continuous_probability_distribution),
+however, a straightforward computational approach is to use Monte Carlo
+sampling - as we shall see shortly. Personally, I find the above relative mean difference presentation of the Gini index much more intuitive than the area
+argument using the Lorenz curve. From the eqution it also becomes
+clear that the Gini coefficient is invariant to multiplicative
+changes in the income: if everybody increases their income by factor $k>0$ then the Gini coefficient remains the same, because $|k x - k y| = k | x - y|$ and $E(k \cdot X) = k \mu$.
+
+The above formula indirectly also states
+how to compute the Gini coefficient for a discrete sample of size $n$
+and with incomes
+$x_1,\ldots, x_n$:
+$$
+G =  \frac{\sum_{i=1}^n \sum_{j=1}^n  |x_i -
+x_j| \frac{1}{n} \frac{1}{n}}{2 \sum_{i=1}^n  x_i \frac{1}{n}} =
+\frac{\sum_{i=1}^n \sum_{j=1}^n |x_i - x_j|}{2 n \sum_{j=1}^n x_j}.
+$$
+
+
+#### Approximating the integral by Monte Carlo
+
+If one is able to easily sample from $f$ then can instead of solving
+the integral analytically use $k$ pairs $(x,y)$ both drawn at random
+from $f$ to approximate the double integral:
+
+$$
+G \approx \frac{1}{2\mu K} \sum_{k=1}^K |x_k - y_k|, \quad\text{where}\quad
+x_k \stackrel{\text{iid}}{\sim} f \text{ and } y_k \stackrel{\text{iid}}{\sim} f,
+$$
+where for our mixture model
+$$
+\mu = \sum_{i=1}^{`r n_country`} w_i \> E(X_i) = \sum_{i=1}^{`r n_country`} w_i \exp\left(\mu_i + \frac{1}{2}\sigma_i^2\right).
+$$
+This allows us to compute $G$ even in case of a complex $f$ such as the log-normal mixture distribution. As always, the larger $K$ is, the better the Monte Carlo approximation is.
+
+```{r MONTECARLO, cache=TRUE, echo=TRUE}
+##Precision of Monte Carlo approx is controlled by the number of samples
+n <- 1e6
+
+##Compute Gini index of world income per year
+gini_year <- gm %>% group_by(year) %>% do({
+  x <- rmix(n, meanlog=.$meanlog, sdlog= .$sdlog, w=.$w)
+  y <- rmix(n, meanlog=.$meanlog, sdlog= .$sdlog, w=.$w)
+  int <- mean( abs(x-y) )
+  mu <- sum(exp( .$meanlog + 1/2 * .$sdlog^2) * .$w)
+  data.frame(gini_all_mc=1/(2*mu)*int,
+             country_gini=gini(.$gdp*.$population))
+}) %>%
+  rename(`World Population GDP/capita`=gini_all_mc, `Country GDP/capita`=country_gini)
+
+##Convert to long format
+gini_ts <- gini_year %>% gather(key="type", value="gini", -year)
+```
+
+### Results
+
+We start by showing the country specific Gini coefficient per year since 1950 for a
+somewhat arbitrary selection of countries.
+The dashed black line shows the mean Gini coefficient each year over
+all `r n_country` countries in the dataset.
+
+```{r GINITSSELECTED, fig.height=4}
+##Mean of all ginis per year
+Mean <- gm %>% group_by(year) %>% summarise(country="Mean", gini=mean(gini))
+
+countryList <- c("Japan", "United States","Sweden", "Germany", "China","India", "Russia","Brazil", "Nigeria", "Ethopia")
+gm %>% filter(country %in% countryList, year >= 1950) %>%
+  rename(Country = country) %>%
+  ggplot(aes(x=as.numeric(year), y=gini, color=Country)) + geom_line(lwd=1.1) +
+  geom_line(data=Mean %>% filter(year >= 1950), color="black", lty=2, lwd=1.1) +
+  xlab("Time [Years]") + ylab("Gini coefficient") +
+  scale_y_continuous(labels=scales::percent) +
+  scale_x_continuous(breaks=seq(1950,2015,by=10))
+```
+
+In addition, we now show the Monte Carlo computed Gini coefficient for
+the world's income distribution given as a log-normal mixture with
+`r n_country` components.
+
+```{r PLOTGINI}
+##Plot the mean gini coeff over time
+plot_gini_ts <- function(from=1800, ylim=c(0,1), n_y_ticks=5) {
+  ##Restrict to time range
+  ts <- gini_ts %>% filter(year>=from)
+
+  ##Make the plot
+  p <- ggplot(ts, aes(x=as.numeric(year), y=gini, color=type)) +
+    geom_line(lwd=1.2) +
+    xlab("Time [year]") + ylab("Gini coefficient [in %]") +
+    scale_y_continuous(labels=scales::percent,breaks = seq(0,1, by=1/n_y_ticks),limit=ylim) +
+    ggtitle(paste0("Gini coefficient for GDP/capita (PPP$, 2011)")) +
+    theme(legend.position="bottom") +
+    guides(color=guide_legend(title="")) +
+    theme(plot.margin = unit(c(1,1,1,1),"cm")) +
+    annotation_custom(grob = textGrob("Data Source: gapm.io/d_gini",gp = gpar(fontsize = 7, col = "gray40"),x=1, just=c("right","centre"), y=-0.18)) +
+    annotation_custom(grob = textGrob("Created by: m_hoehle",gp = gpar(fontsize = 7, col = "gray40"),x=1, just=c("right","centre"), y=-0.22))
+  gt <- ggplotGrob(p)
+  gt$layout$clip[gt$layout$name=="panel"] <- "off"
+
+  gt
+
+  grid.draw(gt)
+  invisible(gt)
+}
+
+plot_gini_ts(from=1800)
+```
+
+We notice that the Gini coefficient taken over the `r n_country`
+countries' GDP/capita remains very stable over time. This, however,
+does not take the large differences in populations between countries
+into account. A fairer measure is thus the Gini coefficient for the
+world's income distribution. We see that this Gini coefficient
+increased over time until peaking around 1990. From then on it has
+declined.  However, the pre-1950 Gini coefficients are rather
+guesstimates as stated by Gapminder, hence, we zoom in on the period
+from 1970, because data are more reliable from this point on.
+
+```{r PLOTGINIFROM1970}
+plot_gini_ts(from=1970, ylim=c(NA,NA), n_y_ticks=20)
+```
+
+## Gini coefficient and Homicide Rate
+
+```{r MURDERDATA}
+if (!file.exists(file.path(fullFigPath,"murders.xlsx"))) {
+  download.file("https://docs.google.com/spreadsheet/pub?key=tZgPgT_sx3VdAuyDxEzenYA&output=xlsx", file.path(fullFigPath,"murders.xlsx"))
+}
+
+##Fetch murder rates per country and convert to long-format
+murder <- readxl::read_xlsx(file.path(fullFigPath,"murders.xlsx")) %>%
+  rename("country"="Murder per 100,000, age adjusted") %>%
+  gather(key="year", value="murder_rate", -country) %>%
+  mutate(year=as.numeric(year)) %>% filter(!is.na(murder_rate))
+
+##Join to gm dataset
+gm2 <- gm %>% mutate(year=as.numeric(year)) %>%
+  inner_join(murder, by=c("country", "year")) %>% rename(Region=region)
+
+##Massage so we fix zeroes (not possible to do log10(0))
+gm2_nozero <- gm2 %>% mutate(murder_rate=if_else(murder_rate == 0, 0.01, murder_rate))
+
+##Show year
+show_year <- 2005
+```
+
+Finally, we end the post by illustrating the association between the
+Gini coefficient and the homicide rate per country using a 2D
+scatterplot over the years. The Gapminder data download page also
+contains
+[data](https://docs.google.com/spreadsheet/pub?key=tZgPgT_sx3VdAuyDxEzenYA&output=xlsx)
+for this for the years `r min(murder$year)`- `r max(murder$year)`.
+Unfortunately, no data for more recent years are available from the
+Gapminder homepage, but the plot shown below is the situation in `r
+show_year` with a log-base-10 y-axis for the homicide rates.  For each
+of the four Gapminder regional groups we also fit a simple linear
+regression line to the points of all countries within the region.
+Findings such as @fajnzylber_etal2002 suggest that there is a strong
+positive correlation between Gini coefficient and homicide
+rate, but we see from the plot that there are regional differences and
+of course correlation is not causality. Explanations for this
+phenomena are
+[debated](https://www.theguardian.com/us-news/2017/dec/08/income-inequality-murder-homicide-rates)
+and beyond the scope of this post.
+
+```{r MURDERGINIPLOT}
+p <- ggplot(gm2_nozero %>% filter(year==show_year), aes(x=gini, y=murder_rate,size=population, color=Region)) +
+  geom_point() +
+  scale_x_continuous(labels=scales::percent) +
+  scale_y_continuous(trans="log10",
+                     breaks = trans_breaks("log10", function(x) 10^x,n=5),
+                     labels = trans_format("log10", function(x) ifelse(x<0, sprintf(paste0("%.",ifelse(is.na(x),"0",round(abs(x))),"f"),10^x), sprintf("%.0f",10^x)))) +
+  geom_smooth(se=FALSE, method="lm", formula=y~x) +
+  geom_text(data=gm2 %>% filter(year == show_year), aes(x=gini,y=murder_rate, label=country), vjust=-0.9, show.legend=FALSE) +
+  ylab("Murder rate (per 100,000 population)") +
+  xlab("Gini coefficient (in %)") +
+  guides(size=FALSE)
+print(p)
+```
+
+We extend the plots to all years `r min(murder$year)`-`r max(murder$year)`.  Unfortunately,
+not all countries are available every year - so we only
+plot the available countries each year. This means that many African countries are
+missing from the animation. An improvement would be to try some form
+of linear interpolation. Furthermore, for the sake of simplicity of illustration,
+we fix countries with a reported murder rate of zero in a given year
+(happens for example for Cyprus, Iceland, Fiji in some years) to 0.01
+per 100,000 population. This can be nicely animated using the new version
+of the [`gganimate`](https://github.com/thomasp85/gganimate) pkg by
+[Thomas Lin Pedersen](https://twitter.com/thomasp85).
+
+
+```{r ANIMATE, message=FALSE, warning=FALSE, echo=TRUE}
+## New version of gganimate. Not on CRAN yet.
+## devtools::install_github('thomasp85/gganimate')
+require(gganimate)
+
+p <- ggplot(gm2_nozero, aes(x=gini, y=murder_rate,size=population, color=Region)) +
+  geom_point() +
+  scale_x_continuous(labels=scales::percent) +
+  scale_y_continuous(trans="log10",
+                     breaks = trans_breaks("log10", function(x) 10^x,n=5),
+                     labels = trans_format("log10", function(x) ifelse(x<0, sprintf(paste0("%.",ifelse(is.na(x),"0",round(abs(x))),"f"),10^x), sprintf("%.0f",10^x)))) +
+  geom_smooth(se=FALSE, method="lm", formula=y~x) +
+  geom_text(data=gm2, aes(x=gini,y=murder_rate, label=country), vjust=-0.9, show.legend=FALSE) +
+  ylab("Murder rate (per 100,000 population)") +
+  xlab("Gini coefficient (in %)") +
+  guides(size=FALSE) +
+  labs(title = 'Year: {frame_time}') +
+  transition_time(year) +
+  ease_aes('linear')
+
+animate(p, nframes=length(unique(gm2$year)), fps=4, width=800, height=400, res=100)
+```
+
+## Discussion
+
+Based on the available Gapminder data we showed that in the last 25
+years the Gini coefficient for the world's income distribution has
+decreased. For several individual countries opposite dynamics are,
+however, observed. One particular concern is the share that the
+richest 1% have of the overall wealth:
+[more than 50%](https://www.theguardian.com/inequality/2017/nov/14/worlds-richest-wealth-credit-suisse).
+
+
+## Literature
