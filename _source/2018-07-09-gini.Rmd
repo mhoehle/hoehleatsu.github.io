@@ -63,7 +63,7 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"MURDERGI
 One of the main messages of the Chapter 'The Gap Instinct' of the book
 [*Factfulness*](https://www.gapminder.org/factfulness/) is that there
 is no justification of the 'we' and 'them' classification of countries
-anymore, because they have converged towards the same levels in key
+anymore, because 'they' have converged towards the same levels in key
 indicators such as life expectancy, child mortality, births per
 female. The difference between countries is, hence, not as many
 imagine it to be: there is less inequality and no real gap. While
@@ -72,7 +72,8 @@ became more equal, but simultaneously inequality within countries
 became bigger?** This was also indirectly a Disqus comment by
 F. Weidemann to the post
 [*Factfulness: Building Gapminder Income Mountains*](http://staff.math.su.se/hoehle/blog/2018/07/02/factfulness.html).
-Aim of the present post is to investigate this hypothesis using the Gapminder data. Furthermore, we use the country specific Gini coefficients to investigate the association with the number of homicides in the country.
+Aim of the present post is to investigate this hypothesis using the
+Gapminder data by calculating Gini coefficients. Furthermore, we use the country specific Gini coefficients to investigate the association with the number of homicides in the country.
 
 ```{r LOADDATA}
 dataPath <- file.path(knitr::opts_knit$get("base.dir"),"figure/source/2018-07-02-factfulness")
@@ -112,7 +113,11 @@ however, a straightforward computational approach is to use Monte Carlo
 sampling - as we shall see shortly. Personally, I find the above relative mean difference presentation of the Gini index much more intuitive than the area
 argument using the Lorenz curve. From the eqution it also becomes
 clear that the Gini coefficient is invariant to multiplicative
-changes in the income: if everybody increases their income by factor $k>0$ then the Gini coefficient remains the same, because $|k x - k y| = k | x - y|$ and $E(k \cdot X) = k \mu$.
+changes in the income: if everybody increases their income by factor
+$k>0$ then the Gini coefficient remains the same, because $|k x - k y|
+= k | x - y|$ and $E(k \cdot X) = k \mu$ and, hence, $k$ cancels from
+numerator and denominator.
+
 
 The above formula indirectly also states
 how to compute the Gini coefficient for a discrete sample of size $n$
@@ -143,12 +148,12 @@ This allows us to compute $G$ even in case of a complex $f$ such as the log-norm
 
 ```{r MONTECARLO, cache=TRUE, echo=TRUE}
 ##Precision of Monte Carlo approx is controlled by the number of samples
-n <- 1e6
+K <- 1e6
 
 ##Compute Gini index of world income per year
 gini_year <- gm %>% group_by(year) %>% do({
-  x <- rmix(n, meanlog=.$meanlog, sdlog= .$sdlog, w=.$w)
-  y <- rmix(n, meanlog=.$meanlog, sdlog= .$sdlog, w=.$w)
+  x <- rmix(K, meanlog=.$meanlog, sdlog= .$sdlog, w=.$w)
+  y <- rmix(K, meanlog=.$meanlog, sdlog= .$sdlog, w=.$w)
   int <- mean( abs(x-y) )
   mu <- sum(exp( .$meanlog + 1/2 * .$sdlog^2) * .$w)
   data.frame(gini_all_mc=1/(2*mu)*int,
@@ -165,7 +170,7 @@ gini_ts <- gini_year %>% gather(key="type", value="gini", -year)
 We start by showing the country specific Gini coefficient per year since 1950 for a
 somewhat arbitrary selection of countries.
 The dashed black line shows the mean Gini coefficient each year over
-all `r n_country` countries in the dataset.
+all `r n_country` country specific Gini coefficients in the dataset.
 
 ```{r GINITSSELECTED, fig.height=4}
 ##Mean of all ginis per year
@@ -181,7 +186,9 @@ gm %>% filter(country %in% countryList, year >= 1950) %>%
   scale_x_continuous(breaks=seq(1950,2015,by=10))
 ```
 
-In addition, we now show the Monte Carlo computed Gini coefficient for
+In addition, we compute and show as time series
+the Gini coefficient of the `r n_country`
+countries' GDP/capita per year. Furthermore, we show the Monte Carlo computed Gini coefficient for
 the world's income distribution given as a log-normal mixture with
 `r n_country` components.
 
@@ -214,7 +221,7 @@ plot_gini_ts <- function(from=1800, ylim=c(0,1), n_y_ticks=5) {
 plot_gini_ts(from=1800)
 ```
 
-We notice that the Gini coefficient taken over the `r n_country`
+We notice that the Gini coefficient for the `r n_country`
 countries' GDP/capita remains very stable over time. This, however,
 does not take the large differences in populations between countries
 into account. A fairer measure is thus the Gini coefficient for the
@@ -259,15 +266,18 @@ contains
 [data](https://docs.google.com/spreadsheet/pub?key=tZgPgT_sx3VdAuyDxEzenYA&output=xlsx)
 for this for the years `r min(murder$year)`- `r max(murder$year)`.
 Unfortunately, no data for more recent years are available from the
-Gapminder homepage, but the plot shown below is the situation in `r
-show_year` with a log-base-10 y-axis for the homicide rates.  For each
+Gapminder homepage, but the plot shown below is the situation in
+`r show_year` with a log-base-10 y-axis for the homicide rates.  For each
 of the four Gapminder regional groups we also fit a simple linear
 regression line to the points of all countries within the region.
 Findings such as @fajnzylber_etal2002 suggest that there is a strong
 positive correlation between Gini coefficient and homicide
-rate, but we see from the plot that there are regional differences and
-of course correlation is not causality. Explanations for this
-phenomena are
+rate. To illustrate this the thin dashed line is the result of a
+linear regression (on the log-base-10 scale) for all data
+points. However, we see from the plot that there are regional
+differences even having a reversed sign of the relationship. Of course
+correlation does not imply causality and explanations for this
+relationship are
 [debated](https://www.theguardian.com/us-news/2017/dec/08/income-inequality-murder-homicide-rates)
 and beyond the scope of this post.
 
@@ -276,12 +286,13 @@ p <- ggplot(gm2_nozero %>% filter(year==show_year), aes(x=gini, y=murder_rate,si
   geom_point() +
   scale_x_continuous(labels=scales::percent) +
   scale_y_continuous(trans="log10",
-                     breaks = trans_breaks("log10", function(x) 10^x,n=5),
+                     breaks = trans_breaks("log10", function(x) 10^x,n=6),
                      labels = trans_format("log10", function(x) ifelse(x<0, sprintf(paste0("%.",ifelse(is.na(x),"0",round(abs(x))),"f"),10^x), sprintf("%.0f",10^x)))) +
+  geom_smooth(aes(x=gini, y=murder_rate), se=FALSE, method="lm", formula=y~x, color="lightgray",lty=2,lwd=0.5) +
   geom_smooth(se=FALSE, method="lm", formula=y~x) +
   geom_text(data=gm2 %>% filter(year == show_year), aes(x=gini,y=murder_rate, label=country), vjust=-0.9, show.legend=FALSE) +
-  ylab("Murder rate (per 100,000 population)") +
-  xlab("Gini coefficient (in %)") +
+  ylab("Murder rate [per 100,000 population]") +
+  xlab("Gini coefficient [in %]") +
   guides(size=FALSE)
 print(p)
 ```
@@ -294,7 +305,7 @@ of linear interpolation. Furthermore, for the sake of simplicity of illustration
 we fix countries with a reported murder rate of zero in a given year
 (happens for example for Cyprus, Iceland, Fiji in some years) to 0.01
 per 100,000 population. This can be nicely animated using the new version
-of the [`gganimate`](https://github.com/thomasp85/gganimate) pkg by
+of the [`gganimate`](https://github.com/thomasp85/gganimate) package by
 [Thomas Lin Pedersen](https://twitter.com/thomasp85).
 
 
@@ -311,8 +322,8 @@ p <- ggplot(gm2_nozero, aes(x=gini, y=murder_rate,size=population, color=Region)
                      labels = trans_format("log10", function(x) ifelse(x<0, sprintf(paste0("%.",ifelse(is.na(x),"0",round(abs(x))),"f"),10^x), sprintf("%.0f",10^x)))) +
   geom_smooth(se=FALSE, method="lm", formula=y~x) +
   geom_text(data=gm2, aes(x=gini,y=murder_rate, label=country), vjust=-0.9, show.legend=FALSE) +
-  ylab("Murder rate (per 100,000 population)") +
-  xlab("Gini coefficient (in %)") +
+  ylab("Murder rate [per 100,000 population]") +
+  xlab("Gini coefficient [in %]") +
   guides(size=FALSE) +
   labs(title = 'Year: {frame_time}') +
   transition_time(year) +
