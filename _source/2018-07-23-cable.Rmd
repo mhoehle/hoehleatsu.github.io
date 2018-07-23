@@ -287,8 +287,7 @@ img[img > 1] <- 1
 We manually identify center, sea level and poles from the image and
 use [`annotation_raster`](https://ggplot2.tidyverse.org/reference/annotation_raster.html)
 to overlay the image on the `ggplot` of the
-corresponding parabola and catenary. See the [code](`r
-paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`)
+corresponding parabola and catenary. See the [code](`r paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`)
 on github for details.
 
 ```{r GOLDENGATE, fig.width=8, fig.height=2}
