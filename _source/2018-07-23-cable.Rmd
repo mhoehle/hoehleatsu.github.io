@@ -1,0 +1,477 @@
+---
+layout: post
+title: "Amazon's Hanging Cable Problem (Golden Gate Edition)"
+tags: [rstats, stats, economics, data visualization, income, equality]
+#  bibliography: ~/Literature/Bibtex/jabref.bib
+header-includes:
+   - \usepackage{bm}
+comments: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2018-07-23-cable/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2018-07-23-cable")
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=4,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2) # autodep=TRUE
+options(width=150)
+
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(magrittr))
+suppressPackageStartupMessages(library(knitr))
+
+## Packages used for this post
+suppressPackageStartupMessages(require(nleqslv))
+suppressPackageStartupMessages(require(viridis))
+
+##Configuration
+options(knitr.table.format = "html")
+theme_set(theme_minimal())
+#if there are more than n rows in the tibble, print only the first m rows.
+options(tibble.print_max = 10, tibble.print_min = 5)
+```
+
+## Abstract:
+
+In this post we use R's capabilities to solve nonlinear equation
+systems in order to answer an extension of the hanging cable problem
+to suspension bridges. We then use R and ggplot to overlay the
+solution to an image of the Golden Gate Bridge in order to bring
+together theory and practice.
+
+<center>
+```{r,results='asis',echo=FALSE,fig.cap="The cable problem"}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"GOLDENGATE-1.png"),")")
+```
+</center>
+
+
+
+{% include license.html %}
+
+
+## Introduction
+
+The so called
+[Amazon's hanging cable problem](https://mindyourdecisions.com/blog/2018/07/12/can-you-solve-amazons-hanging-cable-interview-question/) explained in this [youtube video](https://youtu.be/l_ffdarcJiQ)
+(watched 2.4 mio times!^[As of 2018-07-23.]) goes as follows:
+
+*A cable of 80 meters (m) is hanging from the top of two poles that are
+both 50 m from the ground. What is the distance between the two poles,
+to one decimal place, if the center of the cable is*:
+
+(a) *20 m above the ground?*<br>
+(b) *10 m above the ground?*<br>
+
+Allegedly, (b) has been used as an Amazon interview question, however, the
+problem is much older and has otherwise nothing to do with Amazon. Can you
+solve (b)? Or even (a)? The problem can be illustrated as follows:
+<p>
+<center>
+```{r,results='asis',echo=FALSE,fig.cap="The cable problem"}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"cableproblem.png"),")")
+```
+</center>
+<FONT COLOR="bbbbbb">Screenshot from [Presh Talwalkar's](https://mindyourdecisions.com/blog/2018/07/12/can-you-solve-amazons-hanging-cable-interview-question/) website.</FONT>
+<p>
+
+Hint: The
+[solution to (a)](https://mindyourdecisions.com/blog/2018/07/12/can-you-solve-amazons-hanging-cable-interview-question/)
+is concisely described in @chatterjee_nita2010 and for (b) you need to
+do little more than just think. So instead of applying at Amazon,
+let's take the question to the next level: Apply for the <span style="color:orange">orange</span> belt
+in R: How you *wouldn't* solve the hanging cable problem by instead
+solving the hanging cable problem **suspension bridge style**!
+
+As explained in the video the
+[catenary curve](https://en.wikipedia.org/wiki/Catenary) is the
+[geometric shape](https://www.youtube.com/watch?v=npt6IkyL_f4&pbjreload=10),
+a cable assumes under its own weight when supported only at its ends.
+If instead the cable supports a uniformly distributed vertical load,
+the cable has the shape of a
+[parabolic curve](https://en.wikipedia.org/wiki/Parabola). This would
+for example be the case for a
+**[suspension bridge](https://en.wikipedia.org/wiki/Suspension_bridge)**
+with a horizontal suspended deck, if the cable itself is not too
+heavy compared to the road sections. A prominent example of a
+suspension bridges is the
+[Golden Gate Bridge](https://en.wikipedia.org/wiki/Golden_Gate_Bridge),
+which we will use as motivating example for this post.
+
+## Solving the Cable Problem
+
+### Parabola Shape
+
+Rephrasing the cable problem as the '*suspension bridge problem*' we
+need to solve a two-component non-linear equation system:
+
+1. the first component ensures that the parabolic curve with vertex at
+$(0,0)$ goes through the poles at the x-values $-x$ and $x$. In other
+words: the distance between the two poles is $2x$.  Note that the
+coordinate system is aligned such that the lowest point of the cable
+is at the origo.
+
+2. the second component ensures that the arc-length of the parabola is
+as given by the problem. Since the parabola is symmetric it is
+sufficient to study the positive x-axis
+
+The two criteria are converted into an equation system as follows:
+$$
+\begin{align*} a x^2 &= 50 - \text{height above ground} \\
+\int_0^x \sqrt{1 + \left(\frac{d}{du} a u^2\right)^2} du &= 40.
+\end{align*}
+$$
+
+Here, the general equation for
+[arc-length](https://en.wikipedia.org/wiki/Arc_length) of a function
+$y=f(u)$ has been used.  Solving the arc-length integral for a
+parabola can either be done by numerical integration or by
+[solving the integral analytically](http://www.math.drexel.edu/~tolya/arc_length_x%5e2.pdf)
+or just look up the resulting analytic expression as eqn 4.25 in
+@spiegel1968. Subtracting the RHS from each LHS gives us a non-linear equation
+system with unknowns $a$ and $x$ of the form
+
+$$
+\left[
+\begin{array}{c}
+y_1(a,x) \\
+y_2(a,x)
+\end{array}
+\right]
+=
+\left[
+\begin{array}{c}
+0 \\
+0
+\end{array}
+\right].
+$$
+
+Writing this in R code:
+
+```{r PARABOLA, echo=TRUE}
+## Height of function at the location x from center is (pole_height - height_above_ground)
+y1_parabola <- function(a, x, pole_height=50, above_ground=20) {
+  a*x^2 - (pole_height - above_ground)
+}
+
+## Arc-length of the parabola between [-x,x] is given as cable_length
+y2_parabola <- function(a,x, cable_length=80, arc_method=c("analytic","numeric")) {
+
+  ##Arc-length of a parabola a*u^2 within interval [0,x]
+  if(arc_method == "numeric") {
+    f <- function(u) return( sqrt(1 + (2*a*u)^2))
+    half_arclength <- integrate(f, lower=0, upper=x)$value
+  } else if (arc_method=="analytic") {
+    half_arclength <-  1/(4*a)*(2*a*x*sqrt(4*a^2*x^2+1) + asinh(2*a*x))
+  }
+
+  ##The equation: s = cable_length/2
+  half_arclength - cable_length/2
+}
+
+## The non-linear equation system \bm{y}(\theta) = \bm{0}, where the LHS
+## is given by a list with two components containing y_1(\theta) and y_2(\theta)
+f_sys <- function(theta, y, pole_height=50, above_ground=20, cable_length=80, ...) {
+  ##Parameters
+  a <- theta[1]
+  x <- exp(theta[2]) ##ensure x is positive
+
+  c(y[[1]](a,x, pole_height=pole_height, above_ground=above_ground),
+    y[[2]](a,x, cable_length=cable_length, ...))
+}
+
+##Helper function to transform theta parameter vector to (a,x)'
+theta2ax <- function(theta) {
+  c(a=theta[1], x=exp(theta[2]))
+}
+```
+
+To ensure $x>0$ we re-parametrized the equations with $\theta_2 =
+\log(x)$ and provide the function `theta2ax` to backtransform the result. We can now use the
+[`nleqslv`](https://cran.r-project.org/web/packages/nleqslv/index.html)
+package to solve the non-linear equation system using a one-liner:
+```{r, echo=TRUE}
+y_parabola <- list(y1_parabola, y2_parabola)
+sol_parabola <- nleqslv(x=c(0.1,0.1),f_sys, y=y_parabola,  arc_method="analytic")
+theta2ax(sol_parabola$x)
+```
+In other words, for a cable of length 80m the pole of a suspension bridge will be located `r sprintf("%.1fm",theta2ax(sol_parabola$x)[2])` from the origo, which means the two poles of the bridge will be `r sprintf("%.1fm",2*theta2ax(sol_parabola$x)[2])` apart, which is also the span of the bridge.
+
+Using `arc_method="numeric"` instead of the analytic solution gives
+```{r NUMERICALPARABOLA}
+sol_parabola2 <- nleqslv(x=c(0.1,0.1),f_sys, y=y_parabola, arc_method="numeric")
+theta2ax(sol_parabola2$x)
+```
+
+It is re-assuring to see that the numerical integration method yields
+the same result as the analytic method. The analytic method has
+mathematical beauty, the numerical method allows the data scientist to
+solve the problem without diving into formula compendiums or geometry.
+
+### Catenary Shape
+
+Using the same code, but with the y-functions formulated for the
+catenary case we obtain
+
+```{r, echo=TRUE}
+## Value of y=f(u) evaluated at u=x
+y1_catenary <- function(a,x, pole_height=50, above_ground=20) {
+  a * cosh(x/a) - a - (pole_height- above_ground)
+}
+## Arc-length condition
+y2_catenary <- function(a,x, cable_length=80) {
+  a * sinh(x/a) - cable_length/2
+}
+
+## Solve equation system
+y_catenary <- list(y1_catenary, y2_catenary)
+sol_catenary <- nleqslv(x=c(0.1,0.1),f_sys, y=y_catenary, method="Newton")
+theta2ax(sol_catenary$x)
+```
+
+In other words the solution to the original cable problem is
+$x=`r sprintf("%.1f m",theta2ax(sol_catenary$x)[2])`$ whereas the answer to
+the suspension bridge version is $x=`r sprintf("%.1fm",theta2ax(sol_parabola$x)[2])`$.
+The difference to the parabolic form can be seen from the following
+graph:
+
+```{r PARABOLACATENARYPLOT}
+data.frame(x=seq(-25,25,length=1000)) %>%
+  mutate(catenary=y1_catenary(x, a=sol_catenary$x[1], above_ground=50),
+         parabola=y1_parabola(x, a=sol_parabola$x[1], above_ground=50)) %>%
+  tidyr::gather("Shape","y", -x) %>%
+  ggplot(aes(x=x,y=y, color=Shape)) + geom_line() + xlab("Distance from center [m]") + ylab("Height")
+```
+
+## Testing the theory
+
+```{r}
+##true height is 230m, see https://en.wikipedia.org/wiki/Golden_Gate_Bridge, but picture is distorted
+gg_pole_height <- gg_pole_height <- 192
+##true height above sealvl is 67.1m, but that's the bridge not the cable
+gg_above_ground <- 75
+##half the span of the bridge, total is 1280m,
+gg_pole_position <- 640
+```
+
+We test our theory by studying the cable of the Golden Gate suspension
+bridge.  Shown below is a photograph by
+[D Ramey Logan](https://commons.wikimedia.org/wiki/File:Golden_Gate_Bridge_Dec_15_2015_by_D_Ramey_Logan.jpg)
+available under a
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.en)
+license. For presentation in this post the image was tilted by -0.75
+degrees (around the camera's view axis) with the
+[`imager`](https://dahtah.github.io/imager/imager.html) package to
+make sea level approximately horizontal. Parabolic and catenary
+overlays (no real difference between the two) were done using the
+theory described above.
+
+```{r PREPROCESS, echo=TRUE}
+##Preprocess image
+img <- imager::load.image(file.path(fullFigPath, "Golden_Gate_Bridge.png"))
+img <- imager::imrotate(img, angle=-0.75, interpolation=1)
+img <- imager::resize(img,-50,-50, interpolation_type=5)
+```
+```{r, eval=FALSE}
+##Fix negative channel values, if one uses interpolation=2 in imrotate
+img[img < 0] <- 0
+img[img > 1] <- 1
+```
+We manually identify center, sea level and poles from the image and
+use [`annotation_raster`](https://ggplot2.tidyverse.org/reference/annotation_raster.html)
+to overlay the image on the `ggplot` of the
+corresponding parabola and catenary. See the [code](`r
+paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`)
+on github for details.
+
+```{r GOLDENGATE, fig.width=8, fig.height=2}
+##Convert to ggplot compatible format (alternative: as.data.frame)
+ggate <- aperm(img[,,1,], perm=c(2,1,3))
+
+a_parabola <- uniroot(function(a) y1_parabola(a, x=gg_pole_position, pole_height=gg_pole_height, above_ground=gg_above_ground), interval=c(0, 30))$root
+a_catenary <- uniroot(function(a) y1_catenary(a, x=gg_pole_position, pole_height=gg_pole_height, above_ground=gg_above_ground), interval=c(1e-12, 5000))$root
+
+p <- data.frame(x=seq(-800,800,length=1000)) %>%
+  mutate(catenary=y1_catenary(x, a=a_catenary, pole_height=gg_pole_height, above_ground=gg_above_ground) + gg_pole_height,
+         parabola=y1_parabola(x, a=a_parabola, pole_height=gg_pole_height, above_ground=gg_above_ground) + gg_pole_height) %>%
+  tidyr::gather("Shape","y", -x) %>%
+  ggplot(aes(x=x,y=y, color=Shape)) +
+#  geom_line() +
+  ylim(c(-60, NA)) +
+  scale_x_continuous(name="Distance from center [distorted m]", breaks=seq(-800,800,by=100)) +
+  ylab("Height [distorted m]")
+
+##This is a rather messy piece of code scaling the image to fit acceptably
+##to known parameters. But since the photo is not really orthogonal to the bridge
+##this only works very very approximately...
+xy_ratio <- dim(ggate)[1] / dim(ggate)[2]
+x_scale <- 1.7 ##ymin=-110
+p + annotation_raster(ggate, ymin = -124,ymax= 2*gg_pole_position*xy_ratio,xmin = -x_scale*gg_pole_position, xmax = x_scale*gg_pole_position, interpolate=FALSE) +
+  coord_equal() +
+  geom_line(lwd=1, alpha=0.6) +
+  geom_text(data=data.frame(x=0, y=200,text=paste0(a_parabola, " %.% x^2"),Shape=NA), aes(x=x, y=y, label=text),parse=TRUE, show.legend=FALSE) +
+  geom_hline(yintercept=0,color="steelblue",lty=2, size=0.8) +
+  geom_line(data=data.frame(x=rep(-gg_pole_position, 2), y=c(0,gg_pole_height), Shape=NA),show.legend=FALSE,lwd=1.2) +
+  geom_line(data=data.frame(x=rep(gg_pole_position, 2), y=c(0,gg_pole_height), Shape=NA),show.legend=FALSE,lwd=1.2) +
+  geom_point(data=data.frame(x=0, y=gg_above_ground, Shape=NA), show.legend=FALSE, size=1.5) +
+  geom_line(data=data.frame(x=rep(0,2), y=c(0,gg_above_ground), Shape=NA), show.legend=FALSE, lty=2)
+```
+
+The fit is not perfect, which is due to the camera's direction not
+being orthogonal to the plane spanned by the bridge -
+for example the right pole appears to be closer to the camera than the
+left pole^[A manual investigation using the "Map | Map Object" Filter in Gimp showed that the angle of tilting around the y-axis is about 20 degrees.]. We
+scaled and 'offsetted' the image so the left pole is at distance `r gg_pole_position`m from origo, but did not correct for the tilting around the $y$-axis. Furthermore, distances are being distorted
+by the lens, which might explain the poles being too
+small. [Rectification](https://en.wikipedia.org/wiki/Image_rectification)
+and
+[perspective control](https://en.wikipedia.org/wiki/Perspective_control)
+of such images is a
+**[photogrammetric](https://en.wikipedia.org/wiki/Photogrammetry)**
+method beyond the scope of this post!
+
+## Discussion
+
+This post may not to impress a Matlab coding engineer, but it shows
+how R has developed into a versatile tool going way beyond statistics:
+We used its optimization and image analysis capabilities. Furthermore,
+given an analytic form of $y(\theta)$, R can symbolically determine
+the Jacobian and, hence, implement the required Newton-Raphson solving
+of the non-linear equation system directly - see the Appendix. In
+other words: R is also a full stack mathematical problem solving tool!
+
+As a **challenge** to the interested reader: Can you write R code,
+for example using `imager`, which automatically identifies poles and cable in
+the image and based on the known specification of these parameters of
+the Golden Gate Bridge (pole height: 230m, span 1280m, clearance above
+sea level: 67.1m), and perform a rectification of the image? If yes,
+Stockholm University's Math Department
+[hires](https://www.math.su.se/english/education/phd-studies/admission-and-vacant-positions)
+for Ph.D. positions every April! The challenge could work well as pre-interview project. `r emo::ji("wink")`
+
+## Appendix - Newton-Raphson Algorithm
+
+Because the `y_1(a,x)` and `y_2(a,x)` are both available in closed
+analytic form, one can form the Jacobian of non-linear equations
+system by combining the two gradients. This can be achieved
+symbolically using the `deriv` or
+[`Deriv::Deriv`](https://cran.r-project.org/web/packages/Deriv/index.html)
+functions in R.
+
+Given starting value $\theta$ the iterative procedure to find the root
+of the non-linear equation system $y(\theta) = 0$ is given by
+[@nocedal_wright2006, Sect. 11.1]
+
+$$
+\theta^{(k+1)} = \theta^k - J(\theta^k)^{-1} y(\theta),
+$$
+
+where $J$ is the
+[Jacobian](https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant)
+of the system, which in this case is a 2x2 matrix.
+
+```{r NEWTONRAPHSON, echo=TRUE}
+gradient_y1 <- Deriv::Deriv(y1_parabola, x=c("a","x"))
+
+y2_parabola_analytic <- function(a,x, cable_length=80) {
+  1/(4*a)*(2*a*x*sqrt(4*a^2*x^2+1) + asinh(2*a*x)) - cable_length/2
+}
+
+gradient_y2 <- Deriv::Deriv(y2_parabola_analytic, x=c("a","x"))
+
+##Jacobian
+J <- function(theta, pole_height=50, above_ground=20, cable_length=80, ...) {
+  a <- theta[1]
+  x <- exp(theta[2]) #  x <- exp(theta[2])
+
+  ##Since we use x = exp(theta[2])=g(theta[2]) we need the chain rule to find the gradient in theta
+  ##this is g'(theta[2]) = exp(theta[2]) = x
+  rbind(gradient_y1(a,x, pole_height=pole_height, above_ground=above_ground)* c(1, x),
+        gradient_y2(a,x, cable_length=cable_length)  * c(1, x))
+}
+```
+
+```{r JMANUAL, echo=FALSE, results='hide'}
+J_manual <- function(theta) {
+
+  a <- theta[1]
+  x <- exp(theta[2])
+
+  ##Derivatives dy_1/da and dy_1/dx found with maxima
+  y1da <- x^2
+  y2da <- (2*x*sqrt(4*a^2*x^2+1)+(8*a^2*x^3)/sqrt(4*a^2*x^2+1)+(2*x)/sqrt(4*a^2*x^2+1))/(4*a)-(asinh(2*a*x)+2*a*x*sqrt(4*a^2*x^2+1))/(4*a^2)
+
+
+  ##Derivates dy_2/da and dy_2/dx found with maxima + chain rule
+  y1dx <- 2*a*x * x
+  y2dx <- (2*a*sqrt(4*a^2*x^2+1)+(8*a^3*x^2)/sqrt(4*a^2*x^2+1)+(2*a)/sqrt(4*a^2*x^2+1))/(4*a) * x
+
+
+  ##Return result
+  matrix(c(y1da,y1dx, y2da, y2dx), 2,2, byrow=TRUE)
+}
+
+##Start value
+theta0 <- c(0.1,log(10))
+##Compare Jacobian at theta0
+J(theta=theta0)
+J_manual(theta=theta0)
+```
+
+By iterating Newton-Raphson steps we can find the solution of the
+equation system manually:
+
+```{r NRITERATE, echo=TRUE}
+##Start values
+theta <- c(0.1,log(10))
+thetanew <- c(0.1,log(20))
+##Log with the values
+log <- t(theta2ax(theta))
+
+##Iterate Newton-Raphson steps until convergence
+while ( (sum(thetanew - theta)^2 / sum(theta^2)) > 1e-15) {
+  theta <- thetanew
+  ##Update step
+  thetanew <- theta - solve(J(theta=theta)) %*% f_sys(theta, y=y_parabola, arc_method="analytic")
+  ##Add to log
+  log <- rbind(log, theta2ax(thetanew))
+}
+
+##Look at the steps taken
+log
+```
+
+We show the moves of the algorithm in a 2D contour plot for $r(a,x) =
+\sqrt{y_1(a,x)^2 + y_2(a,x)^2}$. The solution to the system has
+$r(a,x)=0$. See the [code](`r
+paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`)
+on github for details.
+
+```{r NRSTEPSPLOT, warning=FALSE}
+grid <- expand.grid(a=seq(0.01,0.1, length=50), x=seq(10,30, length=50)) %>% as.data.frame
+##apply(grid, 2, fun) would be an alternative
+grid %<>% rowwise %>%
+  mutate(r = sqrt(sum( f_sys( c(a,log(x)), y=y_parabola, arc_method="analytic")^2))) %>%
+  ungroup
+
+
+
+ggplot(grid, aes(x=a, y=x, z=r)) +  geom_raster(aes(fill = r)) +
+  viridis::scale_fill_viridis(option="magma",direction=-1) +
+  geom_contour(colour = "white") +
+  geom_segment(data=as.data.frame(log) %>% mutate(r=NA), aes(x=a, xend=lag(a), y=x, yend=lag(x)),arrow = arrow(length=unit(0.30,"cm"), ends="first", type = "closed"),color="chartreuse3") +
+  geom_point(data=as.data.frame(log) %>% mutate(r=NA), color="salmon3") +
+  geom_point(data=data.frame(a=theta2ax(sol_parabola$x)[1], x=theta2ax(sol_parabola$x)[2],r=NA), aes(x=a, y=x), pch=4, color="salmon3",size=2) +
+  xlim(c(0.01,0.1)) +
+  ylim(c(10,30))
+```
+
+## Literature
+

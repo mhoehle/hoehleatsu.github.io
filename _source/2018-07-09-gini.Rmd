@@ -327,6 +327,7 @@ p <- ggplot(gm2_nozero, aes(x=gini, y=murder_rate,size=population, color=Region)
   guides(size=FALSE) +
   labs(title = 'Year: {frame_time}') +
   transition_time(year) +
+  shadow_wake(wake_length=0.15, exclude_layer=c(2,3)) +
   ease_aes('linear')
 
 animate(p, nframes=length(unique(gm2$year)), fps=4, width=800, height=400, res=100)
@@ -341,5 +342,57 @@ however, observed. One particular concern is the share that the
 richest 1% have of the overall wealth:
 [more than 50%](https://www.theguardian.com/inequality/2017/nov/14/worlds-richest-wealth-credit-suisse).
 
+```{r REDDITPLOTS, results='hide'}
+##Gini vs. murder rate for reddit
+p <- ggplot(gm2_nozero %>% filter(year==show_year), aes(x=gini, y=murder_rate,size=population, color=Region)) +
+  geom_point() +
+  scale_x_continuous(labels=scales::percent) +
+  scale_y_continuous(trans="log2",
+                     breaks = trans_breaks("log2", function(x) 2^x,n=6),
+                     labels = trans_format("log2", function(x) ifelse(x<0, sprintf(paste0("%.",ifelse(is.na(x),"0",round(abs(x))),"f"),2^x), sprintf("%.0f",2^x)))) +
+  geom_smooth(aes(x=gini, y=murder_rate), se=FALSE, method="lm", formula=y~x, color="lightgray",lty=2,lwd=0.5) +
+  geom_smooth(se=FALSE, method="lm", formula=y~x) +
+  geom_text(data=gm2 %>% filter(year == show_year), aes(x=gini,y=murder_rate, label=country), vjust=-0.9, show.legend=FALSE) +
+  ylab("Murder rate [per 100,000 population]") +
+  xlab("Gini coefficient [in %]") +
+  guides(size=FALSE) +
+  theme(legend.position="bottom") +
+  ggtitle(paste0("Scatterplot of year 2005 Gini coefficient for Income vs. Murder Rate")) + 
+  annotation_custom(grob = textGrob("Data Source: gapm.io/d_gini",gp = gpar(fontsize = 7, col = "gray40"),x=1, just=c("right","centre"), y=0.05)) +
+  annotation_custom(grob = textGrob("Created by: m_hoehle",gp = gpar(fontsize = 7, col = "gray40"),x=1, just=c("right","centre"), y=0.03)) 
+gt <- ggplotGrob(p)
+gt$layout$clip[gt$layout$name=="panel"] <- "off"
+
+grid.draw(gt)
+ggsave(file=file.path(fullFigPath,"murdergini.png"), width=8,height=6, dpi=300)
+
+
+##GDP/capita vs. murder rate for reddit
+p <- ggplot(gm2_nozero %>% filter(year==show_year), aes(x=gdp, y=murder_rate,size=population, color=Region)) +
+  geom_point() +
+  scale_x_continuous(trans="log2",
+                     breaks = trans_breaks("log2", function(x) 2^x,n=6),
+                     labels = trans_format("log2", function(x) ifelse(x<0, sprintf(paste0("%.",ifelse(is.na(x),"0",round(abs(x))),"f"),2^x), sprintf("%.0f",2^x)))) +
+  scale_y_continuous(trans="log2",
+                     breaks = trans_breaks("log2", function(x) 2^x,n=6),
+                     labels = trans_format("log2", function(x) ifelse(x<0, sprintf(paste0("%.",ifelse(is.na(x),"0",round(abs(x))),"f"),2^x), sprintf("%.0f",2^x)))) +
+  geom_smooth(aes(x=gdp, y=murder_rate), se=FALSE, method="lm", formula=y~x, color="lightgray",lty=2,lwd=0.5) +
+  geom_smooth(se=FALSE, method="lm", formula=y~x) +
+  geom_text(data=gm2 %>% filter(year == show_year), aes(x=gdp,y=murder_rate, label=country), vjust=-0.9, show.legend=FALSE) +
+  ylab("Murder rate [per 100,000 population]") +
+  xlab("GDP/capita [PPP$, fixed 2011 price]") +
+  guides(size=FALSE) +
+  theme(legend.position="bottom") +
+  ggtitle(paste0("Scatterplot of year 2005 GDP/capita vs. Murder Rate")) + 
+  annotation_custom(grob = textGrob("Data Source: gapm.io/d_gini",gp = gpar(fontsize = 7, col = "gray40"),x=0, just=c("left","centre"), y=0.05)) +
+  annotation_custom(grob = textGrob("Created by: m_hoehle",gp = gpar(fontsize = 7, col = "gray40"),x=0, just=c("left","centre"), y=0.03)) 
+gt <- ggplotGrob(p)
+gt$layout$clip[gt$layout$name=="panel"] <- "off"
+
+grid.draw(gt)
+
+ggsave(file=file.path(fullFigPath,"murdergdp.png"), width=8,height=6, dpi=300)
+```
 
 ## Literature
+
