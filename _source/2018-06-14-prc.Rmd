@@ -158,7 +158,7 @@ variant of the algorithm
 ([undocumented javascript source code](https://fetalmedicine.org/assets/b302e11a/js/_fmf.min.js?v=14397)).
 
 At this point it is instrumental to recall paragraph V.3.3 in the
-[German Gene Diagnostic Commission](https://www.rki.de/DE/Content/Kommissionen/GendiagnostikKommission/Richtlinien/RL-VorgeburtlicheRisikoabklaerung.pdf?__blob=publicationFile)
+[Commission on Genetic Testing](https://www.rki.de/DE/Content/Kommissionen/GendiagnostikKommission/Richtlinien/RL-VorgeburtlicheRisikoabklaerung.pdf?__blob=publicationFile)'s
 guideline for prenatal screening. It demands that the algorithm for
 the computation of such risks to be *comprehensible, scientifically
 justified and published in a peer review process*. In particular the
@@ -413,7 +413,7 @@ invasive action. For posterior odds up to 1:500 the suggestion in
 the second trimester.  Nowadays, one would typically perform a NIPT.
 
 Was the algorithm for the computation of the risk detailed and
-comprehensive as demanded by the Gene Diagnostic Commission? Well,
+comprehensive as demanded by the Commission on Genetic Testing? Well,
 since we -despite quite some effort- were not able to find a full
 description of the FMF 2012 algorithm and, as described in
  `r paste0("[Appendix 2]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"fts-appendix.html#appendix2)")`,
@@ -462,6 +462,38 @@ Similarly, the
 has their own website with information - apparently it is now also
 possible to obtain a demo version of their risk calculation software
 [PRC 3.0](https://www.fmf-deutschland.info/en/software/).
+
+## Update 2018-07-24
+
+Directly after publishing the post I contacted the German
+  [Commission on Genetic Testing (GEKO)](https://www.rki.de/EN/Content/Institute/Committees/GEKO/GEKO_content.html)
+  to make them aware of the post and my troubles to determine what the
+  algorithm actually does, what information enters and the lack of
+  will of the FMF-Germany authors to communicate certain details of
+  the algorithm. As a consequence, I asked which steps the commission
+  performs to ensure and track the realisation of the guideline's
+  demands for "*publication of the entire algorithm with detailed
+  software specification*". In their email reply from 2018-07-16 they
+  answer^[My email and their answer was in German - the quoted part of the answer is translated to English by me.]:
+  "*... The area of responsibility of the GEKO is clearly regulated by
+  legal requirements. The implementation of the Gene Diagnostic Act
+  (GenDG) or the examination of the guideline's requirements are not
+  tasks of the GEKO. The interpretation of the regulatory content of
+  the Gene Diagnostic Act as well as the enforcement of the
+  requirements of the GEKO guidelines are dealt with by the appropriate
+  authorities of the Länder.*" As a consequence of this, their
+  recommendation was to address my question to the equivalent of the
+  Ministry of Health in my federal state (Berlin). I did this on
+  2018-07-16 (awaiting reply), but would be surprised, if the Federal
+  State of Berlin has the resources and expertise to look into
+  software transparency of national and internationally operating
+  software vendors in this field. I doubt this is different for any
+  of the 15 other federal states in Germany. I might be wrong and in for a
+  surprise, but as a citizen and scientist it seems like the
+  guideline's demand for a detailed software specification in order to
+  make it transparent and reproducible how the 1:x is calculated is
+  nothing else than wishful thinking...
+
 
 ## Appendix
 

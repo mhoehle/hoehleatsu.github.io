@@ -269,7 +269,7 @@ available under a
 license. For presentation in this post the image was tilted by -0.75
 degrees (around the camera's view axis) with the
 [`imager`](https://dahtah.github.io/imager/imager.html) package to
-make sea level approximately horizontal. Parabolic and catenary
+make the sea level approximately horizontal. Parabolic and catenary
 overlays (no real difference between the two) were done using the
 theory described above.
 
