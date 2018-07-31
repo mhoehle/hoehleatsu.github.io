@@ -1,0 +1,591 @@
+---
+layout: post
+title: "Judging Freehand Circle Drawing Competitions"
+tags: [rstats, stats, computer vision, image analysis, data science]
+#  bibliography: ~/Literature/Bibtex/jabref.bib
+header-includes:
+   - \usepackage{bm}
+comments: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2018-07-31-circle/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2018-07-31-circle")
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=4,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2)#, global.par = TRUE)
+options(width=150)
+
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(magrittr))
+suppressPackageStartupMessages(library(knitr))
+
+## Packages used for this post
+suppressPackageStartupMessages(require(nleqslv))
+suppressPackageStartupMessages(require(viridis))
+
+##Configuration
+options(knitr.table.format = "html")
+theme_set(theme_minimal())
+#if there are more than n rows in the tibble, print only the first m rows.
+options(tibble.print_max = 10, tibble.print_min = 5)
+```
+
+## Abstract:
+
+In 2007 Alexander Overwijk went viral with his 'Perfect Circle'
+video. The same year a World Freehand Circle Drawing Championship was
+organized, which he won. In this post we show how a mobile camera, R
+and the imager package can be used to develop an image analysis based
+method to judge future instances of the championship.
+
+
+<center>
+```{r,results='asis',echo=FALSE,fig.cap="The cable problem"}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"HUD-1.png"),")")
+```
+</center>
+
+
+{% include license.html %}
+
+
+## Introduction
+
+A few years back I watched with awe the 2007 video of
+[Alexander Overwijk](https://twitter.com/AlexOverwijk)'s freehand
+drawing a 1m diameter circle:
+
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/eAhfZUZiwSE" frameborder="10" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+</center>
+<FONT COLOR="bbbbbb">Note: Depending on your browser you might need to click "[Watch on Youtube](https://www.youtube.com/watch?v=eAhfZUZiwSE)" to see the video.</FONT>
+<p>
+
+Ever since watching that video I have wondered how one would go about to
+judge the winner of such an alleged
+[World Freehand Circle Drawing Championship](https://www.youtube.com/watch?v=u1J5ANnq0T8)
+(WFHCDC). While researching for this post I finally figured it out. On
+his web page Alexander in the story behind the video
+["reveals"](http://slamdunkmath.blogspot.com):
+
+*They have a laser machine called the **circleometer** that creates the
+perfect circle closest to the one you drew. The circleometer then
+calculates the difference in area between the laser circle and the
+circle that you drew. The machine then calibrates the area difference
+as if you had drawn a circle with radius one meter. The person with
+the smallest area difference is declared the world freehand circle
+drawing champion.*
+
+Aha! Imaginary circleometers are expensive and my dean of study most
+likely isn't open for investing in perfect circle measurement
+equipment... So here is a cheaper solution involving a mobile device
+camera, [R](https://www.r-project.org) and the
+[`imager`](https://cran.r-project.org/web/packages/imager/index.html)
+package by
+[Simon Barthelmé](https://sites.google.com/site/simonbarthelme/) et
+al. Altogether a combination of modern *data science* tools, which my dean of study is
+most likely to approve!  We'll use a screenshot from the perfect
+circle video as motivating example to guide through the 3 phases of
+the method:
+
+1. Image Rectification
+2. Freehand circle identification and perfect circle estimation
+3. Quantifying deviation from the perfect circle
+
+We start by loading the screenshot into R using `imager`:
+
+```{r LOADIMAGE, echo=TRUE, message=FALSE, warning=FALSE}
+library("imager")
+file <- "circle2.png"
+img <- imager::load.image(file.path(fullFigPath, file))
+```
+```{r PLOTSCREENSHOT}
+plot(img)
+```
+
+## Image Rectification
+
+The image clearly suffers from perspective distortions caused by the
+camera being positioned to the right of the circle and, hence, not being
+orthogonal to the blackboard plane. Furthermore, small lense
+distortions are also visible - for example the right vertical line of
+the blackboard arcs slightly. Since the video contains no details
+about what sort of lense equipment was used, for the sake of
+simplicity, we will ignore lense distortions in this post. If such
+information is available one can use a program such as
+[RawTherapee](http://rawtherapee.com) (available under a GNU GPL v3
+license) to read the EXIF information in the meta data of the image and
+automatically correct for lens distortion.
+
+To rectify the image we estimate the parameters of the 2D projection
+based on 4 ground control points (GPC). We use R's `locator` function
+to determine the pixel location of the four corner points of the
+blackboard in the image, but could just as well use any image analysis
+program such as [Gimp](https://www.gimp.org). Furthermore, we need the
+true object coordinates of these GPC. Unfortunately, these are only
+approximately available to due lack of knowledge of the size of the
+blackboard in the classroom. As a consequence a *guesstimate* of the
+horizontal length is used.
+
+```{r AQUIREGPC, echo=TRUE, eval=FALSE}
+plot(img)
+p <- locator(4)
+p <- round(cbind(p$x, p$y))
+dump(list=c("p"), "")
+```
+```{r DEFINEGPC}
+## Corner coordinates of blackboard in image (found with Gimp or locator())
+p <- rbind(c(0,318),c(2016,100),c(1988,1242),c(0,980))
+## True coordinates - since we don't know the exact measurements of the
+## blackboard we have to guess a little. Move coordinates to the right, s.t. all
+## object coordinates are positive (otherwise they will not appear in the image.
+## Offset to the right here: 1000 pixels
+dx_blackboard <- 1200
+pp <- rbind(c(-dx_blackboard ,100),c(2016,100),c(1988,1242),c(-dx_blackboard,1242)) + matrix(c(dx_blackboard, 0),4,2,byrow=TRUE)
+```
+
+These points are now used to rectify the image by a Direct Linear Transformation (DLT)
+based on exactly 4 control points
+[@hartley_zisserman2004, Chapter 4]^[Alternatively, see slide 18 and onward in https://ags.cs.uni-kl.de/fileadmin/inf_ags/3dcv-ws11-12/3DCV_WS11-12_lec04.pdf]. That
+is the parameters of the 3x3 transformation matrix $H$ in homogeneous
+coordinates are estimated
+such that $p' = H p$, see the [code](`r paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`)
+on github for details.
+
+```{r DLT, results='hide'}
+## Direct Linear Transformation (DLT) algorithm using inhomogeneous
+## solution, i.e. H[3,3] = 1 and w_i=1. See Sect 4.1.2 of
+## Hartley and Zisserman (2004)
+##
+## (H[1,1]*x + H[1,2]*y + H[1,3]) - x' * (H[3,1]*x + H[3,2]*y + 1) = 0
+## (H[2,1]*x + H[2,2]*y + H[2,3]) - y' * (H[3,1]*x + H[3,2]*y + 1) = 0
+##
+## [[ x y 1 0 0 0 -x'*x  -x'*y =  x'] ,
+##  [ 0 0 0 x y 1 -y'*x  -y'*y =  y']]
+
+A <- list()
+b <- list()
+
+##Build RHS and LHS matrix components for each point pair
+for (i in 1:4) {
+  A[[paste0(i)]] <- matrix(c(
+    p[i,1],p[i,2],1, 0,      0,      0, -pp[i,1]*p[i,1], -pp[i,1]*p[i,2],
+    0,     0,     0, p[i,1], p[i,2], 1, -pp[i,2]*p[i,1], -pp[i,2]*p[i,2]),
+    2,8, byrow=TRUE)
+  b[[paste0(i)]] <- matrix(c(pp[i,1], pp[i,2]),2,1)
+}
+
+##Glue matrices together
+A_matrix <- do.call(rbind, A)
+b_matrix <- do.call(rbind, b)
+
+##Solve equation system
+h_vec <- solve(A_matrix, b_matrix)
+
+##Form H matrix from the solution
+H <- matrix(c(h_vec,1), 3,3, byrow=TRUE)
+H
+```
+We can implement the rectifying transformation using the
+`imager::warp` function:
+```{r RECTIFY, echo=TRUE}
+##Transform image coordinates (x',y') to (x,y), i.e. note we specify
+##the back transformation p = H * p', so H here is the inverse.
+map.persp.inv <- function(x,y, H) {
+  out_image <- H %*% rbind(x,y,1)
+  list(x=out_image[1,]/out_image[3,], y=out_image[2,]/out_image[3,])
+}
+##Pad dx_blackboard pixels to the right to make space for blackboard
+img_padded <- pad(img, nPix=dx_blackboard, axes="x", pos=1)
+##Warp image
+warp <- imwarp(img_padded, map=function(x,y) map.persp.inv(x,y,solve(H)),coordinates="absolute", direction="backward")
+```
+The result looks as follows:
+```{r PLOTRECTIFICATION, fig.height=8}
+layout(c(1,2))
+plot(img, main="Original")
+lines(c(p[,1],p[1,1]), c(p[,2],p[1,2]), col="magenta",lwd=2)
+points(p[,1], p[,2], cex=3, pch=20, col="steelblue")
+plot(warp, main="Rectified")
+lines(c(pp[,1],pp[1,1]), c(pp[,2],pp[1,2]), col="magenta",lwd=2)
+points(pp[,1], pp[,2], cex=3, pch=20, col="steelblue")
+```
+Please notice the different x-axes of the two images when comparing
+them.  For faster computation and better visualization in the
+remainder of this post, we crop the x-axis of the image to the
+relevant parts of the circle.
+
+```{r, echo=TRUE}
+warp <- imsub(warp, x %inr% c(dx_blackboard, nrow(warp)))
+```
+```{r PLOTRECTIFIED}
+plot(warp, main="Rectified and Cropped")
+```
+
+## Freehand circle identification
+
+As described in the `imager`
+[edge detection tutorial](https://dahtah.github.io/imager/canny.html)
+we use length of the gradient to determine the edges in the
+image. This can be done by applying filters to the image.
+
+```{r, echo=TRUE}
+##Edge detection function. Sigma is the size of the blur window.
+detect.edges <- function(im, sigma=1) {
+  isoblur(im,sigma) %>% imgradient("xy") %>% enorm() %>% imsplit("c") %>% add
+}
+#Edge detection filter sequence.
+edges <- detect.edges(warp,1) %>% sqrt
+```
+
+To detect the circle from this we specify a few seed points for a
+[watershed](https://en.wikipedia.org/wiki/Watershed_%28image_processing%29)
+algorithm with a priority map inverse proportional to gradient magnitude. This includes a few points outside the
+circle and a few points inside the circle. Note: a perfect circle
+would have no border, but when drawing a circle with a piece of chalk
+it's destined to have a small thing border line.
+
+```{r}
+#Priority map with priority inverse proportional to gradient magnitude
+pmap <- 1/(1+edges)
+```
+
+```{r, eval=FALSE}
+layout(1)
+plot(pmap)
+background <- locator(2)
+background <- round(cbind(background$x, background$y))
+dump("background","")
+
+foreground <- locator(2)
+foreground <- round(cbind(foreground$x, foreground$y))
+dump("foreground","")
+```
+
+```{r SEGMENTATION, results='hide'}
+##Seed image
+seeds <- imfill(dim=dim(pmap))
+background <- structure(c(1400, 956, 239, 507), .Dim = c(2L, 2L))
+foreground <- structure(c(508, 1078, 1018, 234), .Dim = c(2L, 2L))
+seeds[cbind(background,1,1)] <- 1
+seeds[cbind(foreground,1,1)] <- 2
+##Number of seed points
+sum(seeds >0)
+
+##Run watershed algorithm
+wt <- watershed(seeds,pmap)
+
+mask <- add.colour(wt) #We copy along the three colour channels
+layout(t(1:2))
+plot(warp * (mask==1),main="Background")
+points(background, col="steelblue", pch=20)
+plot(warp * (mask==2),main="Foreground")
+points(foreground, col="magenta", pch=20)
+```
+We can now extract the circle by:
+```{r, echo=TRUE}
+##Just the circle
+freehandCircle <- (warp * (mask==2) > 0) %>% grayscale
+##All area covered by the circle
+freehandDisc <- label(freehandCircle, high_connectivity=TRUE) > 0
+```
+```{r THINBORDER, echo=TRUE}
+dilatedDisc <- freehandDisc %>% dilate_rect(sx=3,sy=3)
+freehandCircleThinBorder <- (freehandDisc - dilatedDisc) != 0
+```
+```{r PLOTTHINBORDER, fig.width=8, fig.height=4}
+par(mar=c(2,2,2,2))
+plot(1-freehandCircleThinBorder, main="Extracted freehand circle")
+```
+
+## Perfect circle estimation
+
+Now the freehand circle path in the image has been identified we need
+to find the best fitting *perfect* circle matching this path. This problem is
+elegantly solved by @coope1993, who formulates the problem as finding
+center and radius of the circle minimizing the squared
+Euclidean distance to $m$ data points $a_j$, $j=1,\ldots,m$.
+Denoting by $c$ the center of the circle and by $r>0$ the radius we
+want to find the solution of
+
+$$
+\min_{c\in \mathbb{R^2}, r>0} \sum_{j=1}^m F_j(c,r)^2, \quad\text{where}\quad F_j(c,r) = \left|r - ||c-a_j||_2\right|,
+$$
+
+and $||x||_2$ denotes Euclidean distance. Because the curve fitting
+minimizes the distance between an observed point $a_j$ and the closest
+point on the circle and thus involves both the $x$ and the $y$
+direction , this is a so called
+**[total least squares](https://en.wikipedia.org/wiki/Total_least_squares)**
+problem. The problem is non-linear and can only be solved by iterative
+numerical methods. However, the dimension of the parameter space can
+be reduced by one, because given the center $c$ we can determine that
+$r(c)=\frac{1}{m} \sum_{j=1}^m ||c-a_j||_2$.
+
+
+```{r FITCIRCLE, echo=TRUE}
+##Compute radius given center
+radius_given_center <- function(center, dist=NULL) {
+  if (is.null(dist)) {
+    a <- as.matrix(where(freehandCircleThinBorder > 0))
+    dist <- sqrt((a[,1] - center[1])^2 + (a[,2] - center[2])^2)
+  }
+  return(mean(dist))
+}
+
+##Target functin of the total least squares criterion of Coope (1993)
+target_tls <- function(theta) {
+  ##Extract parameters
+  center <- exp(theta[1:2])
+
+  ##Total least squares criterion from Coope (1993)
+  a <- as.matrix(where(freehandCircleThinBorder > 0))
+  dist <- sqrt((a[,1] - center[1])^2 + (a[,2] - center[2])^2)
+  ##Compute radius given center
+  radius <- radius_given_center(center, dist)
+
+  F <- abs( radius - dist)
+  sum(F^2)
+}
+
+
+res_tls <- optim(par=log(c(x=background[1,1], y=background[1,2])), fn=target_tls)
+center <- exp(res_tls$par)
+fit_tls <- c(center,radius=radius_given_center(center))
+fit_tls
+```
+
+We illustrate the freehand circle (in black) and the fitted circle
+(magenta) on top of each other using the alpha channel. You have to
+study the image carefully to detect differences between the two curves!
+
+```{r DRAWCIRCLE, fig.width=8, fig.height=4}
+par(mar=c(2,2,0,2))
+nPoints <- 1000
+t <- seq(0,2*pi, length=nPoints)
+circle <- cbind(fit_tls[3]*cos(t) + fit_tls[1], fit_tls[3]*sin(t)+fit_tls[2])
+plot(1-freehandCircleThinBorder)
+lines(circle[,1], circle[,2], col=rgb(0.8,0.4,0.9,0.3),lwd=3)
+points(fit_tls[1], fit_tls[2], pch=20, cex=1, col=rgb(0.8,0.4,0.9,0.4))
+```
+
+## Quantifying the circularness of the freehand circle
+
+We quantify the **circularness** of the freehand circle by contrasting
+the area covered by it with the area of the fitted perfect circle. The
+closer this ratio is to 1 the more perfect is the freehand circle.
+
+```{r, echo=TRUE}
+##Area of the freehand drawn disc
+areaFreehandDisc <- sum(freehandDisc)
+
+##Area of the disc corresponding to the idealized circle fitted
+##to the freehand circle
+areaIdealDisc <- pi * fit_tls["radius"]^2
+
+##Ratio between the two areas
+ratio_area <- as.numeric(areaFreehandDisc  / areaIdealDisc)
+ratio_area
+```
+
+Yup, it's a pretty perfect circle! Note also that the calibration is to a
+circle with an area of 1 pixel unit and not a circle with diameter of
+1m as described in the above text about the "circleometer". Since the
+fitted circle already takes the desired shape into account my
+intuition is that this ratio is a pretty good way to quantify how good
+a circle your freehand drawing is. As a backup measure to avoid
+**measurehacks** we also take the circleometer approach and for each
+point on the freehand circle measure its distance to the freehand
+circle and integrate/sum this up over the path of your freehand
+circle. We can approximate this integration approach using image pixels as
+follows.
+
+```{r DISTANCE, echo=TRUE}
+##Create a pixel based circle in an image of the same size as the
+##freehandCircle img. For visibility we use a border of 'border' pixels
+##s.t. circle goes [radius - border/2, radius + border/2].
+Circle <- function(center, radius, border) {
+  as.cimg(function(x,y) {
+    lhs <- (x-center[1])^2 + (y-center[2])^2
+    return( (lhs >= (radius-border/2)^2) & (lhs <= (radius+border/2)^2))
+  }, dim=dim(freehandCircle))
+}
+
+##Build pixel circle based on the fitted parameters
+C_tls <- Circle(fit_tls[1:2], fit_tls[3], border=1)
+##Calculate Euclidean distance to circle for each pixel in the image
+dist <- distance_transform(C_tls, value=1, metric=2)
+##Distance between outer border of freehand circle and perfect circle
+area_difference <- sum(dist[freehandCircleThinBorder>0])
+
+##Compute area difference and scaled it by the area of the fitted disc
+ratio_areadifference <- as.numeric(area_difference / areaIdealDisc)
+```
+
+The image below illustrates this by overlaying the result on top of
+the distance map. For better visualization we zoom in on the 270-300
+degree part of the circle (i.e. the bottom right). In magenta is the
+fitted perfect circle, in gray the freehand circle and the area
+between the two paths is summed up over the entire path of the
+freehand circle:
+
+```{r PLOTAREADIFF}
+CircleDisc <- function(center, radius, border) {
+  as.cimg(function(x,y) {
+    lhs <- (x-center[1])^2 + (y-center[2])^2
+    return( lhs <= (radius+border/2)^2)
+  }, dim=dim(freehandCircle))
+}
+CDisc <- CircleDisc(fit_tls[1:2], fit_tls[3], border=1)
+
+xr <- c(fit_tls[1], fit_tls[1] + 0.7*fit_tls[3])
+yr <- c(fit_tls[2]+0.7*fit_tls[3], fit_tls[2] + 1.1*fit_tls[3])
+distsub <- imsub(dist, x%inr% xr, y %inr% yr)
+
+par(mar=c(0,0,0,0))
+plot( distsub/max(distsub)  + imsub(freehandDisc * (CDisc==0), x %inr% xr, y %inr% yr), axes=FALSE)
+
+highlight(imsub(C_tls>0, x %inr% xr, y %inr% yr), col="magenta")
+highlight(imsub(freehandCircleThinBorder, x %inr% xr, y %inr% yr), col="gray")
+```
+
+We obtain `ratio_areadifference`= `r
+sprintf("%.5f",ratio_areadifference)`.  Thus also this measure tells
+us: it's a pretty perfect circle! To summarise: The output on the
+display of the official's Circle-O-Meter App (available under a GPL v3
+license) at the World Freehand Circle Drawing Championship would be as
+follows: `r emo::ji("wink")`
+
+```{r HUD}
+##Show our findings Head-up-display (HUD) style on top of image
+par(mar=c(0,0,3,0))
+plot(img, axes=FALSE,main="Athlete: Alexander Overwijk (CAN), Rank: 1")
+lines(c(p[,1],p[1,1]), c(p[,2],p[1,2]), col="magenta",lwd=2)
+points(p[,1], p[,2], cex=3, pch=20, col="steelblue")
+
+##Points of the circle
+t <- seq(0,2*pi, length=nPoints)
+circle <- cbind(fit_tls[3]*cos(t) + fit_tls[1], fit_tls[3]*sin(t)+fit_tls[2])
+circle[,1] <- circle[,1] + dx_blackboard
+
+##Transform and show points of circle
+p_circle <- map.persp.inv(circle[,1], circle[,2], H=solve(H))
+lines(p_circle$x, p_circle$y, col=rgb(0.8,0.8,0.8,0.5),lwd=3, lty=2)
+##Transform and show center
+p_center <- map.persp.inv(fit_tls[1] + dx_blackboard, fit_tls[2], H=solve(H))
+points(p_center$x, p_center$y, pch=20, cex=1, col=rgb(0.8,0.8,0.8,0.8))
+##Add HUD text
+text(p_center$x, p_center$y - 100, substitute(r[A] == x, list(x=sprintf("%.2f%%",100*ratio_area))), col=rgb(0.8,0.8,0.8,0.8))
+text(p_center$x, p_center$y + 100, substitute(r[Delta * "A"] == x, list(x=sprintf("%.2f%%",100*ratio_areadifference))), col=rgb(0.8,0.8,0.8,0.8))
+```
+
+## Discussion
+
+We took elements of computer vision, image analysis and total least
+squares to segment a chalk-drawn circle on a blackboard and provided
+measures of it's circularness. Since we do not have direct access to
+the measurements of the blackboard a little guesstimation was
+necessary, nevertheless, results show that it was a pretty circular
+freehand circle!
+
+With the machinery in place for judging freehand circles, its time to
+send out the call for contributions to the **2nd World Freehand Circle
+Drawing Championship** (online edition!). Stay tuned for the call:
+participants would upload their photo plus minor modifications of a
+general analysis script to get the two area ratios measures by pull
+request to a
+[github project](https://github.com/hoehleatsu/worldfreehandcirclechampionship).
+You can spend the anxious waiting time practicing your freehand 1m
+diameter circles - it's a good way to loosen up long & unproductive
+meetings!
+
+## Appendix
+
+If we instead of the total sum of squares criterion involving
+$F_j(c,r)$ mentioned in the text solve the related criterion
+$$
+\sum_{j=1}^m f_j(c,r)^2, \quad\text{where}\quad f_j(c,r) =
+||c-a_j||_2^2 - r^2,
+$$
+then a much simpler solution emerges. @coope1993 explains that
+this alternative criterion  geometrically corresponds to minimizing the
+product
+
+$$
+\text{(distance to the closest point on the circle)}\times \text{(distance to
+the furthest away point point on the circle)}
+$$
+
+over the measurement point. In order to obtain the solution write the
+residuals $f_j$ as $f_j(c,r) = c^T c - 2 c^T a_j +
+a_j^T a_j - r^2$ and perform a change of variables from $(c_1, c_2,
+r)'$ to
+$$
+y  =
+\left[
+\begin{matrix}
+2 c_1 \\
+2 c_2 \\
+r^2 - c^T c \\
+\end{matrix}
+\right]
+\quad \text{and let} \quad
+b_j =
+\left[
+\begin{matrix}
+a_{j1} \\
+a_{j2} \\
+1
+\end{matrix}
+\right].
+$$
+The minimization problem then becomes
+$$
+\min_{y \in \mathbb{R}^3} \sum_{j=1}^m \left\{ a_j^T a_j - b_j^T y \right\},
+$$
+which can be written as a linear least square (LLS) expression
+$$
+\min_y ||By - d||_2^2,
+$$
+where $B$ is a $3\times m$ matrix with the $b_j$-vectors as columns
+and $d=||a_j||_2^2$. This expression is then easily solved using the standard
+least squares machinery.
+
+```{r, echo=TRUE}
+##Fast linear least squares problem as described in Coope (1993)
+fitCircle_lls <- function(freehandCircle) {
+  a <- as.matrix(where(freehandCircle > 0))
+  b <- cbind(a,1)
+  B <- b
+  d <- a[,1]^2 + a[,2]^2
+  y <- solve(t(B) %*% B) %*% t(B) %*% d
+  x <- 1/2*y[1:2]
+  r <- as.numeric(sqrt(y[3] + t(x) %*% x))
+  return(c(x=x[1], y=x[2], radius=r))
+}
+
+##Fit using linear least squares procedure of Coole (1993)
+fit_lls <- fitCircle_lls(freehandCircleThinBorder)
+
+##Compare TLS and LLS fit
+rbind(lls=fit_lls,tls=fit_tls)
+```
+
+In other words: the results are nearly identical.
+
+```{r, eval=FALSE}
+layout(1)
+C_lls<- Circle(center=fit_lls[1:2], radius=fit_lls[3],border=1)
+plot(colorise(1-freehandCircleThinBorder, C_tls>0, col="blue", alpha=0.5))
+highlight(C_lls, col="magenta")
+```
+
+## Literature
+
