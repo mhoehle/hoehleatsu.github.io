@@ -250,7 +250,7 @@ To detect the circle from this we specify a few seed points for a
 algorithm with a priority map inverse proportional to gradient magnitude. This includes a few points outside the
 circle and a few points inside the circle. Note: a perfect circle
 would have no border, but when drawing a circle with a piece of chalk
-it's destined to have a small thing border line.
+it's destined to have a thin border line.
 
 ```{r}
 #Priority map with priority inverse proportional to gradient magnitude
@@ -293,7 +293,7 @@ We can now extract the circle by:
 ```{r, echo=TRUE}
 ##Just the circle
 freehandCircle <- (warp * (mask==2) > 0) %>% grayscale
-##All area covered by the circle
+##Total area covered by the circle
 freehandDisc <- label(freehandCircle, high_connectivity=TRUE) > 0
 ```
 ```{r THINBORDER, echo=TRUE}
@@ -307,7 +307,7 @@ plot(1-freehandCircleThinBorder, main="Extracted freehand circle")
 
 ## Perfect circle estimation
 
-Now the freehand circle path in the image has been identified we need
+Once the freehand circle path in the image has been identified, we need
 to find the best fitting *perfect* circle matching this path. This problem is
 elegantly solved by @coope1993, who formulates the problem as finding
 center and radius of the circle minimizing the squared
@@ -395,17 +395,17 @@ ratio_area <- as.numeric(areaFreehandDisc  / areaIdealDisc)
 ratio_area
 ```
 
-Yup, it's a pretty perfect circle! Note also that the calibration is to a
-circle with an area of 1 pixel unit and not a circle with diameter of
-1m as described in the above text about the "circleometer". Since the
-fitted circle already takes the desired shape into account my
-intuition is that this ratio is a pretty good way to quantify how good
-a circle your freehand drawing is. As a backup measure to avoid
-**measurehacks** we also take the circleometer approach and for each
-point on the freehand circle measure its distance to the freehand
-circle and integrate/sum this up over the path of your freehand
-circle. We can approximate this integration approach using image pixels as
-follows.
+Yup, it's a pretty perfect circle! Note also that the calibration is
+to a circle with an area of 1 pixel unit and not a circle with
+diameter of 1m as described in the above text about the
+"circleometer". Since the fitted circle already takes the desired
+shape into account, my intuition is that this ratio is a pretty good
+way to quantify circularness. However, to and avoid **measurehacks**,
+we use as backup measure the circleometer approach: for each
+point on the freehand circle we measure its distance to the freehand
+circle and integrate/sum this up over the path of the freehand
+circle. We can approximate this integration approach using image
+pixels as follows.
 
 ```{r DISTANCE, echo=TRUE}
 ##Create a pixel based circle in an image of the same size as the
@@ -456,8 +456,7 @@ highlight(imsub(C_tls>0, x %inr% xr, y %inr% yr), col="magenta")
 highlight(imsub(freehandCircleThinBorder, x %inr% xr, y %inr% yr), col="gray")
 ```
 
-We obtain `ratio_areadifference`= `r
-sprintf("%.5f",ratio_areadifference)`.  Thus also this measure tells
+We obtain `ratio_areadifference`= `r sprintf("%.5f",ratio_areadifference)`.  Thus also this measure tells
 us: it's a pretty perfect circle! To summarise: The output on the
 display of the official's Circle-O-Meter App (available under a GPL v3
 license) at the World Freehand Circle Drawing Championship would be as
