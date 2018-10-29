@@ -66,8 +66,8 @@ cat(paste0("<img src=\"{{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"f
 
 ## Introduction
 
-A few weeks ago I became aware of the publication by @sarma_etal2018,
-who as part of a syndromic surveillance system monitor the time series of
+A few weeks ago I became aware of the publication by @sarma_etal2018
+who, as part of a syndromic surveillance system, monitor the time series of
 a proportion with the aim of timely detecting changes. What initially
 caught my intention was their figure 1A:
 
@@ -106,7 +106,7 @@ observations[^2], respectively, and $k$ is a tuning parameter - for 12 out of th
 syndromes $k=2$ is used, but for the two syndromes with highest
 proportions, including acute respiratory infections, $k=4$ is
 used. As the method looks like an adaptation of the simple EARS method
-[@fricker_etal2008] to proportions this caused me
+[@fricker_etal2008] to proportions, this caused me
 to tweet the following critical remark (no harm intended besides the
 scientific criticism of using a somewhat inadequate statistical
 method):
@@ -140,9 +140,9 @@ As much I can understand the motives, working in applied statistics is
 always a balance between mathematical exactness and pragmatism.  A
 [famous quote](https://quoteinvestigator.com/2011/05/13/einstein-simple/)
 says that things should be as simple as possible, but not simpler. But
-if mathematical rigour always is second, something is amiss. In this
-light, I'd like to comment on the four reasons given in Alexander's
-reply.
+if mathematical rigour always comes in second place, something is
+amiss. In this light, I'd like to comment on the four reasons given in
+Alexander's reply.
 
 ```{r}
 d <- 15
@@ -279,7 +279,7 @@ Beta-Binomial approach.
 
 ## Non-parametric
 
-A one-sided 97.5% prediction interval $[0, U]$ based on the continuous values
+A non-parametric one-sided 97.5% prediction interval $[0, U]$ based on the continuous values
 $p_{t_0-39},\ldots, p_{t_0-1}$ without ties is given as (see e.g. @arts_etal2004 or the Wikipedia entry on [non-parametric prediction intervals](https://en.wikipedia.org/wiki/Prediction_interval#Non-parametric_methods)):
 $$
 U_{t_0} = \max(p_{t_0-39},\ldots, p_{t_0-1}).
@@ -290,7 +290,7 @@ values. If we only have $d=19$ values, then the interval from zero to
 the maximum of these values would constitute a one-sided 95%
 prediction interval.
 
-#### Simulation Study
+## Simulation Study
 
 ```{r}
 n_are <- floor(9364/365)
@@ -342,12 +342,13 @@ algo_sysu_all <- function(y, n, t0, d) {
   bstar <- 0.5 + sum((n[baseline_idx] - y[baseline_idx]))
   U_betabinom <- qbetabinom.ab(q=0.975, size=n[t0], shape1=astar, shape2=bstar) / n[t0]
 
-  ##Non-parametric with a 97.5% one-sided PI (needs 39 obs)
-  U_nonpar <- max( p[(t0-1):(t0-39)])
-
-  ##Prediction interval based on Binomal variance based on Fisher info
+  ##Prediction interval based on the Binomal directly, ignoring estimation uncertainty
   U_binom <- qbinom(p=0.975, size=n[t0], prob=m) / n[t0]
 
+  ##Non-parametric with a 97.5% one-sided PI (this approach needs 39 obs)
+  U_nonpar <- max( p[(t0-1):(t0-39)])
+
+  ##Done
   return(data.frame(t=t0, U_twosd=U_twosd, U_foursd=U_foursd, U_pred=U_pred, U_betabinom=U_betabinom, U_nonpar=U_nonpar, U_binom=U_binom))
 }
 ```
@@ -365,8 +366,8 @@ simone <- function(pi0, d=21, n=25) {
 }
 ```
 
-We then perform the simulation study using several cores using the `future` and `future.apply`
-package:
+We then perform the simulation study using several cores using the [`future`](https://cran.r-project.org/web/packages/future/index.html) and [`future.apply`](https://cran.r-project.org/web/packages/future/index.html)
+packages by @henrikBengtsson (https://twitter.com/henrikbengtsson):
 
 ```{r, cache=TRUE}
 ##Evaluate false alarm proportion for a range of pi0 values
@@ -405,7 +406,7 @@ the 97.5% predictive distribution in a Gaussian setting (pred) have a
 varying FAP over the range of true proportions: The smaller $\pi$ the
 higher the FAP. The FAP can be as high as 7% instead of the nominal
 2.5%. When monitoring 145 time points this means that we will on
-average see $145\cdot 0.07$=`r sprintf("%.0f",145*0.07)` false alarms,
+average see $145\cdot 0.07=`r sprintf("%.0f",145*0.07)`$ false alarms,
 if the process does not change. This is somewhat problematic, because
 it means that the behaviour of the detection procedure depends on the
 underlying $\pi$: the user will get way more false alarm at low
@@ -415,7 +416,7 @@ conservative!
 
 All considered procedures dip down to a FAP of 0% for $\pi$ near
 100%, which means no alarms are sounded here. This is
-related to the fact that if $U_{t_0}=n_{t_0}$ than because $p_{t_0} >
+related to the fact that if $U_{t_0}=n_{t_0}$ then, because $p_{t_0} >
 U_{t_0}$ is required before an alarm will be sounded, no alarm is
 possible. Furthermore, both the beta-binomial, the binomial variant
 and the non-parametric procedure have FAPs slightly lower than the
@@ -445,7 +446,8 @@ y_t^* | y_{t-1}^* \sim \rho \cdot y_{t-1}^* + \epsilon_t, \quad t=2,3,\ldots,
 $$
 where $y_1^* \sim N(0,1)$ and $\epsilon_t \stackrel{\text{iid}}{\sim}
 N(0,1)$.  These latent variables are then marginally back-transformed
-to standard uniforms $u_t \sim U(0,1)$ which are then transformed
+to standard uniforms $u_t \sim U(0,1)$ using the [probability integral
+transform](https://en.wikipedia.org/wiki/Probability_integral_transform) and are then transformed
 using the quantile function of the $\operatorname{Bin}(`r n_are`, `r pi0_are`)$
 distribution, i.e.
 
@@ -457,7 +459,7 @@ $y_t$ = `qbinom(pnorm(ystar[t]))`
 Altogether, this corresponds to a
 [Gaussian copula](https://stackoverflow.com/questions/10535235/generate-correlated-random-numbers-from-binomial-distributions-in-r#10540234)
 approach to generate correlated random variables with a given marginal
-distribution. The correlation between the $y_t$ will not be exactly be
+distribution. The correlation between the $y_t$ will not be exactly
 $\rho$ due to the discrete nature of the binomial, but will approach
 $\rho$ as $n$ in the binomial becomes large.
 Figure `r label("fig:sim_corr") ; ref("fig:sim_corr")` shows the
@@ -593,7 +595,9 @@ ggplot(are_monitored_long, aes(x=t, y=0, xend=t, yend=p)) + geom_segment(color="
 The correlation between $p_{t}$ and $p_{t-1}$ in the time series is `r sprintf("%.2f",cor(are$p[-1], are$p[-nrow(are)]))`, which could be a sign that the synthetic were artificially generated using an independence assumption.
 
 For all algorithms we see the effect on the upper threshold as spikes
-enter the baseline values. In particular the non-parametric method, which uses $d=39$ baseline values, will only sound an alarm during 39 days after time 60, if the proportion is larger than the $p_{60} = `r sprintf("%.1f%%", 100*(are %>% filter(t==60) %$% p))`$ spike .
+enter the baseline values. In particular the non-parametric method,
+which uses $d=39$ baseline values, will only sound an alarm during 39
+days after time 60, if the proportion is larger than the $p_{60} = `r sprintf("%.1f", 100*(are %>% filter(t==60) %$% p))`$ percent spike.
 
 ## Discussion
 
@@ -611,14 +615,13 @@ simulation study and likely access to the real data, but the point of
 this post was to substantiate that statistical problems need a
 statistical investigation. From the simulation results in this post it
 appears more prudent to use $k>2$, e.g.,
-the upper limit of a 97.5% one-sided prediction interval would be
-$k$=`r sprintf("%.2f",sqrt(1+1/d)*qt(0.975, df=d-1))`
+the upper limit of a 97.5% one-sided prediction interval
+($k$=`r sprintf("%.2f",sqrt(1+1/d)*qt(0.975, df=d-1))`)
 or
-$k$=`r sprintf("%.2f",sqrt(1+1/d)*qt(0.995, df=d-1))`
-for the  upper limit of a 99.5% one-sided prediction interval.
+the  upper limit of a 99.5% one-sided prediction interval ($k$=`r sprintf("%.2f",sqrt(1+1/d)*qt(0.995, df=d-1))`).
 Choosing $k>2$ is also supported by the fact
-that none of the 204 signals generated by the system were interpreted
-as an outbreak. A simple fix to avoid confusion could be chop the
+that @sarma_etal2018 report that none of the 204 signals generated by the system were subsequently interpreted
+as an outbreak. A simple fix to avoid confusion could be to chop the
 upper threshold at 100% in the graphics, i.e. to report $U_t^* =
 \max(1, U_t)$ for the Gaussian based procedures. Better would be to
 use the predictive approach and let the user choose $\alpha$ and thus
@@ -632,16 +635,16 @@ auto-correlation as well as previous outbreaks in the baseline appears
 to be important in order to get a more specific syndromic surveillance
 system - see Sect. 3.4 of @salmon_etal2016a for how this could look.
 I invite you to read the @sarma_etal2018 paper to form your own
-impressions.
+opinion.
 
 #### Acknowledgments
 
-The contents of this post were discussed as part of the Statistical
+The contents of this post were discussed as part of the ht2018 Statistical
 Consultancy M.Sc. course at the Department of Mathematics, Stockholm
 University. I thank Jan-Olov Persson, Rolf Sundberg and the students
 of the course for their comments, remarks and questions.
 
-#### Conflicts of Interest
+#### Conflict of Interest
 
 I have previously worked for the Robert Koch Institute. Some of the
 co-authors of the @sarma_etal2018 paper are previous colleagues, which
@@ -650,7 +653,7 @@ I have published together with.
 [^1]: In the paper d=21 was used, but due to many missing values,
 e.g., due to weekends, the actual number of observations used was on
 average 15. We therefore use $d=15$ in the blog post.
-[^2]: The method contained two additional parameters: one being the
+[^2]: The method contains two additional parameters: one being the
 minimum number of cases needed on a particular day to sound an alarm
 (low-count protection) and a fixed threshold for the proportion beyond
 which a signal was always created. For the sake of statistical
@@ -659,4 +662,3 @@ this post.
 [^3]: The 21.5% is taken from Table 2 of @sarma_etal2018 for acute respiratory infections.
 
 ## Literature
-
