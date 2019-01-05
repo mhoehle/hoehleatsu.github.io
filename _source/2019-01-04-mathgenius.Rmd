@@ -42,7 +42,7 @@ puzzle.
 
 <center>
 ```{r,results='asis',echo=FALSE,fig.cap=""}
-cat(paste0("<img src=\"{{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"shinyapp.png\" width=\"600\">\n"))
+cat(paste0("<img src=\"{{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"shinyapp.png\" width=\"450\">\n"))
 ```
 </center>
 
@@ -197,8 +197,8 @@ trees[["0"]] <- NULL
 trees[["1"]] <- list(list(val="node", left=NULL, right=NULL))
 ```
 
-The rather elegant **recursive solution** to generate all binary trees
-with $n$ leaves works combining all possible ways to combine
+The rather elegant **recursive solution** for generating all binary trees
+with $n$ leaves works by combining all possible ways to generate
 subbranches containing $x$ and $n-x$ leaves, respectively:
 
 ```{r, echo=TRUE}
@@ -206,9 +206,11 @@ allBinTrees <- function(n) {
   ##Character version of n, which is used as hash key
   n_char <- as.character(n)
 
-  ##Only compute something if n is not already in the tree list.
+  ##Only compute something if n is not already in the hashlist.
   if (is.null(pluck(trees, n_char))) {
     trees[[n_char]] <<- list()
+
+    ##Combine all possible ways  to generate bintrees with $i$ and $n-i$ leaves
     for (i in 1:(n-1)) {
       j = n - i
       for (left_tree in allBinTrees(i)) {
@@ -334,13 +336,82 @@ detect(res, ~ isTRUE(all.equal(.x$value, 24)))
 
 Voila! QED!
 
+```{r}
+solveMathPuzzle <- function(base_numbers, expr_result, operatorList) {
+
+  ##Variables
+  k <- length(base_numbers)
+
+  ##Permuations of the base numbers
+  perm <- combinat::permn(base_numbers) %>%
+    map(setNames, nm=letters[seq_len(k)])
+
+  ##Slim it?
+  perm <- perm[!duplicated(map(perm, paste0, collapse=""))]
+
+  ##Make all combinations of the operators
+  opsList <- map( seq_len(k-1), function(.x) operatorList)
+  operators <- cross(opsList) %>% map( setNames, nm=paste0("op",seq_len(k-1)))
+
+  ##Make all possible brackets
+  bracketing <- map_chr( allBinTrees(n=k),
+                         ~ tree2String(.x) %>% addOpNumbers %>% replaceNodes)
+
+  ##All combinations of the numbers, the order and the bracketing.
+  ##Depending on the combinations this might take a while...
+  combos <- cross3( perm, map( operators, unlist), bracketing) %>%
+    map(setNames, c("numbers", "operators", "bracket"))
+
+  ##Compute value of all combinations (with progress bar)
+  ##Set up a progress bar for use with the map function
+  pb <- progress_estimated(length(combos))
+
+  ##Compute
+  res <- map(combos, .f=function(l) {
+    pb$tick()$print()
+    l[["expr"]] <- l[["bracket"]] %>% replace(l[["numbers"]]) %>% replace(l[["operators"]])
+    l[["value"]] <- eval(parse(text=l[["expr"]]))
+    return(l)
+  })
+
+  ##Convert results to a data.frame
+  pb <- progress_estimated(length(res))
+  df <- map_df(res, ~ { pb$tick()$print() ; data.frame(expr=.x$expr, value=.x$value)})
+
+  ##Match 24
+  is_zero <- function(x) isTRUE(all.equal(x, 0))
+
+  ##Only those with nice integers results
+  df_int <- df %>%
+    mutate(rounded = round(value, digits=0), diff=value - rounded) %>% rowwise %>%
+    filter(is_zero(diff))
+
+  res <- list(combos=df_int %>% select(expr, value),
+              expr=df_int %>% filter(rounded==expr_result) %$% expr)
+
+  return(res)
+}
+```
+
+#### Extended New Years Fun
+For user experimentation we wrapped all the above steps into one function `solveMathPuzzle` (see [github code](`r paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`) for details).
+To underline the generalizability of the approach we solve a classical
+2019 new-year's puzzle:
+
+```{r COMPUTE2019, cache=TRUE, echo=TRUE}
+res <- suppressWarnings(solveMathPuzzle( base_numbers=c(7,7,11,11,43,43), expr_result=2019, operatorList=c("+","*")))
+res$expr[[1]]
+```
+
+
 ## Shiny App
 
 To make the above solution accessible to a wider audience we wrote a small
 Shiny app to play with the code for $k=4$:
 
 <center>
-[http://michaelhoehle.eu/shiny/mathgenius](http://michaelhoehle.eu/shiny/mathgenius)
+<!-- [https://hoehle.shinyapps.io/mathgenius/](https://hoehle.shinyapps.io/mathgenius/) -->
+<a href="http://michaelhoehle.eu/shiny/mathgenius/">http://michaelhoehle.eu/shiny/mathgenius/</a>
 </center>
 <p>
 <p>
@@ -355,10 +426,10 @@ cat(paste0("<img src=\"{{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"s
 ```
 </center>
 
-Besides possible solutions one can view the result of evaluating all possible combinations in the "Details" tab. We invite you to experiment with the app or download the [source code of the Shiny app](`r paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input(),"mathgenius", "app.R")`) from github for the full math experience. `r emo::ji("smiley")`
+Besides possible solutions one can view the result of all possible combinations yielding integer results in the "Details" tab. We invite you to experiment with the app or download the [source code of the Shiny app](`r paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/figure/source/",gsub("\\.Rmd","",current_input()),"/mathgenius/app.R")`) from github for the full math experience. `r emo::ji("smiley")`
 
 As always: it's amazing how easy you can wrap a interactive web based
-UI around your running R code!
+UI around your running R code with Shiny!
 
 ## Discussion
 
@@ -368,8 +439,8 @@ approach is flexible enough to handle more or less base numbers,
 however, the number of combinations to try quickly exceeds reasonable
 memory and timing constraints. We stress that **a mathematical purr does
 not need speed, it lives from the beauty of recursion and mappings**!
-Clever mathmaticians might be able to achieve considerable speed gains
-by exploiting for example commutative properties of the operators.
+Clever mathematicians might be able to achieve considerable speed gains
+by exploiting for example commutative properties of the operators whereas skilled computer scientists would parallelise the computations.
 
 
 [^1]: Note: The term $\frac{1}{k} \binom{2k-2)}{k-1}$ is the so called

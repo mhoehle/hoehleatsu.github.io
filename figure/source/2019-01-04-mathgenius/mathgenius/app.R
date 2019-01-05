@@ -6,13 +6,19 @@
 #
 #    http://shiny.rstudio.com/
 #
+# Author: Michael Höhle <http://www.math.su.se/~hoehle>
+# Date:   05 Jan 2019
+# License: GNU General Public License (GPL v3 - https://www.gnu.org/licenses/gpl.html)
 
 library(purrr)
 library(shiny)
 library(dplyr)
 library(combinat)
 library(magrittr)
+library(ggplot2)
+library(plotly)
 
+##Global variable containing the hashmap to store the computed binary trees.
 trees <- list()
 trees[["0"]] <- NULL
 trees[["1"]] <- list(list(val="node", left=NULL, right=NULL))
@@ -164,7 +170,8 @@ ui <- fluidPage(
               hr(),
               htmlOutput("result")
      ),# end tabPanel
-     tabPanel("Details",  dataTableOutput("allCombosDF"))
+     tabPanel("Detailed Table",  dataTableOutput("allCombosDF")),
+     tabPanel("Histogram", plotlyOutput("allCombosHistogram"))
    ) #end tabSetPanel
 )
 
@@ -204,6 +211,12 @@ server <- function(input, output) {
     ##Solve the math puzzle
     solution <- suppressWarnings(solve(base_numbers = base_numbers, expr_result = expr_result, operatorList = operatorList))
     output$allCombosDF <- renderDataTable(solution$combos)
+    
+    output$allCombosHistogram <- renderPlotly({
+      ##p <- ggplot(solution$combos, aes(x=value)) + geom_histogram(bins=50) + ylab("Number of combinations") + xlab("Value of expression")
+      p <- ggplot(solution$combos, aes(x=value)) + geom_histogram(breaks=seq(floor(min(solution$combos$value))-0.5,ceiling(max(solution$combos$value))+0.5,by=1)) + ylab("Number of combinations") + xlab("Value of expression")
+      plotly::ggplotly(p)
+    })#,width=800, height=400, res=100)
     
     print(solution)
     HTML(paste0("<h3>Solution:</h3>",

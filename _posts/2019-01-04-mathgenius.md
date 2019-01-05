@@ -20,7 +20,7 @@ provided to allow the user to solve their own variations of the
 puzzle.
 
 <center>
-<img src="{{ site.baseurl }}/figure/source/2019-01-04-mathgenius/shinyapp.png" width="600">
+<img src="{{ site.baseurl }}/figure/source/2019-01-04-mathgenius/shinyapp.png" width="450">
 </center>
 
 
@@ -169,8 +169,8 @@ trees[["0"]] <- NULL
 trees[["1"]] <- list(list(val="node", left=NULL, right=NULL))
 ```
 
-The rather elegant **recursive solution** to generate all binary trees
-with $n$ leaves works combining all possible ways to combine
+The rather elegant **recursive solution** for generating all binary trees
+with $n$ leaves works by combining all possible ways to generate
 subbranches containing $x$ and $n-x$ leaves, respectively:
 
 
@@ -179,9 +179,11 @@ allBinTrees <- function(n) {
   ##Character version of n, which is used as hash key
   n_char <- as.character(n)
 
-  ##Only compute something if n is not already in the tree list.
+  ##Only compute something if n is not already in the hashlist.
   if (is.null(pluck(trees, n_char))) {
     trees[[n_char]] <<- list()
+
+    ##Combine all possible ways  to generate bintrees with $i$ and $n-i$ leaves
     for (i in 1:(n-1)) {
       j = n - i
       for (left_tree in allBinTrees(i)) {
@@ -312,13 +314,32 @@ detect(res, ~ isTRUE(all.equal(.x$value, 24)))
 
 Voila! QED!
 
+
+
+#### Extended New Years Fun
+For user experimentation we wrapped all the above steps into one function `solveMathPuzzle` (see [github code](https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/2019-01-04-mathgenius.Rmd) for details).
+To underline the generalizability of the approach we solve a classical
+2019 new-year's puzzle:
+
+
+```r
+res <- suppressWarnings(solveMathPuzzle( base_numbers=c(7,7,11,11,43,43), expr_result=2019, operatorList=c("+","*")))
+res$expr[[1]]
+```
+
+```
+## [1] "((7 * 7) + ((11 * 11) + (43 * 43)))"
+```
+
+
 ## Shiny App
 
 To make the above solution accessible to a wider audience we wrote a small
 Shiny app to play with the code for $k=4$:
 
 <center>
-[http://michaelhoehle.eu/shiny/mathgenius](http://michaelhoehle.eu/shiny/mathgenius)
+<!-- [https://hoehle.shinyapps.io/mathgenius/](https://hoehle.shinyapps.io/mathgenius/) -->
+<a href="http://michaelhoehle.eu/shiny/mathgenius/">http://michaelhoehle.eu/shiny/mathgenius/</a>
 </center>
 <p>
 <p>
@@ -331,10 +352,10 @@ math puzzles for your nephew...
 <img src="{{ site.baseurl }}/figure/source/2019-01-04-mathgenius/shinyapp.png" width="600">
 </center>
 
-Besides possible solutions one can view the result of evaluating all possible combinations in the "Details" tab. We invite you to experiment with the app or download the [source code of the Shiny app](https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/2019-01-04-mathgenius.Rmdmathgeniusapp.R) from github for the full math experience. 😃
+Besides possible solutions one can view the result of all possible combinations yielding integer results in the "Details" tab. We invite you to experiment with the app or download the [source code of the Shiny app](https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/figure/source/2019-01-04-mathgenius/mathgenius/app.R) from github for the full math experience. 😃
 
 As always: it's amazing how easy you can wrap a interactive web based
-UI around your running R code!
+UI around your running R code with Shiny!
 
 ## Discussion
 
@@ -344,8 +365,8 @@ approach is flexible enough to handle more or less base numbers,
 however, the number of combinations to try quickly exceeds reasonable
 memory and timing constraints. We stress that **a mathematical purr does
 not need speed, it lives from the beauty of recursion and mappings**!
-Clever mathmaticians might be able to achieve considerable speed gains
-by exploiting for example commutative properties of the operators.
+Clever mathematicians might be able to achieve considerable speed gains
+by exploiting for example commutative properties of the operators whereas skilled computer scientists would parallelise the computations.
 
 
 [^1]: Note: The term $\frac{1}{k} \binom{2k-2)}{k-1}$ is the so called
