@@ -54,7 +54,7 @@ operator selected from +, -, * or /. An example is the expression
 After a few unsuccessful attempts to solve the above puzzle with pen
 and paper it felt more *efficient* and computationally *challenging*
 to solve this puzzle via a combinatorial approach: Simply
-try out all permutations of the 4 numbers, the 3 binary operators and
+try out all permutations of the 4 numbers, the 4 binary operators and
 all possible sets of parentheses to combine the operators. One can show
 that there are at most
 
@@ -62,7 +62,7 @@ $$
 \begin{align*} && \text{# permutations of the
 $k=4$ base numbers} \\ \times && \text{# ways to select with replacement $(k-1)$ binary operators from the set $\{+,-,*,/\}$ }\\ \times &&
 \text{# ways to parenthesize the $(k-1)$ binary operators} \\ &=&k!
-\times 4^{(k-1)} \times \frac{1}{k} \binom{2k-2)}{k-1}
+\times 4^{(k-1)} \times \frac{1}{k} \binom{2k-2}p{k-1}
 \end{align*}
 $$
 
@@ -126,7 +126,7 @@ number_perm <- combinat::permn(base_numbers) %>%
 perm <- number_perm[!duplicated(map(number_perm, paste0, collapse=""))]
 ```
 
-For $k=4$ this makes a total 21504 combinations. However, since
+For $k=4$ the first step yields a total 21504 combinations. However, since
 the numbers 8 and 3 both appear more than once in the base numbers, we can slim
 the number of permutations from 24 to 6. Hence, there are altogether only 5376 combinations to investigate.
 
@@ -151,7 +151,7 @@ operators <- cross(opsList) %>%
 
 ### Arrangements of the parentheses
 
-As all the involved operators are binarym it becomes clear that
+As all the involved operators are binary it becomes clear that
 finding all possible ways to parenthesize the expression corresponds to finding all
 [binary trees](https://en.wikipedia.org/wiki/Binary_tree) with $k-1$
 leaves. Beautiful recursive code
@@ -231,7 +231,7 @@ the function `replaceNodes` renames the terms `node` into the variables `` (a op
 Details about the helper functions can be found in the [code](https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/2019-01-04-mathgenius.Rmd)
 on github.
 
-With all preparations in place we can now generate all 5 possible ways to parenthesize the 3 binary operators using the following code:
+With all preparations in place we can now generate all 5 possible ways to parenthesize the 3 binary operations using the following code:
 
 
 ```r
@@ -369,10 +369,10 @@ Clever mathematicians might be able to achieve considerable speed gains
 by exploiting for example commutative properties of the operators whereas skilled computer scientists would parallelise the computations.
 
 
-[^1]: Note: The term $\frac{1}{k} \binom{2k-2)}{k-1}$ is the so called
+[^1]: Note: The term $\frac{1}{k} \binom{2k-2}{k-1}$ is the so called
 [Catalan number](https://en.wikipedia.org/wiki/Catalan_number#Applications_in_combinatorics),
 which - among other applications - also denotes the number of ways to
-parenthesize $k-1$ binary operators.
+parenthesize $k-1$ binary operations.
 
 [^2]: Actually, the package more or less adds a lot of convenience wrapping for functional programming in R, the functional programming approach is rather deeply rooted in R due to the [S language being inspired by Scheme](https://web.archive.org/web/20140414081950/https://daspringate.github.io/posts/2013/05/Functional_programming_in_R.html).
 
