@@ -113,6 +113,15 @@ either by the R session run by the shiny server or an error in the
 *Scale Factor* so far always fixed the problem. Furthermore, I did not
 experience the problem when running the shiny app locally (Mac OS)
 
+To better illustrate, how the shiny app can facilitate the scoring of
+circles on the fly with the camera of your mobile, I made an
+additional video tutorial about the adventures of a perfect circle:
+
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/QZOCKn9XNN4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</center>
+<p>
+
 ## Discussion
 
 As always it was amazingly easy to use shiny to wrap a user interface
