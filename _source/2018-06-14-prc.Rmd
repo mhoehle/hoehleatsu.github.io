@@ -494,6 +494,26 @@ Directly after publishing the post I contacted the German
   make it transparent and reproducible how the 1:x is calculated is
   nothing else than wishful thinking...
 
+## Update 2019-03-29
+
+After several inquiries about what is done to ensure the algorithmic
+transparency of the prenatal diagnostic procedures remained unanswered
+by Berlin's
+[*Senatsverwaltung für Gesundheit, Pflege und Gleichstellung*](https://www.berlin.de/sen/gpg/),
+I decided to formulate a
+[freedom of information act](http://gesetze.berlin.de/jportal/?quelle=jlink&query=InfFrG+BE&psml=bsbeprod.psml&max=true&aiz=true)
+request, which ensures that the public authority has to answer, typically
+within ~4 weeks. A very good interface to formulate such requests in
+Germany is
+[fragdenstaat.de](https://fragdenstaat.de). The [subsequent
+answer](https://fragdenstaat.de/anfrage/vorgeburtliche-risikoabklarung/)
+(in German) shows that no measures are performed in Berlin to ensure the requested
+algorithmic transparency. My conclusion: The current setup of
+a) recommendations being in the hand of the GEKO while b) compliance
+assurance being in the hand of 16 federal states results in the
+software providers not being under any pressure to provide algorithmic
+transparency. This is rather frustrating for an
+ethical sensitive issue such as prenatal screening.
 
 ## Appendix
 
