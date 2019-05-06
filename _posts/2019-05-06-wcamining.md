@@ -31,7 +31,7 @@ acceptable solving times before entering a WCA competition.
 ## Motivation
 
 An item on my bucket list of
-irrelevant-things-to-excel-in-during-parental-leave™ was to solve
+irrelevant-things-to-excel-in-during-parental-leave™ is to solve
 the Rubik's cube again. In 2013 I learned the [**beginner's method**](http://starlingsroost.asuscomm.com/cubestation/index.php?page=3x3x3/beginner/step1)
 for solving the cube by reading
 [Dan Harris'](https://www.speedsolving.com/wiki/index.php/Dan_Harris)
@@ -236,7 +236,7 @@ So at this point we force an execution of the `allResults` query and
 cache the result as an object in R.  This feels slightly
 disappointing, because the hope was to leave the data in the database
 management system (DBMS) as long as possible, but it felt like the
-most efficient way to compute sequential ranks -- however, it might
+most efficient way to compute sequential ranks - however, it might
 have been possible to perform the sequential rank directly using SQL
 statements, although I did not succeed to find the correct approach
 within the available time [^1].
@@ -247,15 +247,18 @@ Instead, the results are sorted according to their date in R and
 subsequently each result is checked to see if it's sequential rank is
 1, i.e. whether the time is lower than all previous results.  For this
 purpose a fast Rcpp function `sequential_is_rank1` function is provided,
-which computes the sequential rank of a vector of values. Note:
+which computes the sequential rank of a vector of values (see [github code](https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/2019-05-06-wcamining.Rmd) for details). Note:
 If we had not pulled the data into R at this point, such a computation
 within R would not have been possible.
 
 
 
-The evolution of the world record over time is then easily plotted:
+The evolution of the world record for males and females
+over time is then easily plotted. Note: As mentioned WCA doesn't officially
+distinguish between male and female results.
+
 <img src="{{ site.baseurl }}/figure/source/2019-05-06-wcamining/WREVO-1.png" style="display: block; margin: auto;" />
-Useful? Not really IMHO, but I had seen a similar plot at the
+Is such a plot useful? Not really IMHO, but I had seen a similar plot at the
 [WCA webpage](https://www.worldcubeassociation.org/results/misc/evolution/),
 so it's nice to be able to create it in R.
 
@@ -316,6 +319,7 @@ highest proportion of female cubers in the `Persons` database:
 <p>
 I find this list quite surprising and also encouraging!
 
+
 ### Skill level before entering a WCA competition
 
 Getting back to the motivating question of this post, we derive for
@@ -335,15 +339,16 @@ visualization we plot the marginal
 quantiles as smooth function of experience - this is done with
 with `ggplot2`'s  `geom_quantile` function together with the argument
 `method="rqss"`, which then uses the `rqss` function of the `quantreg`
-package [@quantreg] to compute the smooth quantile curve:
+package [@quantreg] to compute smooth quantile curves:
 
 <img src="{{ site.baseurl }}/figure/source/2019-05-06-wcamining/QUANTILEAVG-1.png" style="display: block; margin: auto;" />
 We notice that the quantile curves stay more or less parallel, which
-is indicative of a stable variance of the results over the range of
+is indicative of a stable variance and skewness of the results over the range of
 experiences. Focusing only on the round-1 results of those
-participating for the first time in a WCA competition in the period
+participating for the first time in the period
 from 2018-04-19 to 2019-04-19 we see that the quantiles for the average is
 (in seconds) are:
+
 
 
 

@@ -56,7 +56,7 @@ cat(paste0("<img src=\"{{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"Q
 ## Motivation
 
 An item on my bucket list of
-irrelevant-things-to-excel-in-during-parental-leave™ was to solve
+irrelevant-things-to-excel-in-during-parental-leave™ is to solve
 the Rubik's cube again. In 2013 I learned the [**beginner's method**](http://starlingsroost.asuscomm.com/cubestation/index.php?page=3x3x3/beginner/step1)
 for solving the cube by reading
 [Dan Harris'](https://www.speedsolving.com/wiki/index.php/Dan_Harris)
@@ -237,7 +237,7 @@ So at this point we force an execution of the `allResults` query and
 cache the result as an object in R.  This feels slightly
 disappointing, because the hope was to leave the data in the database
 management system (DBMS) as long as possible, but it felt like the
-most efficient way to compute sequential ranks -- however, it might
+most efficient way to compute sequential ranks - however, it might
 have been possible to perform the sequential rank directly using SQL
 statements, although I did not succeed to find the correct approach
 within the available time [^1].
@@ -250,7 +250,7 @@ Instead, the results are sorted according to their date in R and
 subsequently each result is checked to see if it's sequential rank is
 1, i.e. whether the time is lower than all previous results.  For this
 purpose a fast Rcpp function `sequential_is_rank1` function is provided,
-which computes the sequential rank of a vector of values. Note:
+which computes the sequential rank of a vector of values (see [github code](`r paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`) for details). Note:
 If we had not pulled the data into R at this point, such a computation
 within R would not have been possible.
 
@@ -283,7 +283,10 @@ wr_evolution <- function(which_gender, from_year=2005) {
 wr <- purrr::map_df(c("f","m"), wr_evolution)
 ```
 
-The evolution of the world record over time is then easily plotted:
+The evolution of the world record for males and females
+over time is then easily plotted. Note: As mentioned WCA doesn't officially
+distinguish between male and female results.
+
 ```{r WREVO, message=FALSE, }
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(lubridate))
@@ -294,7 +297,7 @@ ggplot(wr, aes(x=date, y=best/100, color=gender)) + geom_step() +
   scale_x_date(breaks = seq(as.Date("2005-01-01"), as.Date("2019-04-19"), by = "2 year"), labels=year(seq(as.Date("2005-01-01"), as.Date("2019-04-19"), by = "2 year"))) +
   scale_y_continuous(limit=c(0,NA))
 ```
-Useful? Not really IMHO, but I had seen a similar plot at the
+Is such a plot useful? Not really IMHO, but I had seen a similar plot at the
 [WCA webpage](https://www.worldcubeassociation.org/results/misc/evolution/),
 so it's nice to be able to create it in R.
 
@@ -316,6 +319,7 @@ persons %>% group_by(id) %>% group_by(countryId) %>%
 ```
 <p>
 I find this list quite surprising and also encouraging!
+
 
 ### Skill level before entering a WCA competition
 
@@ -376,6 +380,7 @@ from 2018-04-19 to 2019-04-19 we see that the quantiles for the average is
 res_lastyear_newbies <- res_lastyear %>% filter(experience==0, roundTypeId==1)
 ```
 
+
 ```{r, eval=FALSE}
 ggplot(res_lastyear_newbies, aes(x=average/100, y=..count../sum(..count..))) + geom_histogram(breaks=seq(0,180,by=5), fill=pal[1], alpha=0.8) + xlab("Average 3x3x3 (s)") + ylab("Proportion of results") + scale_y_continuous(labels=scales::percent) + coord_cartesian(xlim=c(0,180)) + scale_color_viridis()
 ```
@@ -433,7 +438,7 @@ ggplot(cohort_evolution, aes(x=experience, y=average/100, color=as.factor(person
   scale_color_discrete(guide=FALSE) +
   scale_y_continuous(limits=c(0,NA)) +
   scale_x_sqrt() +
-  ylab("Average 3x3x3 (s)") + xlab("Years of experience") +
+  ylab("Average 3x3x3 (s)") + xlab("Experience (years)") +
   geom_hline(yintercept=3*6000/100, lty=2, col="lightgray") +
   geom_hline(yintercept=4*6000/100, lty=2, col="lightgray")
 ```
@@ -454,7 +459,7 @@ ggplot(cohort_evolution, aes(x=experience, y=average/100)) +
   scale_y_continuous(limits=c(0,NA)) +
   geom_hline(yintercept=3*6000/100, lty=2, col="lightgray") +
   geom_hline(yintercept=4*6000/100, lty=2, col="lightgray") +
-  ylab("Average 3x3x3 (s)") + xlab("Years of experience")
+  ylab("Average 3x3x3 (s)") + xlab("Experience (years)")
 ```
 
 From the figure we notice a rapid improvement the first 6 months
