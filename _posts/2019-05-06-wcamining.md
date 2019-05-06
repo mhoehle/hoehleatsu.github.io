@@ -376,8 +376,8 @@ consider the skill evolution of the cohort of **first time cubers** from
 
 
 
-The cohort inclusion criterion provide a total of 174 first time
-competitors in this skill bracket. Only 27.6% of these cubers decide
+The cohort inclusion criterion provide a total of 29466 first time
+competitors in this skill bracket. Only 51.9% of these cubers decide
 to participate in further WCA competitions! The further development of
 the averages of these cubers is best shown in a trajectory
 plot. Note that the end of the lines does not necessarily mean that
@@ -385,7 +385,6 @@ they stopped cubing, instead it could be due to right truncation,
 because only competitions until 2019-04-19 are available.
 
 <img src="{{ site.baseurl }}/figure/source/2019-05-06-wcamining/TRAJPLOT-1.png" style="display: block; margin: auto;" />
-
 Instead of the trajectories we can also overlay an expectation
 smoother on top of the data to see how the expected average progresses
 with time in the cohort. Note, that this portrays the marginal
@@ -395,6 +394,7 @@ made.
 
 <img src="{{ site.baseurl }}/figure/source/2019-05-06-wcamining/TRAJSMOOTHED-1.png" style="display: block; margin: auto;" />
 
+
 From the figure we notice a rapid improvement the first 6 months
 after entering the first WCA competition. Hereafter results only
 improve slowly.
@@ -402,12 +402,14 @@ improve slowly.
 ## Discussion
 
 Through analysis of the WCA results database it became clear that
-participating in a 3x3x3 event with a 180s average is uncool. The data
+participating in a 3x3x3 event with a 180s average ~~is uncool~~ [^2] does
+not take you to winners' rostrum. The data
 also show that cubers entering the world of WCA competitions with such
 an average are likely to never participate in another WCA event. In
 case they do, their times drop to 90-120s averages within 6 months
-after which they are stuck - no one cracks the 20s barrier. To
-conclude: It seems wise to practice more, before going to the first
+after which they are stuck - it is very unlikely that
+they will crack the 20s barrier. To
+conclude: In my situation it seems wise to practice more, before going to the first
 WCA competition. 😃
 
 From a data science perspective this post provided insights on using
@@ -443,5 +445,16 @@ Besides this formal note, I thank the WCA Results Team for providing
 the WCA data for download in this comprehensive form!
 
 [^1]: If you know how to do this efficiently in SQL, let me know!
+[^2]: A reddit user correctly pointed out that just because your
+results are at the low end does not necessarily imply that it is *uncool*
+to participate in a WCA competition:
+<a class="embedly-card" href="https://www.reddit.com/r/Cubers/comments/bl8r18/analysing_the_wca_database/emmwmu6">Card</a>
+<script async src="//embed.redditmedia.com/widgets/platform.js"
+charset="UTF-8"></script>
+This is very true and I've updated the post accordingly. However, if
+you like me already are an age outlier while your kid
+is too young to act as your alibi companion, I miss the courage to
+also be a total skill outlier... But that's my problem and just
+motivates me to train more (if time permits) before signing up. 😏
 
 ## Literature

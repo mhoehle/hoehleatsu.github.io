@@ -406,12 +406,16 @@ consider the skill evolution of the cohort of **first time cubers** from
 ```{r COHORTEVOLUTION}
 ##Define cohort of all cubers entering a WCA competition for the first time
 cohort <- allResultsTabAvg %>% filter(year(first_wca_competition) >= 2015) %>%
-  filter(experience==0)
+  filter(experience==0,  roundTypeId==1)
+
+##Bracket to consider (in centiseconds)
+lower_bracket <- 0 * 6000
+upper_bracket <- 0.5 * 6000
 
 ##Extract only those with an average time in my league
 cohort_myleague <- cohort %>% group_by(personId) %>%
   summarise(best_average=min(average)) %>%
-    filter(best_average > 3*6000 & best_average < 4*6000)
+  filter(best_average > lower_bracket & best_average < upper_bracket)
 
 cohort_evolution <- allResultsTabAvg %>%
   inner_join(cohort_myleague, by="personId")
@@ -439,10 +443,9 @@ ggplot(cohort_evolution, aes(x=experience, y=average/100, color=as.factor(person
   scale_y_continuous(limits=c(0,NA)) +
   scale_x_sqrt() +
   ylab("Average 3x3x3 (s)") + xlab("Experience (years)") +
-  geom_hline(yintercept=3*6000/100, lty=2, col="lightgray") +
-  geom_hline(yintercept=4*6000/100, lty=2, col="lightgray")
+  geom_hline(yintercept=lower_bracket/100, lty=2, col="lightgray") +
+  geom_hline(yintercept=upper_bracket/100, lty=2, col="lightgray")
 ```
-
 Instead of the trajectories we can also overlay an expectation
 smoother on top of the data to see how the expected average progresses
 with time in the cohort. Note, that this portrays the marginal
@@ -457,9 +460,25 @@ ggplot(cohort_evolution, aes(x=experience, y=average/100)) +
   scale_color_discrete(guide=FALSE) +
   geom_smooth() +
   scale_y_continuous(limits=c(0,NA)) +
-  geom_hline(yintercept=3*6000/100, lty=2, col="lightgray") +
-  geom_hline(yintercept=4*6000/100, lty=2, col="lightgray") +
+  geom_hline(yintercept=lower_bracket/100, lty=2, col="lightgray") +
+  geom_hline(yintercept=upper_bracket/100, lty=2, col="lightgray") +
   ylab("Average 3x3x3 (s)") + xlab("Experience (years)")
+```
+```{r TRAJQUANT, eval=FALSE, echo=FALSE, results="hide"}
+ggplot(cohort_evolution, aes(x=experience, y=average/100)) +
+  geom_line(aes(color=as.factor(personId)), alpha=0.1) +
+  geom_point(aes(color=as.factor(personId)),alpha=0.1) +
+  scale_color_discrete(guide=FALSE) +
+  ##geom_smooth() +
+  geom_quantile(method = "rqss", lambda = 1, quantiles=q_grid, color="steelblue",lwd=1.2) +
+  scale_y_continuous(limits=c(0,NA), breaks=seq(5,100,by=5)) +
+  geom_hline(yintercept=lower_bracket/100, lty=2, col="lightgray") +
+  geom_hline(yintercept=0.5*6000/100, lty=2, col="lightgray") +
+  ylab("Average 3x3x3 (s)") + xlab("Experience (years)") +
+  coord_cartesian(xlim=c(0,4),ylim=c(0,30))
+
+nrow(cohort_myleague)
+ggsave(file="~/Temp/cuber-experience-smooth.png", width=8, height=4,dpi=200)
 ```
 
 From the figure we notice a rapid improvement the first 6 months
@@ -469,12 +488,14 @@ improve slowly.
 ## Discussion
 
 Through analysis of the WCA results database it became clear that
-participating in a 3x3x3 event with a 180s average is uncool. The data
+participating in a 3x3x3 event with a 180s average ~~is uncool~~ [^2] does
+not take you to winners' rostrum. The data
 also show that cubers entering the world of WCA competitions with such
 an average are likely to never participate in another WCA event. In
 case they do, their times drop to 90-120s averages within 6 months
-after which they are stuck - no one cracks the 20s barrier. To
-conclude: It seems wise to practice more, before going to the first
+after which they are stuck - it is very unlikely that
+they will crack the 20s barrier. To
+conclude: In my situation it seems wise to practice more, before going to the first
 WCA competition. `r emo::ji("smiley")`
 
 From a data science perspective this post provided insights on using
@@ -510,5 +531,16 @@ Besides this formal note, I thank the WCA Results Team for providing
 the WCA data for download in this comprehensive form!
 
 [^1]: If you know how to do this efficiently in SQL, let me know!
+[^2]: A reddit user correctly pointed out that just because your
+results are at the low end does not necessarily imply that it is *uncool*
+to participate in a WCA competition:
+<a class="embedly-card" href="https://www.reddit.com/r/Cubers/comments/bl8r18/analysing_the_wca_database/emmwmu6">Card</a>
+<script async src="//embed.redditmedia.com/widgets/platform.js"
+charset="UTF-8"></script>
+This is very true and I've updated the post accordingly. However, if
+you like me already are an age outlier while your kid
+is too young to act as your alibi companion, I miss the courage to
+also be a total skill outlier... But that's my problem and just
+motivates me to train more (if time permits) before signing up. `r emo::ji("smirk")`
 
 ## Literature
