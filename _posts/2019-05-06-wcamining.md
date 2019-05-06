@@ -376,8 +376,8 @@ consider the skill evolution of the cohort of **first time cubers** from
 
 
 
-The cohort inclusion criterion provide a total of 29466 first time
-competitors in this skill bracket. Only 51.9% of these cubers decide
+The cohort inclusion criterion provide a total of 168 first time
+competitors in this skill bracket. Only 28.0% of these cubers decide
 to participate in further WCA competitions! The further development of
 the averages of these cubers is best shown in a trajectory
 plot. Note that the end of the lines does not necessarily mean that
