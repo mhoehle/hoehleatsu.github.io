@@ -409,8 +409,8 @@ cohort <- allResultsTabAvg %>% filter(year(first_wca_competition) >= 2015) %>%
   filter(experience==0,  roundTypeId==1)
 
 ##Bracket to consider (in centiseconds)
-lower_bracket <- 0 * 6000
-upper_bracket <- 0.5 * 6000
+lower_bracket <- 3 * 6000
+upper_bracket <- 4 * 6000
 
 ##Extract only those with an average time in my league
 cohort_myleague <- cohort %>% group_by(personId) %>%
