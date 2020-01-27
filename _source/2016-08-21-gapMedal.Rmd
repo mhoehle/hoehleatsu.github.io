@@ -159,17 +159,25 @@ In principle, all that is left to do is to join the two data sources using the c
 
 Conditioned on the success of the previous wrangling step, we can now join the two data sources:
 
-```{r,echo=FALSE}
+```{r,echo=FALSE, warning=FALSE}
 medals_mod <- medals %>% select(Nation,Year,Gold,Silver, Bronze,Total)
 
 #Merge Germany into one country? Is there a better way to do
 #this in dplyr?
-germany <- medals_mod %>% group_by(Year) %>% filter(grepl("Germany",Nation)) %>%  summarise_each(funs(sum),-Nation) %>% mutate(Nation="Germany")
+germany <- medals_mod %>%
+  group_by(Year) %>%
+  filter(grepl("Germany", Nation)) %>%
+  #summarise_each(funs(sum), -Nation) %>% #old style
+  summarise_at(vars(-Nation), funs(sum)) %>%
+  mutate(Nation = "Germany")
 
-medals_mod <- medals_mod %>% filter(!grepl("Germany",Nation)) %>% bind_rows(germany) %>% arrange(Year,desc(Gold))
+medals_mod <- medals_mod %>%
+  filter(!grepl("Germany", Nation)) %>%
+  bind_rows(germany) %>%
+  arrange(Year, desc(Gold))
 
 #Rename Great Britain in the medal dataset to United Kingdom
-medals_mod <- medals_mod %>% mutate(Nation = replace(Nation, Nation=="Great Britain", "United Kingdom"))
+medals_mod <- medals_mod %>% mutate(Nation = replace(Nation, Nation == "Great Britain", "United Kingdom"))
 
 #Rename the Unified Team in 1992 to Soviet union even though
 #countries such as Estonia, Latvia and Lithuania already in 1992
@@ -182,12 +190,20 @@ medals_mod <- medals_mod %>% mutate(Nation = replace(Nation, Nation=="Unified Te
 # info in https://en.wikipedia.org/wiki/Soviet_Union
 soviet_republics <- c("Russia", "Armenia", "Azerbaijan", 	"Belarus", 	"Estonia", 	"Georgia", 	"Kazakhstan", "Kyrgyzstan", 	"Latvia", "Lithuania", 	"Moldova", 	"Tajikistan", "Turkmenistan", "Ukraine","Uzbekistan")
 
-soviet_union <- gapminder_manual %>% group_by(Year) %>%  filter((Nation %in% soviet_republics & Year < 1992) | (Nation %in% setdiff(soviet_republics, c("Estonia","Latvia","Lithuania")) & Year == 1992)) %>% summarise(GDPpc=mean(GDPpc), Population=sum(Population)) %>% mutate(Nation = "Soviet Union", Continent="FSU")
+soviet_union <- gapminder_manual %>%
+  group_by(Year) %>%
+  filter((Nation %in% soviet_republics & Year < 1992) | (Nation %in% setdiff(soviet_republics, c("Estonia", "Latvia", "Lithuania")) & Year == 1992)) %>%
+  summarise(GDPpc = mean(GDPpc), Population = sum(Population)) %>%
+  mutate(Nation = "Soviet Union", Continent = "FSU")
 
 #Handle Yugoslavia
 yugo_republics <- c("Croatia", "Bosnia-Herzegovina", "Slovenia", "Serbia", "Macedonia", "Montenegro", "Bosnia and Herzegovina")
 
-yugoslavia <- gapminder_manual %>% group_by(Year) %>%  filter((Nation %in% yugo_republics & Year < 1992) | (Nation %in% setdiff(yugo_republics, c("Croatia", "Bosnia-Herzegovina", "Slovenia")) & Year == 1992)) %>% summarise(GDPpc=mean(GDPpc), Population=sum(Population)) %>% mutate(Nation = "Yugoslavia", Continent="Europe")
+yugoslavia <- gapminder_manual %>%
+  group_by(Year) %>%
+  filter((Nation %in% yugo_republics & Year < 1992) | (Nation %in% setdiff(yugo_republics, c("Croatia", "Bosnia-Herzegovina", "Slovenia")) & Year == 1992)) %>%
+  summarise(GDPpc = mean(GDPpc), Population = sum(Population)) %>%
+  mutate(Nation = "Yugoslavia", Continent = "Europe")
 
 #Update the gapminder dataset
 gapminder_manual <- bind_rows(gapminder_manual, soviet_union, yugoslavia)
@@ -203,20 +219,27 @@ medals_gm <- left_join(medals_mod, gapminder_manual, by=c("Nation","Year"))
 First we analyse the [all-time summer olympic medal table](https://en.wikipedia.org/wiki/All-time_Olympic_Games_medal_table) for the period 1960-2016.
 
 ```{r}
-medals_alltime <- medals_gm  %>% group_by(Nation)  %>% summarise(Total=sum(Total))  %>% arrange(desc(Total))
+medals_alltime <- medals_gm %>%
+  group_by(Nation) %>%
+  summarise(Total = sum(Total)) %>%
+  arrange(desc(Total))
 DT::datatable(medals_alltime)
 ```
 
 We now plot of the total number of medals awarded for each summer games in the period of 1960-2016.
 ```{r,TOTALMEDALSPERGAME}
-nTotal <- medals_gm %>% group_by(Year) %>% summarise(TotalOfGames=sum(Total))
-ggplot(nTotal, aes(x=Year,y=TotalOfGames)) + geom_line() + ylab("Total number of medals per Summer Games")
+nTotal <- medals_gm %>%
+  group_by(Year) %>%
+  summarise(TotalOfGames = sum(Total))
+ggplot(nTotal, aes(x = Year, y = TotalOfGames)) + geom_line() + ylab("Total number of medals per Summer Games")
 ```
 
 A distinct increasing trend is observed in the above figure. Hence, in order to make between-country comparisons over time based on the number of medals won, we normalize the medals by the total number of medals awarded during the corresponding games. The result is stored in the column `Frac`.
 
 ```{r}
-medals_gm <- medals_gm %>% left_join(nTotal, by="Year") %>% mutate(Frac = Total / TotalOfGames)
+medals_gm <- medals_gm %>%
+  left_join(nTotal, by = "Year") %>%
+  mutate(Frac = Total / TotalOfGames)
 ```
 
 After all these pre-processing steps, we can now compare country results for all summer games in the period 2000-2016.
@@ -225,7 +248,7 @@ After all these pre-processing steps, we can now compare country results for all
 #Add city name for better visualization
 olympic_city <- data.frame(Year=olympic_years, City=c("Rome","Tokyo", "Mexico City","Munich", "Montreal", "Moscow","Los Angeles", "Seoul", "Barcelona", "Atlanta", "Sydney", "Athens", "Beijing", "London","Rio"))
 
-medals_gm <- left_join(medals_gm, olympic_city, by="Year") %>% mutate("YearCity"=paste0(Year," - ",City))
+medals_gm <- left_join(medals_gm, olympic_city, by = "Year") %>% mutate("YearCity" = paste0(Year, " - ", City))
 
 #Restrict dataset to Year >= 2000
 medals_gm2000 <- medals_gm %>% filter(Year >= 2000)
@@ -246,7 +269,7 @@ Note that for better visualization of the many countries with a small number of 
 Finally, we can use the `gganimate` package to visualize the dependence of the total number of medals won in the summer games 1960-2016 as a function of GDP per capita. 
 
 ```{r,GAPMINDERANIM,fig.width=8,fig.height=5,echo=FALSE,warning=FALSE,results='hide',message=FALSE,fig.keep='hide'}
-p2 <- ggplot(medals_gm, aes(x=GDPpc, y=Frac, size = Population, color = Continent, frame = YearCity)) +
+p2 <- ggplot(medals_gm, aes(x=GDPpc, y=Frac, size = Population, color = Continent)) + #, frame = YearCity)) +
   geom_point() +
   geom_text(data=medals_gm, aes(x=GDPpc, y=Frac, label=Nation), vjust=-0.7,show.legend=FALSE, size=1.4*(medals_gm$Population/1e6)^(1/4)+0.2, check_overlap=TRUE) +
   scale_x_log10() +
@@ -254,8 +277,13 @@ p2 <- ggplot(medals_gm, aes(x=GDPpc, y=Frac, size = Population, color = Continen
    scale_y_sqrt(labels = scales::percent)
   
 #Animate the result
-#gganimate::gg_animate(p2,interval = 3, ani.width=600, ani.height=350)
-gganimate::gg_animate(p2, filename="olympicMedals-gapminder-style.gif",interval = 3, ani.width=600, ani.height=350)
+##old gganimate
+##gganimate::gg_animate(p2, filename="olympicMedals-gapminder-style.gif",interval = 3, ani.width=600, ani.height=350)
+##update 2020-01-27: new gganimate
+library(gganimate)
+anim <- p2 + transition_states(YearCity, transition_length = 3, state_length = 1) + 
+  ggtitle('{closest_state}')
+anim %>% anim_save(filename = "olympicMedals-gapminder-style.gif",width=600, height=350)
 ```
 
 ```{r,results='asis',echo=FALSE}
@@ -271,7 +299,7 @@ Update: After being made aware of the concurrent [blog entry](http://pmassicotte
 
 ```{r,echo=FALSE,results='hide',warning=FALSE,message=FALSE}
 #Use the ggflags package - not on CRAN
-#devtools::install_github("baptiste/ggflags")
+#devtools::install_github("baptiste/ggflags") #ellisp/ggflags
 library("ggflags")
 library("countrycode")
 
@@ -321,8 +349,8 @@ We shall call this index a country's fraction of all medals per million populati
 medals_gm <- medals_gm %>% mutate(FracPerPop=Frac/Population * 1e6)
 highlight_countries <- c("Denmark","Sweden","Norway")
 
-p3 <- ggplot(medals_gm, aes(x=GDPpc, y=FracPerPop, size = Population, color = Continent, frame = YearCity)) +
-  geom_point(data=medals_gm, aes(x=GDPpc, y=FracPerPop, size = Population, color = Continent, frame = YearCity, alpha=ifelse(Nation %in% highlight_countries, 1,0.4)), show.legend=FALSE) +
+p3 <- ggplot(medals_gm, aes(x=GDPpc, y=FracPerPop, size = Population, color = Continent)) +
+  geom_point(data=medals_gm, aes(x=GDPpc, y=FracPerPop, size = Population, color = Continent, alpha=ifelse(Nation %in% highlight_countries, 1,0.4)), show.legend=FALSE) +
   geom_text(data=medals_gm, aes(x=GDPpc, y=FracPerPop, label=Nation), vjust=-0.7,show.legend=FALSE,size=ifelse(medals_gm$Nation %in% highlight_countries, 6, 4),alpha=ifelse(medals_gm$Nation %in% highlight_countries, 1,0.4)) +
   scale_x_log10() +
   xlab("GDP per Capita") + ylab("Fraction of All Medals per Million Population") +
@@ -330,7 +358,11 @@ p3 <- ggplot(medals_gm, aes(x=GDPpc, y=FracPerPop, size = Population, color = Co
 
 #Animate the result
 #gganimate::gg_animate(p3,interval = 3, ani.width=600, ani.height=350)
-gganimate::gg_animate(p3, filename="olympicMedals-perpop-gapminder-style.gif",interval = 3, ani.width=600, ani.height=350)
+#gganimate::gg_animate(p3, filename="olympicMedals-perpop-gapminder-style.gif",interval = 3, ani.width=600, ani.height=350)
+#new gganimate
+anim <- p3 + transition_states(YearCity, transition_length = 3, state_length = 1) + 
+  ggtitle('{closest_state}')
+anim %>% anim_save(filename = "olympicMedals-perpop-gapminder-style.gif",width=600, height=350)
 ```
 
 
