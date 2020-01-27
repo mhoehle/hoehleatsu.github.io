@@ -195,7 +195,7 @@ Besides this formal note, I thank the WCA Results Team for providing
 the WCA data for download in this comprehensive form!
 
 
-[^1]: Original course development in 2018-2019 was done by [Martin Sköld](https://www.su.se/profiles/mskold-1.187868).
+[^1]: Original course development was done by [Martin Sköld](https://www.su.se/profiles/mskold-1.187868) in 2018-2019.
 
 
 ## Literature

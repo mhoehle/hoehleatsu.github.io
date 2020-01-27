@@ -15,13 +15,17 @@ url: "http://staff.math.su.se" # the base hostname & protocol for your site
 twitter_username: m_hoehle
 github_username:  hoehleatsu
 
-gems:
+#old jekyll versions use this:
+#gems:
+#   - jekyll-pandoc
+
+plugins:
    - jekyll-pandoc
 
 # Build settings
 # markdown: kramdown
 # Changed to (in my eyes) superious pandoc renderer -- see https://github.com/mfenner/jekyll-pandoc
-markdown: pandoc
+markdown: Pandoc
 
 
 pandoc:
