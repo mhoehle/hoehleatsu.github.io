@@ -27,11 +27,11 @@ Web-scraped data are used to put a  Rubik's cube competition result into perspec
 
 I just finished teaching an undergraduate course on [data
 wrangling with R](https://mt5013-ht19.github.io/) at Stockholm University about the tidyverse, SQL, and web-scraping[^1]. Inspired by Jenny Bryan's [STAT545
-course](https://happygitwithr.com/classroom-overview.html) the course used GitHub as communication platform . Similar to the userR! [lightning talks](https://en.wikipedia.org/wiki/Lightning_talk), each student had to pitch their project work in a 5
-minute presentation in order to convince other students to read their
+course](https://happygitwithr.com/classroom-overview.html) the course used GitHub as communication platform. Similar to the userR! [lightning talks](https://en.wikipedia.org/wiki/Lightning_talk), each student had to pitch their project work in a 5
+minute presentation in order to woo other students to read their
 report. I was utterly
 amazed by the content of the reports and the creativity of the
-presentations (sung slide titles, shiny apps, cliffhangers, and much more). Enabling mathematics students to pull their own data gives them a
+presentations, which included sung slide titles, shiny apps, cliffhangers, and much more. Enabling mathematics students to pull their own data gives them a
 power to realize ideas and test hypothesis that were not possible
 before! Most of the students did web-scraping or API calls to get their data. Since I -
 thanks to support by two TAs - never got around to implement any scraping
@@ -43,19 +43,17 @@ competition, there was an acute need to
 sugarcoat the result. The aim of the post is thus to substantiate that this last
 place was purely due to lack of competitors. 😃 
 Since at the time of the analysis, my results were not
-yet part of the [WCA results
+yet part of the [World Cube Association (WCA) results
 database](https://www.worldcubeassociation.org/results/misc/export.html), the idea was to use web-scraping from the live feed to pull my results and compare them to the database.
-
+The resulting R code is available from [github](https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/2020-01-22-wcascrape.Rmd) and is described below.
 
 ## Scraping WCA live results
 
-WCA competition results are reported live, i.e. as they are entered. The results can be queried and a dynamically generated web page displays the information. Below is shown the round 1 results of the [Berlin Winter Cubing2020](](https://live.worldcubeassociation.org/competitions/BerlinWinterCubing2020)). In case of the traditional Rubik's cube (aka. 3x3x3) event, one round of the competition consists of 5 solves. A trimmed mean is computed from the five solve times (aka. Ao5) by removing the best and worst result and averaging the tree remaining results. 
+WCA competition results are reported live, i.e. as they are entered, by a dynamically generated web page. Below is shown the round 1 results of the [Berlin Winter Cubing2020](](https://live.worldcubeassociation.org/competitions/BerlinWinterCubing2020)). In case of the traditional Rubik's cube (aka. 3x3x3) event, one round of the competition consists of 5 solves. A trimmed mean is computed from the five solve times (aka. Ao5) by removing the best and worst result and averaging the tree remaining results. 
 
 <center>
 <img src="{{ site.baseurl }}/figure/source/2020-01-22-wcascrape/liveresults.png">
 </center>
-
-From discussions in the Competitor's Area it sounds that usually those last ranks are occupied by parents accompanying their kids to the competition.
 
 The data science job is now to automatically scrape the above results as they become available. In other words dynamically generated pages are to be scraped. The post [RSelenium Tutorial: A Tutorial to Basic Web Scraping With RSelenium](https://thatdatatho.com/2019/01/22/tutorial-web-scraping-rselenium/) provided help here, including an explanation on how to change the [web driver version](https://sites.google.com/a/chromium.org/chromedriver/downloads) to match the installed Chrome version. The  [`Rselenium`](https://cran.r-project.org/web/packages/RSelenium/index.html) based scraping code to get the above table looks as follows.
 
@@ -83,30 +81,27 @@ library(rvest)
 # Extract table with all results from round 1
 results <- remote_driver$getPageSource() %>% .[[1]] %>% read_html() %>% 
   html_nodes(css = ".MuiTable-root") %>% html_table(header=1) %>% .[[1]] %>% as_tibble()
+
 # Small helper function to parse WCA results with lubridate, i.e. add "0:" if no minutes.
 time_2_ms <- function(x) { if_else(str_detect(x, ":"),  x, str_c("0:", x)) %>% lubridate::ms() }
 
 # Convert reported timings to lubridate periods 
 my_results <- results %>% filter(Name == "Michael Höhle") %>%
   mutate_at(vars(`1`,`2`,`3`,`4`,`5`,`Average`,`Best`), .funs= ~ time_2_ms(.))
-
-##Extract the relevant results
-my_avg_333 <- my_results %>% pull(`Average`) %>% as.numeric() * 100 #in centiseconds
-my_rank    <- my_results %>% pull(`#`) %>%  as.numeric()  # 84
-max_rank <- results %>% summarise(n=n()) %>% pull(n)   # 84
-my_range   <- my_results %>% select(`1`:`5`) %>%  # best and worst result
-  mutate_all(lubridate::period_to_seconds) %>% as.numeric() %>% range() * 100
 ```
 
 
 
-In other words, my first (and as of today only) official 3x3x3 average is 1M 18.05S which corresponds to 7805 centiseconds. This is much better than 3 minutes anticipated in my [analysis from May 2019](http://staff.math.su.se/hoehle/blog/2019/05/06/wcamining.html) and was well under the 4:00 cutoff of the round. Still, I finished last place in the 3x3x3 competition (rank 84/84). However, the competition was in no way representative of my peer group (senior newbie cubers) as, for example, number 1, 3 and 7 of the [World Championship 2019](https://www.worldcubeassociation.org/competitions/WC2019/results/all?event=333) also competed. 
+
+In other words, my first (and as of today only) official 3x3x3 average is 1M 18.05S which corresponds to 7805 centiseconds. This is much better than the 3 minutes anticipated in my [analysis from May 2019](http://staff.math.su.se/hoehle/blog/2019/05/06/wcamining.html) and was well under the 4:00 cutoff of the round. Still, I finished last place in the 3x3x3 competition (rank 84/84). However, the competition was in no way representative of my peer group (senior newbie cubers) as, for example, number 1, 3 and 7 of the [World Championship 2019](https://www.worldcubeassociation.org/competitions/WC2019/results/all?event=333) also competed. 
 
 The aim of this post is thus to use a data based approach to alter the sampling
 frame of the comparison in order to make the comparison more relevant (aka. sugarcoating):
 
 * How does my result rank within the population of German first time competitors?
 * How does my result rank within the population of age 40+ cubers?
+
+
 
 ### German first time competitors
 
@@ -117,27 +112,27 @@ The [WCA results database](https://www.worldcubeassociation.org/results/misc/exp
 
 
 
-This gives us 1024 cubers to compare with and which constitutes a more relevant population of comparison than, e.g., podium contestants from World's 2019.
+This gives us 1024 cubers to compare with and constitutes a more relevant population of comparison than, e.g., podium contestants from World's 2019.
 The plot below shows the cumulative distribution of the Ao5 the cubers got in round 1 of their first competition. Given a value on the x-axis, the y-axis denotes the proportion of cubers which obtained an average lower or equal to the selected value. 
 
 <img src="{{ site.baseurl }}/figure/source/2020-01-22-wcascrape/CDFNEWBIE-1.png" style="display: block; margin: auto;" />
 
 From the graph it becomes clear that my time corresponds to the 
-94.34 percentile of the distribution, i.e. 94% of the `years_to_consider` last years German first time competitors had an average better than me in their first competition. In other words, my result was within 95% percentile of German competition newbies. Yay!
+94.34 percentile of the distribution, i.e. 94% of the 5 last years German first time competitors had an average better than me in their first competition. This means that the performance was just about within 95% percentile of German competition newbies. Yay!
 
-How do these cubers evolve after their first competition? I was particularly interested in the trajectory of cubers within my skill bracket, which here shall be defined as an average located between my best and worst solve time, i.e. 65.24s and 105.12s. 
+How do these cubers evolve after their first competition? I was particularly interested in the trajectory of cubers within my skill bracket, which here shall be defined as an average located between my best and worst solve time of the round, i.e. 65.24s and 105.12s. 
 
 <img src="{{ site.baseurl }}/figure/source/2020-01-22-wcascrape/TRAJPLOT-1.png" style="display: block; margin: auto;" />
 
-In the figure, the two horizontal lines indicate the limits of the skill bracket and the cross denotes the obtained average. A smooth line is fitted to the longitudinal data, due to simplicity the smoothed fit does not take the longitudinal data structure and the drop-out mechanisms into account. By focusing on the cohort of cubers starting to compete within the last `years_to_consider` years induces censoring: Cubers who started with competitions for example 1 years ago, will not be able to have results more than 1 years back in time. Still, a clear downward trend is visible, if the cuber goes to further cubing competitions. However, only 37% of the first time cubers have a second competition recorded in the data. Somewhat demotivating is to see that only 3 out of 
+In the figure, the two horizontal lines indicate the limits of the skill bracket and the cross denotes my average. A smooth line is fitted to the longitudinal data, due to simplicity the smoothed fit does not take the longitudinal data structure and the drop-out mechanisms into account. By focusing on the cohort of cubers starting to compete within the last 5 years induces censoring: Cubers who started with competitions for example 1 years ago, will not be able to have results more than 1 years back in time. Still, a clear downward trend is visible, if the cuber goes to further cubing competitions. However, only 37% of the first time cubers have a second competition recorded in the data. Somewhat demotivating is to see that only 3 out of 
 the 84 first time cubers in the skill bracket manage to obtain a sub-30s average at a later stage.  
 
 ### Comparing with senior cubers
 
 [Michael George](https://www.speedsolving.com/members/logiqx.17180/)
 maintains an
-[unofficial ranking for the senior cubing community](https://logiqx.github.io/wca-ipy-www/) based on the WCA results database and a voluntary registration of senior cubers. As in other sports disciplines, "senior" is defined as aged 40+. Based on a one-time anonymised extract from the WCA database containing the true age of the cuber, the completeness of the self-report sample as well as a statistical extrapolation of the true rank within the WCA 40+ population can be computed. Around 30% of the senior cubers are contained in the self-reported sample.
-The WCA id as well a personal records of all self-reported "old-cubers" is available in [JSON format](https://en.wikipedia.org/wiki/JSON)'ish format and can be scraped using the `httr` package.
+[unofficial ranking for the senior cubing community](https://logiqx.github.io/wca-ipy-www/) based on the WCA results database and a voluntary registration of senior cubers. As in other sports disciplines, "senior" is defined as aged 40+. Based on a one-time anonymised extract from the WCA database containing the true age of the cuber, the completeness of the self-report sample as well as a statistical extrapolation of the true rank within the WCA 40+ population can be computed: Around 30% of the senior cubers are contained in the self-reported sample.
+The WCA id as well a personal records of all self-reported "old-cubers" is available in [JSON format](https://en.wikipedia.org/wiki/JSON)'ish format and can be scraped using the [`httr`](https://cran.r-project.org/web/packages/httr/index.html) package.
 
 
 ```r
@@ -148,7 +143,7 @@ response <- httr::GET("https://logiqx.github.io/wca-ipy-www/data/Senior_Rankings
 ```
 
 From the response we can extract the WCA id of the self-reported senior cubers, which we then match to the WCA database to get their round 1 result at their first cubing competition.
-Note: This is a slight approximation to the population of relevance as the cubers could have been younger than 40 at the time of their first WCA average.
+Note: This is a slight approximation to the population of relevance, because the cubers could have been younger than 40 at the time of their first WCA average.
 
 
 ```r
@@ -171,12 +166,13 @@ From this it becomes clear that my average is located at the 70% percentile of t
 
 ## Discussion
 
-It's only logical and in the nature of competitions that somebody has to finish last. From my previous analysis I knew this would happen, but being both the age and skill outlier is a bit of a party pooper. On the positive side: Signing up for a competition helped me shuffle some time free to practice, I learned how a competition works, saw 1,3 and 7 from the World's 2019 final and got to judge others. The statistical analyses in this post show that, by rectifying the sampling frame to a more comparable group, results are not so bad at all. 😃
+It's only logical and in the nature of competitions that somebody has to finish last. From my previous analysis I knew this would be a risk, but being both the age and skill outlier is still a bit of a party pooper. On the positive side: Signing up for a competition helped me shuffle some time free to practice, I learned how a competition works, saw no. 1,3 and 7 from the World's 2019 final in action and got to judge other cubers. The statistical analyses in this post show that, by rectifying the sampling frame to a more comparable group, results are not so bad at all. 😃
+
 
 #### Technical note
 
 I cube with a stickerless YuXin Little Magic using CFOP (F2L+4LL accelerated with additional PLL algos). My 3x3x3 PBs at home are 46.19 (single) and 58.10 (Ao5) with scrambles generated by [cstimer](cstimer.net).
-This illustrates that a competition in terms of pressure is something else than cubing relaxed at home. In one of the attempts I failed the T-perm twice - despite having made a [regular expression exercise](https://mt5013-ht19.github.io/HW/HW4.html) for it as part of the course...
+This illustrates that a competition, in terms of pressure, is something else than cubing relaxed at home. In one of the attempts I failed the T-perm twice - despite having made a [regular expression exercise](https://mt5013-ht19.github.io/HW/HW4.html) for it as part of the course...
 
 <center>
 <img src="{{ site.baseurl }}/figure/source/2020-01-22-wcascrape/toolset_small.jpg" width="550">
