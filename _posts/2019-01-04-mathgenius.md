@@ -115,7 +115,7 @@ general enough so it is possible to use a different base, e.g., $k=3$
 or $k=5$.
 
 
-```r
+{% highlight r %}
 base_numbers <- c(8,8,3,3)
 k <- length(base_numbers)
 
@@ -124,7 +124,7 @@ number_perm <- combinat::permn(base_numbers) %>%
 
 ##Slim in case permutations of the base numbers contain duplicates.
 perm <- number_perm[!duplicated(map(number_perm, paste0, collapse=""))]
-```
+{% endhighlight %}
 
 For $k=4$ the first step yields a total 21504 combinations. However, since
 the numbers 8 and 3 both appear more than once in the base numbers, we can slim
@@ -140,14 +140,14 @@ Cartesian product of the set $\{+, -, *, /\}$ represented as strings.
 
 
 
-```r
+{% highlight r %}
 opList <- list("+", "-", "*", "/")
 ##Repeat the opList k-1 times
 opsList <- map( seq_len(k-1), ~ opList)
 ##Form the Cartesian product
 operators <- cross(opsList) %>%
   map( setNames, nm=paste0("op",seq_len(k-1)))
-```
+{% endhighlight %}
 
 ### Arrangements of the parentheses
 
@@ -162,19 +162,19 @@ use recursion in $k$ and use a hash-map to cache results of previous
 computations.
 
 
-```r
+{% highlight r %}
 ##Initialize hashmap to save the results of all binary trees up to n=1 leaves
 trees <- list()
 trees[["0"]] <- NULL
 trees[["1"]] <- list(list(val="node", left=NULL, right=NULL))
-```
+{% endhighlight %}
 
 The rather elegant **recursive solution** for generating all binary trees
 with $n$ leaves works by combining all possible ways to generate
 subbranches containing $x$ and $n-x$ leaves, respectively:
 
 
-```r
+{% highlight r %}
 allBinTrees <- function(n) {
   ##Character version of n, which is used as hash key
   n_char <- as.character(n)
@@ -196,32 +196,36 @@ allBinTrees <- function(n) {
   ##Return result from our hashmap
   return(pluck(trees, n_char))
 }
-```
+{% endhighlight %}
 We can test the function for $n=2$, which yields exactly one tree:
 
 
 
 
 
-```r
+{% highlight r %}
 ##Manual construction
 trees2 <- list(list(val=NULL, left=trees[["1"]][[1]], right=trees[["1"]][[1]]))
 all.equal(allBinTrees(n=2), trees2)
-```
+{% endhighlight %}
 
-```
+
+
+{% highlight text %}
 ## [1] TRUE
-```
+{% endhighlight %}
 
 The result is:
 
-```r
+{% highlight r %}
 tree2String(allBinTrees(n=2)[[1]]) %>% replaceNodes() %>% addOpNumbers
-```
+{% endhighlight %}
 
-```
+
+
+{% highlight text %}
 ## [1] "(a op1 b)"
-```
+{% endhighlight %}
 
 In the above code segments the function `tree2String` is a small
 helper function to convert the nested list structure to a string - in
@@ -234,25 +238,25 @@ on github.
 With all preparations in place we can now generate all 5 possible ways to parenthesize the 3 binary operations using the following code:
 
 
-```r
+{% highlight r %}
 ##Make all possible brackets
 bracketing <- map_chr( allBinTrees(n=k),
                       ~ tree2String(.x) %>% addOpNumbers %>% replaceNodes)
-```
+{% endhighlight %}
 
-```
+{% highlight text %}
 ## [1] "(a op1 (b op2 (c op3 d)))" "(a op1 ((b op2 c) op3 d))" "((a op1 b) op2 (c op3 d))" "((a op1 (b op2 c)) op3 d)" "(((a op1 b) op2 c) op3 d)"
-```
+{% endhighlight %}
 
 ### Putting it all together
 
 We can now generate all combinations of numbers, operators and bracketing by the Cartesian of the three lists:
 
 
-```r
+{% highlight r %}
 combos <- cross3( perm, map( operators, unlist), bracketing) %>%
   map(setNames, c("numbers", "operators", "bracket"))
-```
+{% endhighlight %}
 
 
 
@@ -261,7 +265,7 @@ combinations. Note: Because this might take a while it's a good idea to add
 a [progress bar](https://github.com/tidyverse/purrr/issues/149#issuecomment-359236625) for this `purrr` computation.
 
 
-```r
+{% highlight r %}
 ##Set up a progress bar for use with the map function
 pb <- progress_estimated(length(combos))
 
@@ -272,28 +276,30 @@ res <- map(combos, .f=function(l) {
   l[["value"]] <- eval(parse(text=l[["expr"]]))
   return(l)
 })
-```
+{% endhighlight %}
 Again, `replace(v)` is a small helper function to replace the strings
 in `names(v)` with `v`'s content. The actual evaluation of each
 possible solution string is done by parsing the string with `parse`
 and then evaluate the resulting expression. We extract the relevant results into a `data.frame`
 
 
-```r
+{% highlight r %}
 df <- map_df(res, ~ data.frame(expr=.x$expr, value=.x$value))
-```
+{% endhighlight %}
 
 <img src="{{ site.baseurl }}/figure/source/2019-01-04-mathgenius/DATATABLE-1.png" style="display: block; margin: auto;" />
 
 We can now easily extract the solution:
 
 
-```r
+{% highlight r %}
 ##First element to give the value 24
 detect(res, ~ isTRUE(all.equal(.x$value, 24)))
-```
+{% endhighlight %}
 
-```
+
+
+{% highlight text %}
 ## $numbers
 ## a b c d 
 ## 8 3 8 3 
@@ -310,7 +316,7 @@ detect(res, ~ isTRUE(all.equal(.x$value, 24)))
 ## 
 ## $value
 ## [1] 24
-```
+{% endhighlight %}
 
 Voila! QED!
 

@@ -1,0 +1,318 @@
+---
+layout: post
+title: "Scraping the Sugarcoat"
+tags: [rstats, dataviz, data science, tidyverse, Rubik's cube, 3x3x3, speedsolving]
+#  bibliography: ~/Literature/Bibtex/jabref.bib
+header-includes:
+   - \usepackage{bm}
+comments: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2020-01-22-wcascrape/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2020-01-22-wcascrape")
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=4,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2)#, global.par = TRUE)
+options(width=150, scipen=1e3)
+
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(kableExtra))
+suppressPackageStartupMessages(library(viridis))
+
+# Non CRAN packages
+# devtools::install_github("hadley/emo")
+
+##Configuration
+options(knitr.table.format = "html")
+theme_set(theme_minimal())
+#if there are more than n rows in the tibble, print only the first m rows.
+options(tibble.print_max = 10, tibble.print_min = 5)
+```
+
+## Abstract:
+
+Web-scraped data are used to put a  Rubik's cube competition result into perspective. The sugarcoating consists of altering the sampling frame of the comparison to the more relevant population of senior first time cubers.
+
+<center>
+```{r,results='asis',echo=FALSE,fig.cap=""}
+cat(paste0("<img src=\"{{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"liveresults.png\" width=\"550\">\n"))
+```
+</center>
+
+
+{% include license.html %}
+
+## Motivation
+
+I just finished teaching an undergraduate course on [data
+wrangling with R](https://mt5013-ht19.github.io/) at Stockholm University about the tidyverse, SQL, and web-scraping[^1]. Inspired by Jenny Bryan's [STAT545
+course](https://happygitwithr.com/classroom-overview.html) the course used GitHub as communication platform . Similar to the userR! [lightning talks](https://en.wikipedia.org/wiki/Lightning_talk), each student had to pitch their project work in a 5
+minute presentation in order to convince other students to read their
+report. I was utterly
+amazed by the content of the reports and the creativity of the
+presentations (sung slide titles, shiny apps, cliffhangers, and much more). Enabling mathematics students to pull their own data gives them a
+power to realize ideas and test hypothesis that were not possible
+before! Most of the students did web-scraping or API calls to get their data. Since I -
+thanks to support by two TAs - never got around to implement any scraping
+myself, a blog post feels like the right way to catch up on this. 
+
+After finishing last place in the [Berlin Winter Cubing
+2020](https://www.worldcubeassociation.org/competitions/BerlinWinterCubing2020)
+competition, there was an acute need to
+sugarcoat the result. The aim of the post is thus to substantiate that this last
+place was purely due to lack of competitors. `r emo::ji("smiley")` 
+Since at the time of the analysis, my results were not
+yet part of the [WCA results
+database](https://www.worldcubeassociation.org/results/misc/export.html), the idea was to use web-scraping from the live feed to pull my results and compare them to the database.
+
+
+## Scraping WCA live results
+
+WCA competition results are reported live, i.e. as they are entered. The results can be queried and a dynamically generated web page displays the information. Below is shown the round 1 results of the [Berlin Winter Cubing2020](](https://live.worldcubeassociation.org/competitions/BerlinWinterCubing2020)). In case of the traditional Rubik's cube (aka. 3x3x3) event, one round of the competition consists of 5 solves. A trimmed mean is computed from the five solve times (aka. Ao5) by removing the best and worst result and averaging the tree remaining results. 
+
+<center>
+```{r, results='asis',echo=FALSE,fig.cap=""}
+cat(paste0("<img src=\"{{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"liveresults.png\">\n"))
+```
+</center>
+
+From discussions in the Competitor's Area it sounds that usually those last ranks are occupied by parents accompanying their kids to the competition.
+
+The data science job is now to automatically scrape the above results as they become available. In other words dynamically generated pages are to be scraped. The post [RSelenium Tutorial: A Tutorial to Basic Web Scraping With RSelenium](https://thatdatatho.com/2019/01/22/tutorial-web-scraping-rselenium/) provided help here, including an explanation on how to change the [web driver version](https://sites.google.com/a/chromium.org/chromedriver/downloads) to match the installed Chrome version. The  [`Rselenium`](https://cran.r-project.org/web/packages/RSelenium/index.html) based scraping code to get the above table looks as follows.
+
+<!-- Note: Open ~/Programs/chromedriver -->
+```{r SELENIUMSTART, message=FALSE, results="hide", echo=TRUE}
+library(RSelenium)
+driver <- rsDriver(browser = c("chrome"), chromever = "79.0.3945.36")
+remote_driver <- driver[["client"]] 
+
+# Fetch WCA live results of the 3x3x3 round 1 from the Berlin Winter Cubing 2020 competition
+url <- "https://live.worldcubeassociation.org/competitions/BerlinWinterCubing2020/rounds/333-r1"
+remote_driver$navigate(url)
+
+# Wait a little to make sure page has been generated.
+Sys.sleep(5)
+```
+
+The [`selectorgadget`](https://cran.r-project.org/web/packages/rvest/vignettes/selectorgadget.html) bookmarklet was then used to find the css selector of the table containing the results and the `rvest::html_table` function was used to extract the table as a `data.frame`.
+
+```{r, message=FALSE, results="hide", message=FALSE, echo=TRUE}
+library(rvest)
+
+# Extract table with all results from round 1
+results <- remote_driver$getPageSource() %>% .[[1]] %>% read_html() %>% 
+  html_nodes(css = ".MuiTable-root") %>% html_table(header=1) %>% .[[1]] %>% as_tibble()
+# Small helper function to parse WCA results with lubridate, i.e. add "0:" if no minutes.
+time_2_ms <- function(x) { if_else(str_detect(x, ":"),  x, str_c("0:", x)) %>% lubridate::ms() }
+
+# Convert reported timings to lubridate periods 
+my_results <- results %>% filter(Name == "Michael Höhle") %>%
+  mutate_at(vars(`1`,`2`,`3`,`4`,`5`,`Average`,`Best`), .funs= ~ time_2_ms(.))
+
+##Extract the relevant results
+my_avg_333 <- my_results %>% pull(`Average`) %>% as.numeric() * 100 #in centiseconds
+my_rank    <- my_results %>% pull(`#`) %>%  as.numeric()  # 84
+max_rank <- results %>% summarise(n=n()) %>% pull(n)   # 84
+my_range   <- my_results %>% select(`1`:`5`) %>%  # best and worst result
+  mutate_all(lubridate::period_to_seconds) %>% as.numeric() %>% range() * 100
+```
+
+```{r CLOSESELENIUM, results='hide'}
+#Stop client
+remote_driver$close()
+#Stop selenium server
+driver[["server"]]$stop()
+```
+
+In other words, my first (and as of today only) official 3x3x3 average is `r as.character(lubridate::seconds_to_period(my_avg_333/100))` which corresponds to `r my_avg_333` centiseconds. This is much better than 3 minutes anticipated in my [analysis from May 2019](http://staff.math.su.se/hoehle/blog/2019/05/06/wcamining.html) and was well under the 4:00 cutoff of the round. Still, I finished last place in the 3x3x3 competition (rank `r my_rank`/`r max_rank`). However, the competition was in no way representative of my peer group (senior newbie cubers) as, for example, number 1, 3 and 7 of the [World Championship 2019](https://www.worldcubeassociation.org/competitions/WC2019/results/all?event=333) also competed. 
+
+The aim of this post is thus to use a data based approach to alter the sampling
+frame of the comparison in order to make the comparison more relevant (aka. sugarcoating):
+
+* How does my result rank within the population of German first time competitors?
+* How does my result rank within the population of age 40+ cubers?
+
+### German first time competitors
+
+```{r CONNECTDB, echo=FALSE}
+# Connect to mySQL/MariaDB database containing the WCA results
+library(DBI)
+library(RMariaDB)
+con <- DBI::dbConnect(RMariaDB::MariaDB(), group="my-db")
+
+# Work on 3x3x3 results
+results <- tbl(con, "Results") %>% filter(eventId == "333") %>% filter(average > 0)
+persons <- tbl(con, "Persons") 
+competitions <- tbl(con, "Competitions2")
+
+# JOIN the three tables together so we get info on who (incl. nationality), where and when
+detailed_results <- results %>% 
+  inner_join(persons, by=c("personId"="id")) %>%  
+  inner_join(competitions, by=c("competitionId"="id"))
+# Restrict to German cubers
+detailed_results_de <- detailed_results  %>% filter(countryId.x  == "Germany") 
+```
+```{r, echo=FALSE}
+years_to_consider <- 5
+```
+
+The [WCA results database](https://www.worldcubeassociation.org/results/misc/export.html) is used to determine all 3x3x3 results by German cubers a shown in the previous [Speedmining the Cubing Community with dbplyr](http://staff.math.su.se/hoehle/blog/2019/05/06/wcamining.html) post. We perform a comparison with the round 1 results of all German first time 3x3x3 competitors within the last `r years_to_consider` years.
+
+```{r FIRSTIMECOMPETITORS, warning=FALSE}
+##Get first competition result of each cuber
+first <- detailed_results_de %>% group_by(personId) %>% arrange(date,roundTypeId) %>% 
+  filter(row_number() == 1) 
+##Define what we mean by recent results (i.e. last years_to_consider years)
+recent <- Sys.Date() - lubridate::years(years_to_consider)
+##Pull results of all recent competition starters (might take a while, need more keys?...)
+recent_first <- first %>% ungroup %>% filter(date >= recent) %>%
+  collect() %>% 
+  # Is the result in my skill bracket?
+  mutate(in_skill_bracket = ((average >= my_range[1]) & (average <= my_range[2]))) 
+```
+
+This gives us `r recent_first %>% summarise(n=n())` cubers to compare with and which constitutes a more relevant population of comparison than, e.g., podium contestants from World's 2019.
+The plot below shows the cumulative distribution of the Ao5 the cubers got in round 1 of their first competition. Given a value on the x-axis, the y-axis denotes the proportion of cubers which obtained an average lower or equal to the selected value. 
+
+```{r CDFNEWBIE}
+ggplot( recent_first, aes(average)) + stat_ecdf() + 
+  scale_y_continuous(labels=scales::percent, breaks=seq(0,1,length=11)) +
+  xlab("3x3x3 Ao5 (seconds)") + ylab("CDF") + 
+  geom_vline(xintercept=my_avg_333, lty=2, col="darkgray") + 
+  coord_cartesian(expand = FALSE)
+```
+
+From the graph it becomes clear that my time corresponds to the 
+`r sprintf("%.2f",100*ecdf(recent_first %>% pull(average))(my_avg_333))` percentile of the distribution, i.e. `r scales::percent(ecdf(recent_first %>% pull(average))(my_avg_333))` of the `years_to_consider` last years German first time competitors had an average better than me in their first competition. In other words, my result was within 95% percentile of German competition newbies. Yay!
+
+How do these cubers evolve after their first competition? I was particularly interested in the trajectory of cubers within my skill bracket, which here shall be defined as an average located between my best and worst solve time, i.e. `r my_range[1]/100`s and `r my_range[2]/100`s. 
+```{r TRAJDATA}
+##Trajectory of the "peer group" of first time cubers
+first_rich <- recent_first %>% select(personId, average, date, in_skill_bracket) %>% 
+  rename(date_first_competition = date, average_first_competition=average) %>% 
+  collect() %>% 
+  mutate(date_first_competition = lubridate::ymd(date_first_competition))
+
+extended_results <- detailed_results_de %>% collect() %>% 
+  inner_join(first_rich, by="personId") %>% 
+  collect() %>% 
+  mutate(time_since_first_competition = lubridate::interval(date_first_competition, date)/lubridate::years(1)) 
+```
+```{r TRAJPLOT, message=FALSE}
+#Trajectory plotting inspired by https://stats.idre.ucla.edu/r/faq/how-can-i-visualize-longitudinal-data-in-ggplot2/
+p <- ggplot(extended_results %>% 
+              filter(in_skill_bracket), aes(x=time_since_first_competition, y=average/100, group=personId)) # , , color=better_than_cor
+
+##Helper data
+my_df <- data.frame(time_since_first_competition=0, average=my_avg_333,in_skill_bracket=TRUE,personId=NA)
+
+#Add geoms
+p + geom_point(alpha=0.03) + geom_line(alpha=0.2) + stat_smooth(group=1, span=1) + 
+  geom_point(data=my_df, color="steelblue", pch=4, size=5) +
+  geom_hline(yintercept=my_range/100, lty=2, col="steelblue") +
+  scale_y_continuous(breaks=seq(0,120,by=30)) +
+  coord_cartesian(ylim=c(0,120)) +
+  guides(color=FALSE) +
+  ylab("Ao5 3x3x3 (seconds)") + xlab("Time since first competition (years)")
+```
+```{r PROPWITH2NDCOMP}
+# Proportion with more than one-comp
+mto_prop <- extended_results %>%
+  filter(in_skill_bracket) %>%
+  group_by(personId) %>%
+  summarise(n = n()) %>%
+  mutate(m_t_o = n > 1) %>%
+  pull(m_t_o) %>%
+  mean(na.rm = TRUE)
+
+# Proportion of cubers obtaining an avg. better than 30s at some point
+better_than_30s <- extended_results %>%
+  filter(in_skill_bracket) %>%
+  group_by(personId) %>%
+  arrange(average) %>%
+  slice(1) %>%
+  ungroup() %>%
+  summarise(
+    n = n(),
+    n_better_than_30s = sum(average < 3000),
+    prop_better_than_30s = n_better_than_30s / n
+  )
+```
+In the figure, the two horizontal lines indicate the limits of the skill bracket and the cross denotes the obtained average. A smooth line is fitted to the longitudinal data, due to simplicity the smoothed fit does not take the longitudinal data structure and the drop-out mechanisms into account. By focusing on the cohort of cubers starting to compete within the last `years_to_consider` years induces censoring: Cubers who started with competitions for example 1 years ago, will not be able to have results more than 1 years back in time. Still, a clear downward trend is visible, if the cuber goes to further cubing competitions. However, only `r scales::percent(mto_prop)` of the first time cubers have a second competition recorded in the data. Somewhat demotivating is to see that only `r better_than_30s %>% pull(n_better_than_30s)` out of 
+the `r better_than_30s %>% pull(n)` first time cubers in the skill bracket manage to obtain a sub-30s average at a later stage.  
+
+### Comparing with senior cubers
+
+[Michael George](https://www.speedsolving.com/members/logiqx.17180/)
+maintains an
+[unofficial ranking for the senior cubing community](https://logiqx.github.io/wca-ipy-www/) based on the WCA results database and a voluntary registration of senior cubers. As in other sports disciplines, "senior" is defined as aged 40+. Based on a one-time anonymised extract from the WCA database containing the true age of the cuber, the completeness of the self-report sample as well as a statistical extrapolation of the true rank within the WCA 40+ population can be computed. Around 30% of the senior cubers are contained in the self-reported sample.
+The WCA id as well a personal records of all self-reported "old-cubers" is available in [JSON format](https://en.wikipedia.org/wiki/JSON)'ish format and can be scraped using the `httr` package.
+
+```{r SCRAPESENIORRANKING, cache=TRUE, echo=TRUE}
+response <- httr::GET("https://logiqx.github.io/wca-ipy-www/data/Senior_Rankings.js") %>% 
+  httr::content(as="text") %>% 
+  str_replace("rankings =\n", "") %>% 
+  jsonlite::fromJSON()
+```
+
+From the response we can extract the WCA id of the self-reported senior cubers, which we then match to the WCA database to get their round 1 result at their first cubing competition.
+Note: This is a slight approximation to the population of relevance as the cubers could have been younger than 40 at the time of their first WCA average.
+
+```{r, echo=TRUE}
+# WCA IDs of the senior cubers
+ids <- response$persons %>% pull(id) %>% unique()
+ 
+# Extract all WCA 3x3x3 results of these senior cubers and restrict to their first
+# competition result.
+first_senior <- detailed_results %>% filter(personId %in% ids) %>% 
+  group_by(personId) %>% 
+  arrange(date,roundTypeId) %>% 
+  filter(row_number() == 1) %>% 
+  ungroup
+
+# Percentile in the first comp average of senior cubers
+senior_percentile__first_average <- ecdf(first_senior %>% pull(average))(my_avg_333)
+```
+
+From this it becomes clear that my average is located at the `r scales::percent(senior_percentile__first_average)` percentile of the first competition result of senior cubers. Not so bad at all.
+
+## Discussion
+
+It's only logical and in the nature of competitions that somebody has to finish last. From my previous analysis I knew this would happen, but being both the age and skill outlier is a bit of a party pooper. On the positive side: Signing up for a competition helped me shuffle some time free to practice, I learned how a competition works, saw 1,3 and 7 from the World's 2019 final and got to judge others. The statistical analyses in this post show that, by rectifying the sampling frame to a more comparable group, results are not so bad at all. `r emo::ji("smiley")`
+
+#### Technical note
+
+I cube with a stickerless YuXin Little Magic using CFOP (F2L+4LL accelerated with additional PLL algos). My 3x3x3 PBs at home are 46.19 (single) and 58.10 (Ao5) with scrambles generated by [cstimer](cstimer.net).
+This illustrates that a competition in terms of pressure is something else than cubing relaxed at home. In one of the attempts I failed the T-perm twice - despite having made a [regular expression exercise](https://mt5013-ht19.github.io/HW/HW4.html) for it as part of the course...
+
+<center>
+```{r,results='asis',echo=FALSE,fig.cap=""}
+cat(paste0("<img src=\"{{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"toolset_small.jpg\" width=\"550\">\n"))
+```
+</center>
+
+## Acknowledgments
+
+The terms of use of the WCA database requests any use of it to be
+equipped with the following text:
+
+> This information is based on competition results owned and maintained by the
+> World Cube Association, published at https://worldcubeassociation.org/results
+> as of Jan 22, 2020.
+
+Besides this formal note, I thank the WCA Results Team for providing
+the WCA data for download in this comprehensive form!
+
+
+[^1]: Original course development in 2018-2019 was done by [Martin Sköld](https://www.su.se/profiles/mskold-1.187868).
+
+
+## Literature

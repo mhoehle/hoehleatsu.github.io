@@ -21,7 +21,8 @@ gems:
 # Build settings
 # markdown: kramdown
 # Changed to (in my eyes) superious pandoc renderer -- see https://github.com/mfenner/jekyll-pandoc
-markdown: Pandoc
+markdown: pandoc
+
 
 pandoc:
   extensions:

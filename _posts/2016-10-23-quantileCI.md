@@ -141,13 +141,13 @@ When it comes to confidence intervals for quantiles the set of alternative imple
 
 | Package::Function   |  Version | Description                                            |
 |---------------------|:--------:|--------------------------------------------------------|
-| [`MKMisc::quantileCI`](http://finzi.psych.upenn.edu/R/library/MKmisc/html/quantileCI.html)|  | Implements an exact but very slow $O(n^2)$ search as well as an asymptotic method approximating the exact procedure. Due to the method being slow it is not investigated further, but looking at it an `Rcpp` implementation of the nested loop might be able to speed up the performance substantially. |
+| [`MKmisc::quantileCI`](http://finzi.psych.upenn.edu/R/library/MKmisc/html/quantileCI.html)|1.3 | Implements an exact but very slow $O(n^2)$ search as well as an asymptotic method approximating the exact procedure. Due to the method being slow it is not investigated further, but looking at it an `Rcpp` implementation of the nested loop might be able to speed up the performance substantially. Note: New versions of `MKmisc` do not install, because the depency pkg `limma` is not on CRAN anymore. |
 |   |   |  |
-| [`jmuOutlier::quantileCI`](http://finzi.psych.upenn.edu/R/library/jmuOutlier/html/quantileCI.html)  |    | Implements the exact method. |
+| [`jmuOutlier::quantileCI`](http://finzi.psych.upenn.edu/R/library/jmuOutlier/html/quantileCI.html)  |  1.4  | Implements the exact method. |
 |   |   |  |
-| [`envStats::eqnpar`](http://finzi.psych.upenn.edu/R/library/EnvStats/html/eqnpar.html)  |  | implements both an exact and an asymptotic interval  |
+| [`envStats::eqnpar`](http://finzi.psych.upenn.edu/R/library/EnvStats/html/eqnpar.html)  | 2.3.1 | implements both an exact and an asymptotic interval  |
 |   |   |  |
-| [`asht::quantileTest`](http://finzi.psych.upenn.edu/R/library/asht/html/quantileTest.html)|  | also implements an exact method |
+| [`asht::quantileTest`](http://finzi.psych.upenn.edu/R/library/asht/html/quantileTest.html)| 0.9.4 | also implements an exact method |
 |   |   |  |
 | [`Qtools::confint.midquantile`](http://finzi.psych.upenn.edu/R/library/Qtools/html/confint.midquantile.html) |  | operates on the mid-quantile (whatever that is). The method is not investigated further.
 |   |   |  |
@@ -158,51 +158,17 @@ the above mentioned procedures:
 
 
 ```r
-as.numeric(MKmisc::quantileCI(x=x, prob=p, method="exact",conf.level=0.95)$CI)
-```
-
-```
-## Error in loadNamespace(name): there is no package called 'MKmisc'
-```
-
-```r
-as.numeric(MKmisc::quantileCI(x=x, prob=p, method="asymptotic",conf.level=0.95)$CI)
-```
-
-```
-## Error in loadNamespace(name): there is no package called 'MKmisc'
-```
-
-```r
 as.numeric(jmuOutlier::quantileCI(x=x, probs=p, conf.level=0.95)[1,c("lower","upper")])
-```
-
-```
-## Error in loadNamespace(name): there is no package called 'jmuOutlier'
-```
-
-```r
 as.numeric(EnvStats::eqnpar(x=x, p=p, ci=TRUE, ci.method="exact",approx.conf.level=0.95)$interval$limits)
-```
-
-```
-## Error in loadNamespace(name): there is no package called 'EnvStats'
-```
-
-```r
 as.numeric(EnvStats::eqnpar(x=x, p=p, ci=TRUE, ci.method="normal.approx",approx.conf.level=0.95)$interval$limits)
-```
-
-```
-## Error in loadNamespace(name): there is no package called 'EnvStats'
-```
-
-```r
 as.numeric(asht::quantileTest(x=x,p=p,conf.level=0.95)$conf.int)
 ```
 
 ```
-## Error in loadNamespace(name): there is no package called 'asht'
+## [1] -0.03377687  1.52483138
+## [1] -0.03377687  1.52483138
+## [1] -0.0376499  2.6786278
+## [1] -0.03377687  2.67862782
 ```
 
 An impressive number of similar, but yet, different results! To add to the confusion here is
@@ -217,26 +183,14 @@ The package provides three methods for computing confidence intervals for quanti
 
 ```r
 quantileCI::quantile_confint_nyblom(x=x, p=p, conf.level=0.95,interpolate=FALSE)
-```
-
-```
-## Error in loadNamespace(name): there is no package called 'quantileCI'
-```
-
-```r
 quantileCI::quantile_confint_nyblom(x=x, p=p, conf.level=0.95,interpolate=TRUE)
-```
-
-```
-## Error in loadNamespace(name): there is no package called 'quantileCI'
-```
-
-```r
 quantileCI::quantile_confint_boot(x, p=p, conf.level=0.95,R=999, type=1)
 ```
 
 ```
-## Error in loadNamespace(name): there is no package called 'quantileCI'
+## [1] -0.03377687  2.67862782
+## [1] 0.07894831 1.54608644
+## [1] -0.0376499  1.2008637
 ```
 
 The first procedure with `interpolate=FALSE` implements the previously
@@ -282,7 +236,12 @@ quantile_confints(x, p=p, conf.level=0.95)
 ```
 
 ```
-## Error in loadNamespace(name): there is no package called 'jmuOutlier'
+##   jmuOutlier_exact EnvStats_exact EnvStats_asymp asht_quantTest nyblom_exact
+## 1      -0.03377687    -0.03377687     -0.0376499    -0.03377687  -0.03377687
+## 2       1.52483138     1.52483138      2.6786278     2.67862782   2.67862782
+##   nyblom_interp        boot
+## 1    0.07894831 -0.03377687
+## 2    1.54608644  1.26565726
 ```
 
 In order to evaluate the various methods and implementations we
@@ -334,6 +293,7 @@ the results of the `jmuOutlier_exact` method appear to deviate from
 `asht_quantTest` as well as `nyblom_exact`, which is surprising,
 because they should implement the same approach.
 
+
 #### Simulation 2
 As a further test-case we consider the situation for the median in a
 smaller sample:
@@ -354,6 +314,13 @@ than the nominal required level, it must therefore implement a
 slightly different procedure than expected. That coverage is
 less than the nominal for an *exact* method is, however, still somewhat
 *surprising*.
+
+**Edit 2019-05-14**: I pointed the package maintainer to this problem
+after looking at the code. Versions larger than 2.1.1 of the
+`EnvStats` pkg now contain an updated version of this function and
+also the
+[Nyblom function](http://finzi.psych.upenn.edu/R/library/EnvStats/html/eqnpar.html).
+
 
 In this study for the median, the original
 @hettmansperger_sheather1986 procedure implemented in `quantileCI` as
@@ -412,8 +379,8 @@ simulation study even more time consuming.
 Can we based on the above recommend one procedure to use in practice?
 Well, even though the simulation study is small, the exact
 `EnvStats::eqnpar` approach appears to yield below nominal coverage
-intervals, sometimes even substantially, and hence is not to be
-recommended. On the other hand, `jmuOutlier_exact`, `asht_quantTest`,
+intervals, sometimes even substantially, and hence is not recommended
+in versions below or equal to 2.1.1 [^1]. On the other hand, `jmuOutlier_exact`, `asht_quantTest`,
 and `nyblom_exact` in all four cases provide above nominal level
 coverage, i.e. the intervals are conservative in as much as they are
 too wide. Also slightly disturbing is that the results of the exact
@@ -443,38 +410,6 @@ quantile of the standard normal distribution based on the above sample
 of size $n$=25 say this in less than 1000 words.
 
 
-```
-## Error in loadNamespace(name): there is no package called 'quantileCI'
-```
-
-```
-## Error in loadNamespace(name): there is no package called 'quantileCI'
-```
-
-```
-## Error in pmatch(ci1, x): object 'ci1' not found
-```
-
-```
-## Error in pbinom(idx[1] - 1, prob = p, size = n): object 'idx' not found
-```
-
-```
-## Error in eval(expr, envir, enclos): object 'p_tail' not found
-```
-
-```
-## Error in eval(expr, envir, enclos): object 'idx' not found
-```
-
-```
-## Error in pbinom(idx[1] + 1 - 1, prob = p, size = n): object 'idx' not found
-```
-
-
-```
-## Error in sprintf("Exact %0.f%% CI (%.1f%% coverage)", (1 - alpha) * 100, : object 'cov1' not found
-```
 
 <img src="{{ site.baseurl }}/figure/source/2016-10-23-quantileCI/FIRSTPICTURE-1.png" style="display: block; margin: auto;" />
 
@@ -504,6 +439,10 @@ x_{(r+1)}) = \frac{n!}{(r-1)!(n-r-1)!} F(x_{(r)})^{r-1}
 $$
 The two nested integrals can be solved by numerical integration using,
 e.g., the `integral` function.
+
+[^1]: Versions > 2.1.1 of the package contain a bug-fix
+as described in the author information of the [help page]((http://finzi.psych.upenn.edu/R/library/EnvStats/html/eqnpar.html)
+) as well as the Nyblom method.
 
 # References
 

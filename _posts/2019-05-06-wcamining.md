@@ -403,7 +403,7 @@ improve slowly.
 
 Through analysis of the WCA results database it became clear that
 participating in a 3x3x3 event with a 180s average ~~is uncool~~ [^2] does
-not take you to winners' rostrum. The data
+not take you to winners' rostrum [^3]. The data
 also show that cubers entering the world of WCA competitions with such
 an average are likely to never participate in another WCA event. In
 case they do, their times drop to 90-120s averages within 6 months
@@ -456,5 +456,13 @@ you like me already are an age outlier while your kid
 is too young to act as your alibi companion, I miss the courage to
 also be a total skill outlier... But that's my problem and just
 motivates me to train more (if time permits) before signing up. 😏
+
+[^3]: From readings on [speedsolving.com](http://www.speedsolving.com)
+I now learned that there exist (partial)
+[40+ rankings](https://logiqx.github.io/wca-ipy/), which can help to
+assess the skill level in that age bracket in more detail.  My
+interest was in the skill level of the overall cubing population
+though.
+
 
 ## Literature
