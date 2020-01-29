@@ -76,7 +76,7 @@ The resulting R code is available from [github](`r paste0("https://raw.githubuse
 
 ## Scraping WCA live results
 
-WCA competition results are reported live, i.e. as they are entered, by a dynamically generated web page. Below is shown the round 1 results of the [Berlin Winter Cubing2020](](https://live.worldcubeassociation.org/competitions/BerlinWinterCubing2020)). In case of the traditional Rubik's cube (aka. 3x3x3) event, one round of the competition consists of 5 solves. A trimmed mean is computed from the five solve times (aka. Ao5) by removing the best and worst result and averaging the tree remaining results. 
+WCA competition results are reported live, i.e. as they are entered, by a dynamically generated web page. Below is shown the round 1 results of the [Berlin Winter Cubing2020](](https://live.worldcubeassociation.org/competitions/BerlinWinterCubing2020)). In case of the traditional Rubik's cube (aka. 3x3x3) event, one round of the competition consists of 5 solves. A trimmed mean is computed from the five solve times (aka. Ao5) by removing the best and worst result and averaging the three remaining results. 
 
 <center>
 ```{r, results='asis',echo=FALSE,fig.cap=""}
@@ -170,7 +170,7 @@ The [WCA results database](https://www.worldcubeassociation.org/results/misc/exp
 
 ```{r FIRSTIMECOMPETITORS, warning=FALSE}
 ##Get first competition result of each cuber
-first <- detailed_results_de %>% group_by(personId) %>% arrange(date,roundTypeId) %>% 
+first <- detailed_results %>% group_by(personId) %>% arrange(date,roundTypeId) %>% 
   filter(row_number() == 1) 
 ##Define what we mean by recent results (i.e. last years_to_consider years)
 recent <- Sys.Date() - lubridate::years(years_to_consider)
@@ -179,21 +179,23 @@ recent_first <- first %>% ungroup %>% filter(date >= recent) %>%
   collect() %>% 
   # Is the result in my skill bracket?
   mutate(in_skill_bracket = ((average >= my_range[1]) & (average <= my_range[2]))) 
+# Restrict to German cubers
+recent_first_de <- recent_first %>% filter(countryId.x  == "Germany")
 ```
 
-This gives us `r recent_first %>% summarise(n=n())` cubers to compare with and constitutes a more relevant population of comparison than, e.g., podium contestants from World's 2019.
+This gives us `r recent_first_de %>% summarise(n=n())` cubers to compare with and constitutes a more relevant population of comparison than, e.g., podium contestants from World's 2019.
 The plot below shows the cumulative distribution of the Ao5 the cubers got in round 1 of their first competition. Given a value on the x-axis, the y-axis denotes the proportion of cubers which obtained an average lower or equal to the selected value. 
 
 ```{r CDFNEWBIE}
-ggplot( recent_first, aes(average)) + stat_ecdf() + 
+ggplot( recent_first_de, aes(average)) + stat_ecdf() + 
   scale_y_continuous(labels=scales::percent, breaks=seq(0,1,length=11)) +
-  xlab("3x3x3 Ao5 (seconds)") + ylab("CDF") + 
+  xlab("3x3x3 Ao5 (centiseconds)") + ylab("CDF") + 
   geom_vline(xintercept=my_avg_333, lty=2, col="darkgray") + 
   coord_cartesian(expand = FALSE)
 ```
 
 From the graph it becomes clear that my time corresponds to the 
-`r sprintf("%.2f",100*ecdf(recent_first %>% pull(average))(my_avg_333))` percentile of the distribution, i.e. `r scales::percent(ecdf(recent_first %>% pull(average))(my_avg_333))` of the `r years_to_consider` last years German first time competitors had an average better than me in their first competition. This means that the performance was just about within 95% percentile of German competition newbies. Yay!
+`r sprintf("%.2f",100*ecdf(recent_first_de %>% pull(average))(my_avg_333))` percentile of the distribution, i.e. `r scales::percent(ecdf(recent_first_de %>% pull(average))(my_avg_333))` of the `r years_to_consider` last years German first time competitors had an average better than me in their first competition. This means that the performance was just about within 95% percentile of German competition newbies. Yay!
 
 How do these cubers evolve after their first competition? I was particularly interested in the trajectory of cubers within my skill bracket, which here shall be defined as an average located between my best and worst solve time of the round, i.e. `r my_range[1]/100`s and `r my_range[2]/100`s. 
 ```{r TRAJDATA}
@@ -203,14 +205,16 @@ first_rich <- recent_first %>% select(personId, average, date, in_skill_bracket)
   collect() %>% 
   mutate(date_first_competition = lubridate::ymd(date_first_competition))
 
-extended_results <- detailed_results_de %>% collect() %>% 
+extended_results <- detailed_results %>% collect() %>% 
   inner_join(first_rich, by="personId") %>% 
   collect() %>% 
   mutate(time_since_first_competition = lubridate::interval(date_first_competition, date)/lubridate::years(1)) 
+
+extended_results_de <- extended_results %>% filter(countryId.x == "Germany")
 ```
 ```{r TRAJPLOT, message=FALSE}
 #Trajectory plotting inspired by https://stats.idre.ucla.edu/r/faq/how-can-i-visualize-longitudinal-data-in-ggplot2/
-p <- ggplot(extended_results %>% 
+p <- ggplot(extended_results_de %>% 
               filter(in_skill_bracket), aes(x=time_since_first_competition, y=average/100, group=personId)) # , , color=better_than_cor
 
 ##Helper data
@@ -235,8 +239,8 @@ mto_prop <- extended_results %>%
   pull(m_t_o) %>%
   mean(na.rm = TRUE)
 
-# Proportion of cubers obtaining an avg. better than 30s at some point
-better_than_30s <- extended_results %>%
+# Proportion of German cubers obtaining an avg. better than 30s at some point
+better_than_30s <- extended_results_de %>%
   filter(in_skill_bracket) %>%
   group_by(personId) %>%
   arrange(average) %>%
@@ -266,7 +270,7 @@ response <- httr::GET("https://logiqx.github.io/wca-ipy-www/data/Senior_Rankings
 ```
 
 From the response we can extract the WCA id of the self-reported senior cubers, which we then match to the WCA database to get their round 1 result at their first cubing competition.
-Note: This is a slight approximation to the population of relevance, because the cubers could have been younger than 40 at the time of their first WCA average.
+Note: This is a slight approximation to the population of relevance, because the cubers could have been younger than 40 at the time of their first WCA average. Furthermore, note also the cohort effects as cubing times in general have declined, e.g., due to better hardware.
 
 ```{r, echo=TRUE}
 # WCA IDs of the senior cubers
@@ -284,7 +288,40 @@ first_senior <- detailed_results %>% filter(personId %in% ids) %>%
 senior_percentile__first_average <- ecdf(first_senior %>% pull(average))(my_avg_333)
 ```
 
-From this it becomes clear that my average is located at the `r scales::percent(senior_percentile__first_average)` percentile of the first competition result of senior cubers. Not so bad at all.
+```{r, results="hide"}
+#Number of first time cubers analysed
+first_senior  %>% summarise(n=n())
+
+#How many started within last 5 years?
+recent_senior_traj <- extended_results %>% inner_join(first_senior %>% select(personId) %>% collect(), by="personId") 
+
+n_recent_senior_traj <- recent_senior_traj %>% summarise(n=n_distinct(personId)) %>% pull(n)
+
+skill_bracket_breaks <- c(0, 30, 60, 90, 120)
+recent_senior_traj <- recent_senior_traj %>% mutate(skill_bracket= cut(average_first_competition/100, skill_bracket_breaks))
+```
+
+From this it becomes clear that my average is located at the `r scales::percent(senior_percentile__first_average)` percentile of the first competition result of (self-reported) senior cubers. Not so bad at all. How do comparable senior cubers evolve over time? The graphic below shows how the senior `r n_recent_senior_traj` cubers, who participated in their first competition within the last `r years_to_consider` years, evolved over time.
+
+```{r SENIORTRAJ, message=FALSE}
+p <- ggplot(recent_senior_traj %>% filter(!is.na(skill_bracket)),
+            aes(x=time_since_first_competition, y=average/100, group=personId, color=skill_bracket))
+
+my_df <- data.frame(time_since_first_competition=0, average=my_avg_333,skull_bracket="[60-90)",personId=NA)
+
+#Add geoms
+p + geom_point(alpha=0.03) + geom_line(alpha=0.1) +
+  stat_smooth(aes(group=skill_bracket, fill=skill_bracket), span=1, se=TRUE, alpha=0.1) +
+   geom_point(data=my_df, color="steelblue", pch=4, size=5) +
+  scale_y_continuous(breaks=skill_bracket_breaks, minor_breaks = seq(0, 120, 10)) +
+  coord_cartesian(ylim=range(skill_bracket_breaks)) +
+  scale_color_discrete(name="Ao5 at first comp.") +
+  theme(legend.position="bottom") +
+  guides(fill=FALSE) +
+  ylab("Ao5 3x3x3 (seconds)") + xlab("Time since first competition (years)")
+```
+
+Mean tendencies in 5 skill brackets: [0,30), [30, 60), [60, 90) and [90, 120) seconds are computed and visualized. The cross again indicates my Ao5 result.
 
 ## Discussion
 
@@ -312,8 +349,7 @@ equipped with the following text:
 > as of Jan 22, 2020.
 
 Besides this formal note, I thank the WCA Results Team for providing
-the WCA data for download in this comprehensive form!
-
+the WCA data for download in this comprehensive form! Also thanks to [Logiqx](https://www.speedsolving.com/members/logiqx.17180/) for maintaining a database of senior cubers.
 
 [^1]: Original course development was done by [Martin Sköld](https://www.su.se/profiles/mskold-1.187868) in 2018-2019.
 

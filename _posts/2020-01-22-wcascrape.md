@@ -49,7 +49,7 @@ The resulting R code is available from [github](https://raw.githubusercontent.co
 
 ## Scraping WCA live results
 
-WCA competition results are reported live, i.e. as they are entered, by a dynamically generated web page. Below is shown the round 1 results of the [Berlin Winter Cubing2020](](https://live.worldcubeassociation.org/competitions/BerlinWinterCubing2020)). In case of the traditional Rubik's cube (aka. 3x3x3) event, one round of the competition consists of 5 solves. A trimmed mean is computed from the five solve times (aka. Ao5) by removing the best and worst result and averaging the tree remaining results. 
+WCA competition results are reported live, i.e. as they are entered, by a dynamically generated web page. Below is shown the round 1 results of the [Berlin Winter Cubing2020](](https://live.worldcubeassociation.org/competitions/BerlinWinterCubing2020)). In case of the traditional Rubik's cube (aka. 3x3x3) event, one round of the competition consists of 5 solves. A trimmed mean is computed from the five solve times (aka. Ao5) by removing the best and worst result and averaging the three remaining results. 
 
 <center>
 <img src="{{ site.baseurl }}/figure/source/2020-01-22-wcascrape/liveresults.png">
@@ -124,7 +124,7 @@ How do these cubers evolve after their first competition? I was particularly int
 
 <img src="{{ site.baseurl }}/figure/source/2020-01-22-wcascrape/TRAJPLOT-1.png" style="display: block; margin: auto;" />
 
-In the figure, the two horizontal lines indicate the limits of the skill bracket and the cross denotes my average. A smooth line is fitted to the longitudinal data, due to simplicity the smoothed fit does not take the longitudinal data structure and the drop-out mechanisms into account. By focusing on the cohort of cubers starting to compete within the last 5 years induces censoring: Cubers who started with competitions for example 1 years ago, will not be able to have results more than 1 years back in time. Still, a clear downward trend is visible, if the cuber goes to further cubing competitions. However, only 37% of the first time cubers have a second competition recorded in the data. Somewhat demotivating is to see that only 3 out of 
+In the figure, the two horizontal lines indicate the limits of the skill bracket and the cross denotes my average. A smooth line is fitted to the longitudinal data, due to simplicity the smoothed fit does not take the longitudinal data structure and the drop-out mechanisms into account. By focusing on the cohort of cubers starting to compete within the last 5 years induces censoring: Cubers who started with competitions for example 1 years ago, will not be able to have results more than 1 years back in time. Still, a clear downward trend is visible, if the cuber goes to further cubing competitions. However, only 25% of the first time cubers have a second competition recorded in the data. Somewhat demotivating is to see that only 3 out of 
 the 84 first time cubers in the skill bracket manage to obtain a sub-30s average at a later stage.  
 
 ### Comparing with senior cubers
@@ -143,7 +143,7 @@ response <- httr::GET("https://logiqx.github.io/wca-ipy-www/data/Senior_Rankings
 ```
 
 From the response we can extract the WCA id of the self-reported senior cubers, which we then match to the WCA database to get their round 1 result at their first cubing competition.
-Note: This is a slight approximation to the population of relevance, because the cubers could have been younger than 40 at the time of their first WCA average.
+Note: This is a slight approximation to the population of relevance, because the cubers could have been younger than 40 at the time of their first WCA average. Furthermore, note also the cohort effects as cubing times in general have declined, e.g., due to better hardware.
 
 
 ```r
@@ -162,7 +162,13 @@ first_senior <- detailed_results %>% filter(personId %in% ids) %>%
 senior_percentile__first_average <- ecdf(first_senior %>% pull(average))(my_avg_333)
 ```
 
-From this it becomes clear that my average is located at the 70% percentile of the first competition result of senior cubers. Not so bad at all.
+
+
+From this it becomes clear that my average is located at the 70% percentile of the first competition result of (self-reported) senior cubers. Not so bad at all. How do comparable senior cubers evolve over time? The graphic below shows how the senior 289 cubers, who participated in their first competition within the last 5 years, evolved over time.
+
+<img src="{{ site.baseurl }}/figure/source/2020-01-22-wcascrape/SENIORTRAJ-1.png" style="display: block; margin: auto;" />
+
+Mean tendencies in 5 skill brackets: [0,30), [30, 60), [60, 90) and [90, 120) seconds are computed and visualized. The cross again indicates my Ao5 result.
 
 ## Discussion
 
@@ -188,8 +194,7 @@ equipped with the following text:
 > as of Jan 22, 2020.
 
 Besides this formal note, I thank the WCA Results Team for providing
-the WCA data for download in this comprehensive form!
-
+the WCA data for download in this comprehensive form! Also thanks to [Logiqx](https://www.speedsolving.com/members/logiqx.17180/) for maintaining a database of senior cubers.
 
 [^1]: Original course development was done by [Martin Sköld](https://www.su.se/profiles/mskold-1.187868) in 2018-2019.
 
