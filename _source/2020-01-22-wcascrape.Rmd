@@ -89,7 +89,7 @@ The data science job is now to automatically scrape the above results as they be
 <!-- Note: Open ~/Programs/chromedriver -->
 ```{r SELENIUMSTART, message=FALSE, results="hide", echo=TRUE}
 library(RSelenium)
-driver <- rsDriver(browser = c("chrome"), chromever = "79.0.3945.36")
+driver <- rsDriver(browser = c("chrome"), chromever = "79.0.3945.36", port = 4568L)
 remote_driver <- driver[["client"]] 
 
 # Fetch WCA live results of the 3x3x3 round 1 from the Berlin Winter Cubing 2020 competition
@@ -168,7 +168,7 @@ years_to_consider <- 5
 
 The [WCA results database](https://www.worldcubeassociation.org/results/misc/export.html) is used to determine all 3x3x3 results by German cubers a shown in the previous [Speedmining the Cubing Community with dbplyr](http://staff.math.su.se/hoehle/blog/2019/05/06/wcamining.html) post. We perform a comparison with the round 1 results of all German first time 3x3x3 competitors within the last `r years_to_consider` years.
 
-```{r FIRSTIMECOMPETITORS, warning=FALSE}
+```{r FIRSTIMECOMPETITORS, warning=FALSE, cache=TRUE}
 ##Get first competition result of each cuber
 first <- detailed_results %>% group_by(personId) %>% arrange(date,roundTypeId) %>% 
   filter(row_number() == 1) 
@@ -272,7 +272,7 @@ response <- httr::GET("https://logiqx.github.io/wca-ipy-www/data/Senior_Rankings
 From the response we can extract the WCA id of the self-reported senior cubers, which we then match to the WCA database to get their round 1 result at their first cubing competition.
 Note: This is a slight approximation to the population of relevance, because the cubers could have been younger than 40 at the time of their first WCA average. Furthermore, note also the cohort effects as cubing times in general have declined, e.g., due to better hardware.
 
-```{r, echo=TRUE}
+```{r, echo=TRUE, message=FALSE}
 # WCA IDs of the senior cubers
 ids <- response$persons %>% pull(id) %>% unique()
  
@@ -289,16 +289,35 @@ senior_percentile__first_average <- ecdf(first_senior %>% pull(average))(my_avg_
 ```
 
 ```{r, results="hide"}
-#Number of first time cubers analysed
+# Number of first time cubers analysed
 first_senior  %>% summarise(n=n())
+# Subset who started within the last 5 years
+first_senior_recent <- first_senior %>% filter(date >= recent) %>% collect()
+first_senior_recent  %>% summarise(n=n())
+# Which ids, note: some have an id before 2015, but it appears that this is just
+# an error which was made when ppl got their id assigned.
+first_senior_recent %>% pull(personId) %>% substring(1,4) %>% table()
 
-#How many started within last 5 years?
-recent_senior_traj <- extended_results %>% inner_join(first_senior %>% select(personId) %>% collect(), by="personId") 
+#All results of the first_senior_recent cohort
+recent_senior_traj <- extended_results %>% 
+  inner_join(first_senior_recent %>% select(personId), by = "personId") 
+recent_senior_traj %>% filter(personId == "2010SOHT01") %>% select(personId, date, competitionId)
 
+# How many cubers are analysed?
 n_recent_senior_traj <- recent_senior_traj %>% summarise(n=n_distinct(personId)) %>% pull(n)
 
+# How many participated more than once?
+prop_senior_recurrent <- recent_senior_traj %>%
+  group_by(personId) %>%
+  summarise(n=n()) %>%
+  ungroup %>% 
+  summarise(prop = mean(n > 1)) %>% 
+  pull(prop)
+
+# Skill brackets
 skill_bracket_breaks <- c(0, 30, 60, 90, 120)
-recent_senior_traj <- recent_senior_traj %>% mutate(skill_bracket= cut(average_first_competition/100, skill_bracket_breaks))
+recent_senior_traj <- recent_senior_traj %>% 
+  mutate(skill_bracket= cut(average_first_competition/100, skill_bracket_breaks))
 ```
 
 From this it becomes clear that my average is located at the `r scales::percent(senior_percentile__first_average)` percentile of the first competition result of (self-reported) senior cubers. Not so bad at all. How do comparable senior cubers evolve over time? The graphic below shows how the senior `r n_recent_senior_traj` cubers, who participated in their first competition within the last `r years_to_consider` years, evolved over time.
@@ -321,7 +340,10 @@ p + geom_point(alpha=0.03) + geom_line(alpha=0.1) +
   ylab("Ao5 3x3x3 (seconds)") + xlab("Time since first competition (years)")
 ```
 
-Mean tendencies in 5 skill brackets: [0,30), [30, 60), [60, 90) and [90, 120) seconds are computed and visualized. The cross again indicates my Ao5 result.
+About `r scales::percent(prop_senior_recurrent)` of these senior cubers attended more than one competition, which is a higher proportion than in the overall cubing population, but is likely to be explained by the sampling bias of senior cubers having to self-report. Smoothed mean tendencies in 5 skill brackets, i.e. cohorts of [0,30), [30, 60), [60, 90) and [90, 120) seconds Ao5 in their first competition, are computed and visualized. The cross indicates my Ao5 result. Interpretation of these curves is again
+complicated by drop-out processes and cohort effects. Still the curves show
+that if I stick to cubing, I have a good chance at becoming sub-50, maybe even sub-40, within one year!
+
 
 ## Discussion
 
@@ -349,7 +371,7 @@ equipped with the following text:
 > as of Jan 22, 2020.
 
 Besides this formal note, I thank the WCA Results Team for providing
-the WCA data for download in this comprehensive form! Also thanks to [Logiqx](https://www.speedsolving.com/members/logiqx.17180/) for maintaining a database of senior cubers.
+the WCA data for download in this comprehensive form! Also thanks to [Michael George](https://www.speedsolving.com/members/logiqx.17180/) for maintaining a database of senior cubers.
 
 [^1]: Original course development was done by [Martin Sköld](https://www.su.se/profiles/mskold-1.187868) in 2018-2019.
 

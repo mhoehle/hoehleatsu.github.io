@@ -61,7 +61,7 @@ The data science job is now to automatically scrape the above results as they be
 
 ```r
 library(RSelenium)
-driver <- rsDriver(browser = c("chrome"), chromever = "79.0.3945.36")
+driver <- rsDriver(browser = c("chrome"), chromever = "79.0.3945.36", port = 4568L)
 remote_driver <- driver[["client"]] 
 
 # Fetch WCA live results of the 3x3x3 round 1 from the Berlin Winter Cubing 2020 competition
@@ -162,13 +162,28 @@ first_senior <- detailed_results %>% filter(personId %in% ids) %>%
 senior_percentile__first_average <- ecdf(first_senior %>% pull(average))(my_avg_333)
 ```
 
+```
+## Warning: `lang_name()` is deprecated as of rlang 0.2.0.
+## Please use `call_name()` instead.
+## This warning is displayed once per session.
+```
+
+```
+## Warning: `lang()` is deprecated as of rlang 0.2.0.
+## Please use `call2()` instead.
+## This warning is displayed once per session.
+```
+
 
 
 From this it becomes clear that my average is located at the 70% percentile of the first competition result of (self-reported) senior cubers. Not so bad at all. How do comparable senior cubers evolve over time? The graphic below shows how the senior 289 cubers, who participated in their first competition within the last 5 years, evolved over time.
 
 <img src="{{ site.baseurl }}/figure/source/2020-01-22-wcascrape/SENIORTRAJ-1.png" style="display: block; margin: auto;" />
 
-Mean tendencies in 5 skill brackets: [0,30), [30, 60), [60, 90) and [90, 120) seconds are computed and visualized. The cross again indicates my Ao5 result.
+About 81% of these senior cubers attended more than one competition, which is a higher proportion than in the overall cubing population, but is likely to be explained by the sampling bias of senior cubers having to self-report. Smoothed mean tendencies in 5 skill brackets, i.e. cohorts of [0,30), [30, 60), [60, 90) and [90, 120) seconds Ao5 in their first competition, are computed and visualized. The cross indicates my Ao5 result. Interpretation of these curves is again
+complicated by drop-out processes and cohort effects. Still the curves show
+that if I stick to cubing, I have a good chance at becoming sub-50, maybe even sub-40, within one year!
+
 
 ## Discussion
 
@@ -194,7 +209,7 @@ equipped with the following text:
 > as of Jan 22, 2020.
 
 Besides this formal note, I thank the WCA Results Team for providing
-the WCA data for download in this comprehensive form! Also thanks to [Logiqx](https://www.speedsolving.com/members/logiqx.17180/) for maintaining a database of senior cubers.
+the WCA data for download in this comprehensive form! Also thanks to [Michael George](https://www.speedsolving.com/members/logiqx.17180/) for maintaining a database of senior cubers.
 
 [^1]: Original course development was done by [Martin Sköld](https://www.su.se/profiles/mskold-1.187868) in 2018-2019.
 
