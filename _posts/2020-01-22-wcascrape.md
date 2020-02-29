@@ -49,7 +49,7 @@ The resulting R code is available from [github](https://raw.githubusercontent.co
 
 ## Scraping WCA live results
 
-WCA competition results are reported live, i.e. as they are entered, by a dynamically generated web page. Below is shown the round 1 results of the [Berlin Winter Cubing2020](](https://live.worldcubeassociation.org/competitions/BerlinWinterCubing2020)). In case of the traditional Rubik's cube (aka. 3x3x3) event, one round of the competition consists of 5 solves. A trimmed mean is computed from the five solve times (aka. Ao5) by removing the best and worst result and averaging the three remaining results. 
+WCA competition results are reported live, i.e. as they are entered, by a dynamically generated web page. Below is shown the round 1 results of the [Berlin Winter Cubing2020](](https://live.worldcubeassociation.org/competitions/BerlinWinterCubing2020)) competition. In case of the traditional Rubik's cube (aka. 3x3x3) event, one round of the competition consists of 5 solves. A trimmed mean is computed from the five solve times (aka. Ao5) by removing the best and worst result and averaging the three remaining results. 
 
 <center>
 <img src="{{ site.baseurl }}/figure/source/2020-01-22-wcascrape/liveresults.png">
@@ -93,7 +93,7 @@ my_results <- results %>% filter(Name == "Michael Höhle") %>%
 
 
 
-In other words, my first (and as of today only) official 3x3x3 average is 1M 18.05S which corresponds to 7805 centiseconds. This is much better than the 3 minutes anticipated in my [analysis from May 2019](http://staff.math.su.se/hoehle/blog/2019/05/06/wcamining.html) and was well under the 4:00 cutoff of the round. Still, I finished last place in the 3x3x3 competition (rank 84/84). However, the competition was in no way representative of my peer group (senior newbie cubers) as, for example, number 1, 3 and 7 of the [World Championship 2019](https://www.worldcubeassociation.org/competitions/WC2019/results/all?event=333) also competed. 
+In other words, my first (and as of today only) official 3x3x3 average is 1M 18.05S which corresponds to 7805 centiseconds. This is much better than the 3 minutes anticipated in my [analysis from May 2019](http://staff.math.su.se/hoehle/blog/2019/05/06/wcamining.html) and was well under the 4:00 time limit of the round. Still, I finished last place in the 3x3x3 competition (rank 84/84). However, the competition was in no way representative of my peer group (senior newbie cubers) as, for example, number 1, 3 and 7 of the [World Championship 2019](https://www.worldcubeassociation.org/competitions/WC2019/results/all?event=333) also competed. 
 
 The aim of this post is thus to use a data based approach to alter the sampling
 frame of the comparison in order to make the comparison more relevant (aka. sugarcoating):
@@ -160,18 +160,6 @@ first_senior <- detailed_results %>% filter(personId %in% ids) %>%
 
 # Percentile in the first comp average of senior cubers
 senior_percentile__first_average <- ecdf(first_senior %>% pull(average))(my_avg_333)
-```
-
-```
-## Warning: `lang_name()` is deprecated as of rlang 0.2.0.
-## Please use `call_name()` instead.
-## This warning is displayed once per session.
-```
-
-```
-## Warning: `lang()` is deprecated as of rlang 0.2.0.
-## Please use `call2()` instead.
-## This warning is displayed once per session.
 ```
 
 

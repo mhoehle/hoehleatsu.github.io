@@ -76,7 +76,7 @@ The resulting R code is available from [github](`r paste0("https://raw.githubuse
 
 ## Scraping WCA live results
 
-WCA competition results are reported live, i.e. as they are entered, by a dynamically generated web page. Below is shown the round 1 results of the [Berlin Winter Cubing2020](](https://live.worldcubeassociation.org/competitions/BerlinWinterCubing2020)). In case of the traditional Rubik's cube (aka. 3x3x3) event, one round of the competition consists of 5 solves. A trimmed mean is computed from the five solve times (aka. Ao5) by removing the best and worst result and averaging the three remaining results. 
+WCA competition results are reported live, i.e. as they are entered, by a dynamically generated web page. Below is shown the round 1 results of the [Berlin Winter Cubing2020](](https://live.worldcubeassociation.org/competitions/BerlinWinterCubing2020)) competition. In case of the traditional Rubik's cube (aka. 3x3x3) event, one round of the competition consists of 5 solves. A trimmed mean is computed from the five solve times (aka. Ao5) by removing the best and worst result and averaging the three remaining results. 
 
 <center>
 ```{r, results='asis',echo=FALSE,fig.cap=""}
@@ -132,7 +132,7 @@ remote_driver$close()
 driver[["server"]]$stop()
 ```
 
-In other words, my first (and as of today only) official 3x3x3 average is `r as.character(lubridate::seconds_to_period(my_avg_333/100))` which corresponds to `r my_avg_333` centiseconds. This is much better than the 3 minutes anticipated in my [analysis from May 2019](http://staff.math.su.se/hoehle/blog/2019/05/06/wcamining.html) and was well under the 4:00 cutoff of the round. Still, I finished last place in the 3x3x3 competition (rank `r my_rank`/`r max_rank`). However, the competition was in no way representative of my peer group (senior newbie cubers) as, for example, number 1, 3 and 7 of the [World Championship 2019](https://www.worldcubeassociation.org/competitions/WC2019/results/all?event=333) also competed. 
+In other words, my first (and as of today only) official 3x3x3 average is `r as.character(lubridate::seconds_to_period(my_avg_333/100))` which corresponds to `r my_avg_333` centiseconds. This is much better than the 3 minutes anticipated in my [analysis from May 2019](http://staff.math.su.se/hoehle/blog/2019/05/06/wcamining.html) and was well under the 4:00 time limit of the round. Still, I finished last place in the 3x3x3 competition (rank `r my_rank`/`r max_rank`). However, the competition was in no way representative of my peer group (senior newbie cubers) as, for example, number 1, 3 and 7 of the [World Championship 2019](https://www.worldcubeassociation.org/competitions/WC2019/results/all?event=333) also competed. 
 
 The aim of this post is thus to use a data based approach to alter the sampling
 frame of the comparison in order to make the comparison more relevant (aka. sugarcoating):
@@ -272,7 +272,7 @@ response <- httr::GET("https://logiqx.github.io/wca-ipy-www/data/Senior_Rankings
 From the response we can extract the WCA id of the self-reported senior cubers, which we then match to the WCA database to get their round 1 result at their first cubing competition.
 Note: This is a slight approximation to the population of relevance, because the cubers could have been younger than 40 at the time of their first WCA average. Furthermore, note also the cohort effects as cubing times in general have declined, e.g., due to better hardware.
 
-```{r, echo=TRUE, message=FALSE}
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 # WCA IDs of the senior cubers
 ids <- response$persons %>% pull(id) %>% unique()
  
