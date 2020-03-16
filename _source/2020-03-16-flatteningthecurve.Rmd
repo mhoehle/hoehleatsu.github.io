@@ -141,7 +141,7 @@ R0 <- beta*N/gamma
 ```   
 
 Assuming a hypothetical population of $N = `r format(N, big.mark=",")`$ and a contact rate
-of $\beta = `r beta`$ means that the contact rate with a given individual is `r beta` contacts per day. The choice of $\gamma = `r gamma`$ corresponds to an average length of the infective period of 5 days. Furthermore, assuming  Altogether, this leads to an $R_0$ of `r R0`, which roughly corresponds to the $R_0$ of SARS-CoV-2.
+of $\beta = `r beta`$ means that the contact rate with a given individual is `r beta` contacts per day. The choice of $\gamma = `r gamma`$ corresponds to an average length of the infective period of 5 days. Altogether, this leads to an $R_0$ of `r R0`, which roughly corresponds to the $R_0$ of SARS-CoV-2.
 
 We can now solve the ODE system using the above parameters and an initial number of infectious of, say, 10:
 
@@ -178,7 +178,7 @@ ggplot(df_plot, aes(x=t, y=Proportion)) + geom_col() +
   xlab("Time (days)") + ylab("Daily new cases (as proportion of the population)") + scale_y_continuous(labels=scales::percent)
 ```
 
-Another important quantity of the model is an estimate for how many individuals are ultimately infected by the disease, i.e. $1-s(\infty)$ in a population where initially everyone is susceptible to the disease. This can be either calculated numerically from the above numerical solution as:
+Another important quantity of the model is an estimate for how many individuals are ultimately infected by the disease, i.e. $1-s(\infty)$ in a population where initially everyone is susceptible to the disease. This can be either calculated numerically from the above output as:
 ```{r, echo=TRUE}
 (1 - tail(ode_solution, n=1) %>% pull(s)) 
 ```
@@ -186,7 +186,7 @@ or by numerically solving the following recursive equation [@diekman_etal2013, p
 $$
 s(\infty) = \exp(-R_0 (1-s(\infty)))
 $$
-This can be solved in R using:
+using R:
 
 ```{r, echo=TRUE}
 # Function to compute the final size.
@@ -217,7 +217,7 @@ As we could see from the equation defining $R_0$ in our simple SIR-model, there 
 1. Reduce the number of contacts persons have with each-other, i.e. make $\beta$ smaller
 2. Reduce the duration for how long people are effectively spreading the disease (e.g. by quarantine), i.e. reduce the average duration $\gamma$ of how long infectious individuals can infect others.
 
-For simplicity we shall only be interested in the first case and let's purse the following simple strategy, where the measures only depend on time:
+For simplicity we shall only be interested in the first case and will pursue the following very simple strategy, where the different measures only depend on time:
 
 $$
 \beta(t) = 
@@ -229,7 +229,7 @@ $$
 \end{array}
 \right.
 $$
-where $\beta_0$ is the ordinary $\beta$ value of the disease. We will use a drastic reduction of the contacts within the interval $[t_1, t_2]$ and thus $\beta_1 < \beta_0$. After some time, the control measures are reduced slightly, i.e. $\beta_1 < \beta_2 < \beta_0$.
+where $\beta_0$ is the ordinary $\beta$ value of the disease. We will use a large reduction of the contacts within the interval $[t_1, t_2]$ and thus $\beta_1 < \beta_0$. After some time, the control measures are reduced slightly, i.e. $\beta_1 < \beta_2 < \beta_0$.
 We shall use $\beta_1 = r_1 \beta_0$ and $\beta_2 = r_2 \beta_0$ with $r_1 \leq r_2$.
 The two epidemic curves can now be plotted as follows:
 
@@ -295,8 +295,8 @@ ode_df %>%
   select(final_fraction)
 ```
 
-Here we used the rather conservative estimate that $R_0$ can be reduced by `r scales::percent(reduction[1])` to `r R0*reduction[1]` for a few weeks, after the reduction is
-`r scales::percent(reduction[2])` of the original $R_0$, i.e. `r R0*reduction[2]`. Things of course become more optimistic, the larger the reduction is. One trap is though to reduce $R_0$ drastically and then lift the measures too much - in this case the outbreak is delayed, but then almost of the same peak and size, only later.
+Here we used the very conservative estimates that $R_0$ can be reduced by `r scales::percent(reduction[1])` to `r R0*reduction[1]` for a few weeks, hereafter the reduction is
+`r scales::percent(reduction[2])` of the original $R_0$, i.e. `r R0*reduction[2]`. Things of course become more optimistic, the larger the reduction is. One danger is although to reduce $R_0$ drastically and then lift the measures too early and too much - in this case the outbreak is delayed, but then almost of the same peak size  and final size, only later.
 
 The simple analysis in this post shows that the final size proportion with interventions is several percentage points smaller than without interventions. The larger the interventions,  if done right and timed right, the smaller the final size. In other words: the spread of an infectious disease in a population is a dynamic phenomena. Time matters. The timing of interventions matters. If done correctly, they stretch the outbreak and reduce the final size! 
 
@@ -308,7 +308,7 @@ The epidemic model based approaches to flatten the curve shows that the effect o
 The simple SIR model used in this post suffers from a number of limitations: It is a deterministic construction averaging over many stochastic phenomena. However, at the large scale of the outbreak we are now talking about, this simplification appears acceptable. Furthermore, it assumes homogeneous mixing between individuals, which is way too simple. Dividing the population into age-groups as well as their geographic locations and modelling the interaction between these groups  would be a more realistic reflection of how the population is shaped. Again, for the purpose of the visualization of the flatten-the-curve effect again I think a simple model is OK.  More involved modelling covering the establishment of the disease as endemic in the population are beyond this post, so is the effectiveness of the case-tracing.
 For more background on the modelling see for example the YouTube video about the [The Mathematics of the Coronavirus Outbreak](https://www.youtube.com/watch?time_continue=1&v=gSqIwXl6IjQ&feature=emb_logo) by my colleague Tom Britton or the work by @fraser_etal2004. 
 
-It is worth pointing out that mathematical models are only tools to gain insight. They are based on assumptions which are likely to be wrong. The question is, if a violation is crucial or if the component is still adequately captured by the model. A famous quote says: All models are wrong, but some are useful... **Useful** in this case is the message: **flatten the curve by reducing contacts and by efficient contact tracing**.
+It is worth pointing out that mathematical models are only tools to gain insight. They are based on assumptions which are likely to be wrong. The question is, if a violation is crucial or if the component is still adequately captured by the model. A famous quote says: All models are wrong, but some are useful... **Useful** in this case is the message: **flatten the curve by reducing infectious contacts and by efficient contact tracing**.
 
 
 ## Literature
