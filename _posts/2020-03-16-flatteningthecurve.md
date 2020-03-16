@@ -218,7 +218,13 @@ The two epidemic curves can now be plotted as follows:
 
 
 
-<img src="{{ site.baseurl }}/figure/source/2020-03-16-flatteningthecurve/FLATTENTHECURVE-1.png" style="display: block; margin: auto;" />
+
+```
+## Error: <text>:15:0: unexpected end of input
+## 13:   #geom_hline(yintercept = 0.02, lty=2, color="steelblue") #+
+## 14:   #geom_text(data=data.frame(t=120, c=0.021, label="Healthcare system capacity",type="without_intervention"), aes(t,c, label=label), color="steelblue")
+##    ^
+```
 
 The final size in the two cases:
 

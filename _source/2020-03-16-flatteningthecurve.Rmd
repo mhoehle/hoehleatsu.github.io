@@ -283,7 +283,9 @@ ggplot(ode_df, aes(x=t, y=0, xend=t, yend=c, color=type)) + geom_segment(alpha=0
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank()) +
   scale_color_brewer(name = "Epidemic model:", type= "qual", palette=1 ) +
-  geom_vline(xintercept = social_dist_period, lty=2)
+  geom_vline(xintercept = social_dist_period, lty=2) +
+  #geom_hline(yintercept = 0.02, lty=2, color="steelblue") #+
+  #geom_text(data=data.frame(t=120, c=0.021, label="Healthcare system capacity",type="without_intervention"), aes(t,c, label=label), color="steelblue")
 ```
 
 The final size in the two cases:
