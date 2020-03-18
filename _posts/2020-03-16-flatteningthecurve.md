@@ -14,7 +14,7 @@ editor_options:
 
 ## Abstract:
 
-We discuss why the message of flattening the COVID-19 curve is right, but why some of the visualizations used to show the effect are wrong: Reducing the basic reproduction number does not just stretch the outbreak, it also reduces the final size of the outbreak.
+We discuss why the message of flattening the COVID-19 curve is right, but why some of the visualizations used to show the effect are wrong: Reducing the basic reproduction number does not just stretch the outbreak, it also reduces the final size of the outbreak. A Shiny app exists to investigate different scenarios.
 
 <center>
 <img src="{{ site.baseurl }}/figure/source/2020-03-16-flatteningthecurve/FLATTENTHECURVE-1.png" width="550">
@@ -246,5 +246,6 @@ For more background on the modelling see for example the YouTube video about the
 
 It is worth pointing out that mathematical models are only tools to gain insight. They are based on assumptions which are likely to be wrong. The question is, if a violation is crucial or if the component is still adequately captured by the model. A famous quote says: All models are wrong, but some are useful... **Useful** in this case is the message: **flatten the curve by reducing infectious contacts and by efficient contact tracing**.
 
+**Update 2020-03-18**: Tinu Schneider from Switzerland used the GitHub code of this post to program a small [Shiny app](https://tinu.shinyapps.io/Flatten_the_Curve/) allowing one to study the impact of changing the parameters. Check it out!
 
 ## Literature
