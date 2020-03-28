@@ -36,7 +36,8 @@ The origin of these illustration is discussed [here](https://www.fastcompany.com
 As much as I support the message and reasons for flattening the curve, some of the visualizations have shortcomings from an infectious disease modelling point of view: They transport the message that the number of individuals, which -as an result of the outbreak- will need hospitalization, is fixed. Hence, the figure suggests that it's impossible to avoid a certain number of infected (say 40-70% of the population), but we save lives by stretching out hospital cases over time. Although the conclusion is correct, the premise is IMHO wrong:
 Reducing the basic reproduction number by drastically reducing contacts or quickly isolating infectious diseases also reduces the size of the outbreak. Also others, like [Ben Bolker](http://ms.mcmaster.ca/~bolker/misc/peak_I_simple.html) have pointed out this flaw.
 
-We shall use a simple and common mathematical model from infectious disease modelling to illustrate this point. This model is easily implemented in R - showing how is a secondary objective of this post. The R code of this post is available from [github](https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/2020-03-16-flatteningthecurve.Rmd).
+We shall use a simple and common mathematical model from infectious disease modelling to illustrate this point. This model is easily implemented in R - showing how is a secondary objective of this post. The R code of this post is available from [github](https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/2020-03-16-flatteningthecurve.Rmd) and is nicely visualized interactively by a 
+[**Shiny App**](https://tinu.shinyapps.io/Flatten_the_Curve/) made by Tinu Schneider. 
 
 A word of caution at this point: **The numbers and illustrations used in this post address the point of visualization and are not an attempt to generate actual policy advice**.
 
@@ -73,7 +74,7 @@ One important quantity, which can be derived from the above ODE equation system 
 <div class = "blackbox"> **the expected number of secondary cases per primary case in **a completely susceptible population. It is computed as** $R_0 = N \frac{\beta}{\gamma}$. </div> <p>
 
 This means that if we consider the dynamics of a disease in generation time, i.e. in a time scale where one time unit is the time period between infection in the primary case and infection in the secondary case, then $R_0$ denotes the growth factor in the size of the population at the beginning of the outbreak. What is special about the beginning of the outbreak? Well, more or less all contacts an infectious individual has, will be with susceptible individuals. However, once a large part of the population has already been infected, then $R_0$ does not necessarily describe the expected number of cases per primary
-anymore. For the COVID-19 outbreak, since it is assumed that little immunity exists against the disease,  all individuals will be susceptible and, hence, almost all contacts an infectious individual has, will be with susceptible persons. However, at a later stage in the epidemic, due to the depletion of susceptibles, the number of secondary cases since the population 
+case anymore. For the COVID-19 outbreak, since it is assumed that little immunity exists against the disease,  all individuals will be susceptible and, hence, almost all contacts an infectious individual has, will be with susceptible persons. However, at a later stage in the epidemic, due to the depletion of susceptibles, the number of secondary cases since the population 
 
 
 Assuming $R(0)$ and letting $I(0)=m$ we obtain $S(0) = N-m$. We can use this initial configuration together 
