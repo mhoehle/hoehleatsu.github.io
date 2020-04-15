@@ -244,7 +244,7 @@ est_rt_rki <- function(ts, GT=4L) {
 }
 ```
 Basically, the method appears to be the @wallinga_lipsitch2006 approach using a point mass generation time distribution, but with a slightly different timing of the sliding windows. However, since no references were given in the RKI publication, I got curious: what happens for this approach when the generation time distribution is not a point mass at $G$? What happens if the mean generation time is not an integer? 
-That these are not purely hypothetical question is underlined by the fact that @nishiura_serial_2020 find serial interval distribution with mean 4.7 days and standard deviation 2.9 as the most suitable fit to data from 28 COVID-19 infector-infectee pairs. Such a serial interval distribution has the following shape:
+That these are not purely hypothetical question is underlined by the fact that @nishiura_serial_2020 find a serial interval distribution with mean 4.7 days and standard deviation 2.9 as the most suitable fit to data from 28 COVID-19 infector-infectee pairs. Such a serial interval distribution has the following shape:
 ```{r, echo=FALSE}
 gt <- R0::generation.time("lognormal", c(mean=4.7, sd=2.9))
 gt_df <- data.frame(time = gt$time, PMF = gt$GT)
@@ -311,7 +311,8 @@ and 3 time points at the end of the outbreak:
 df %>% slice((nrow(df)-2):nrow(df))
 ```
 
-One observes that the RKI method has a bias. To some extent this is not surprising, because both the W & T method as well as the exponential growth model use the correct generation time distribution. In practice this would not be available, only an estimate. However, one could reflect estimation uncertainty through additional bootstrapping of the two methods. A more thorough investigation of the methods would of course also have to investigate the effect of misspecification for the W & T (2004) method or the exponential growth approach. The point is, however, that the RKI method as stated is not able to handle a non-point-mass generation time distribution.
+One observes that the RKI method has a bias in this situation. To some extent this is not surprising, because both the W & T method as well as the exponential growth model use the correct generation time distribution, whereas the RKI method and the exponential growth with point mass distribution use an incorrect serial interval distribution. In practice "the correct" serial interval distribution would not be available -- only an estimate. However, one could reflect estimation uncertainty through additional bootstrapping of the two more advanced methods. A more thorough investigation of the methods would of course also have to investigate the effect of misspecification for the W & T (2004) method or the exponential growth approach. The point is, however, that the RKI method as stated in the report is not able to handle a non-point-mass generation time distribution, which does seem necessary.
+There might be other reasons for choosing such a simplified distribution, but from a statistical point of view it seems like the estimator could be improved.
 
 ## Discussion
 
