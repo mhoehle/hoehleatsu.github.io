@@ -14,10 +14,10 @@ editor_options:
 ##If default fig.path, then set it.
 if (knitr::opts_chunk$get("fig.path") == "figure/") {
   knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
-  knitr::opts_chunk$set(fig.path="figure/source/2020-03-16-flatteningthecurve/")
+  knitr::opts_chunk$set(fig.path="figure/source/2020-04-15-effectiveR0/")
 }
 fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
-filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2020-03-16-flatteningthecurve")
+filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2020-04-15-effectiveR0")
 
 knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='',fig.align='center',echo=FALSE,dpi=72*2)#, global.par = TRUE)
 options(width=150, scipen=1e3)
