@@ -155,7 +155,7 @@ est_rt_exp <- function(ts, GT_obj, half_window_width=3L) {
 
 ## RKI Method
 
-In a recent [report](https://www.rki.de/DE/Content/Infekt/EpidBull/Archiv/2020/Ausgaben/17_20_SARS-CoV2_vorab.pdf?__blob=publicationFile) the RKI described their method for computing $R_e(t)$ as part of the COVID-19 outbreak as follows (p. 13): *For a constant generation time of 4 days, one obtains $R$ as the ratio of new infections in two consecutive time periods each consisting of 4 days*. 
+In a recent [report](https://www.rki.de/DE/Content/Infekt/EpidBull/Archiv/2020/Ausgaben/17_20_SARS-CoV2_vorab.pdf?__blob=publicationFile) [@anderheiden_hamouda2020] the RKI described their method for computing $R_e(t)$ as part of the COVID-19 outbreak as follows (p. 13): *For a constant generation time of 4 days, one obtains $R$ as the ratio of new infections in two consecutive time periods each consisting of 4 days*. 
 Mathematically, this estimation could be formulated as part of a statistical model: 
 $$
 \begin{align*}
@@ -208,8 +208,7 @@ Ret_true <- data.frame(Date=out$Date) %>% mutate(R_hat=Ret(Date), Method="Truth"
 
 
 <img src="{{ site.baseurl }}/figure/source/2020-04-15-effectiveR0/EFFECTIVERPLOT-1.png" style="display: block; margin: auto;" />
-
-To make the graph more specific, we take a look at 3 time points in the beginning of the outbreak
+The shaded area indicates the pointwise confidence intervals of the @wallinga_teunis2004 method. To make the results of the graph more explicit, we take a look at 3 time points in the beginning of the outbreak
 
 
 
@@ -228,15 +227,15 @@ and 3 time points at the end of the outbreak:
 ## 3 2020-04-06              0.95 0.9502230  0.95         0.9501288
 ```
 
-One observes that the RKI method has a bias. To some extent this is not surprising, because both the W & T method as well as the exponential growth model use the correct generation time distribution. In practice this would not be available, only an estimate. A more thorough investigation of the methods would of course also have to investigate the effect of misspecification for the W & T (2004) method or the exponential growth approach. The point is, however, that the RKI method as stated is not able to handle a non-point-mass generation time distribution.
+One observes that the RKI method has a bias. To some extent this is not surprising, because both the W & T method as well as the exponential growth model use the correct generation time distribution. In practice this would not be available, only an estimate. However, one could reflect estimation uncertainty through additional bootstrapping of the two methods. A more thorough investigation of the methods would of course also have to investigate the effect of misspecification for the W & T (2004) method or the exponential growth approach. The point is, however, that the RKI method as stated is not able to handle a non-point-mass generation time distribution.
 
 ## Discussion
 
-In this post we showed how to compute the effective reproduction number in R using both own implementations and the `R0` package. We illustrated this with data from a hypothetical outbreak. An important message is that there is a mathematical relationship between the daily growth factor and the reproduction number - this relationship is governed by the generation time distribution.
+In this post we showed how to compute the effective reproduction number in R using both own implementations and the [`R0`](https://cran.r-project.org/web/packages/R0/index.html) package. We illustrated this with data from a hypothetical outbreak. An important message is that there is a mathematical relationship between the daily growth factor and the reproduction number - this relationship is governed by the generation time distribution.
 
 In the present analysis the RKI method, which basically is identical to the approach of inserting the point mass distribution into the formula of @wallinga_lipsitch2006, showed a bias when the generation time had the anticipated mean, but had a standard deviation larger than zero. The bias is more pronounced when $R_e(t)$ is further away from 1. However, once the lockdown is gradually lifted, $R_e(t)$ is likely to raise again making this potentially a relevant bias. The exponential growth approach using the moment generating function of the (discretized) best estimate of the serial interval distribution, can be realized with any statistics package and is computationally fast. Further algorithmic improvements such as @wallinga_teunis2004 are readily available in R.
 
-A nice site, which computes time varying reproduction rates for many countries in the world is [Temporal variation in transmission during the COVID-19 outbreak](https://epiforecasts.io/covid/) by the LSHTM. It is realized using the  [`EpiEstim`](https://cran.r-project.org/web/packages/EpiEstim/index.html) package, which also provides $R_e(t)$ estimation functions.
+A nice site, which computes time varying reproduction rates for many countries in the world is [Temporal variation in transmission during the COVID-19 outbreak](https://epiforecasts.io/covid/) by the LSHTM. It is realized using the  [`EpiEstim`](https://cran.r-project.org/web/packages/EpiEstim/index.html) package [@cori_etal2013], which also provides $R_e(t)$ estimation functions.
 
  
 
