@@ -58,7 +58,7 @@ The motivation of this blog post is now to show how to estimate the time-varying
 The R code of this post is available from [github](`r paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`). We shall consider three estimators from the literature.
 One of the estimators is used by the German Robert-Koch Institute (RKI). Since [8th of April 2020](https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Situationsberichte/2020-04-07-en.pdf?__blob=publicationFile) the estimate is reported as part of their [daily COVID-19 situational reports](https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Situationsberichte/Gesamt.html) and is thus discussed by major German news media (e.g. [ARD](https://www.tagesschau.de/inland/corona-rki-positivtrend-101.html)).
 
-## Oubtreak simulation
+## Outbreak simulation
 
 We consider a simple growth model and denote by $y_t$ the expected number of new symptom onsets we observe on day $t$.  Let $(g_1, \ldots, g_M)'$, denote the probability mass function of the serial interval distribution, i.e. $P(GT=i) = g_i$ for $i=1,2,\ldots, M$ . The development in the expected number of cases can be described by the homogeneous linear difference equation
 $$
@@ -217,7 +217,7 @@ est_rt_exp <- function(ts, GT_obj, half_window_width=3L) {
 ```
 
 
-## RKI Method
+### RKI Method
 
 In a recent [report](https://www.rki.de/DE/Content/Infekt/EpidBull/Archiv/2020/Ausgaben/17_20_SARS-CoV2_vorab.pdf?__blob=publicationFile) [@anderheiden_hamouda2020] the RKI described their method for computing $R_e(t)$ as part of the COVID-19 outbreak as follows (p. 13): *For a constant generation time of 4 days, one obtains $R$ as the ratio of new infections in two consecutive time periods each consisting of 4 days*. 
 Mathematically, this estimation could be formulated as part of a statistical model: 
@@ -314,15 +314,63 @@ df %>% slice((nrow(df)-2):nrow(df))
 One observes that the RKI method has a bias in this situation. To some extent this is not surprising, because both the W & T method as well as the exponential growth model use the correct generation time distribution, whereas the RKI method and the exponential growth with point mass distribution use an incorrect serial interval distribution. In practice "the correct" serial interval distribution would not be available -- only an estimate. However, one could reflect estimation uncertainty through additional bootstrapping of the two more advanced methods. A more thorough investigation of the methods would of course also have to investigate the effect of misspecification for the W & T (2004) method or the exponential growth approach. The point is, however, that the RKI method as stated in the report is not able to handle a non-point-mass generation time distribution, which does seem necessary.
 There might be other reasons for choosing such a simplified distribution, but from a statistical point of view it seems like the estimator could be improved.
 
+### Instantaneous reproduction number
+
+**Update 2020-04-22**: Based on recent discussions, I'm adding an additional reproduction number estimator, i.e. the **instantaneous reproduction number** as defined in @cori_etal2013. This quantitity is different from the effective reproduction number, because it compares the number of new infections on day $t$ with the infection pressure from the days prior to $t$, i.e.
+
+$$
+\hat{R}(t) = \frac{y_t}{\sum_{s=1}^{t} g_{s} \cdot y_{t-s}}
+$$
+
+It can be interpreted as the average number of secondary cases that each symptomatic individual at time $t$ would infect if the conditions remained as they were at time $t$.
+
+Opposite to the forward looking approach of @wallinga_teunis2004, this estimator is defined backwards im time. As illustrated by this comment to a JAMA paper by [Lipsitch et al](https://github.com/keyajoshi/Pan_response), the definition of timing of $R(t)$ can make a big difference when comparing it with intervention measures. The instantaneous reproduction number estimator is implemented in the  [`EpiEstim`](https://cran.r-project.org/web/packages/EpiEstim/index.html) package [@cori_etal2013]. For our small simulation and without any smoothing window for the instantaneous estimator we obtain
+
+```{r INSTANTANEOUSR0, warning=FALSE, message=FALSE}
+library(EpiEstim)
+
+# Rename data.frame columns to names handled by the EpiEstim pkg.
+out_epiestim <- out %>% rename(I = y, dates = Date) %>% select(dates, I)
+
+# Estimate the instantaneous R_0
+res <- EpiEstim::estimate_R(out_epiestim, method = "non_parametric_si",
+                            config=make_config(si_distr=GT_obj$GT,
+                                                         t_start=2:nrow(out_epiestim),
+                                                         t_end=2:nrow(out_epiestim))
+)
+
+# Convert result to a data.frame
+rt_irt_df <- data.frame(Date=res$dates[res$R$t_end], R_hat=res$R$`Mean(R)`, Method="Instantaneous R(t)")
+```
+```{r PLOTINSTANTANEOUSR0, warning=FALSE, message=FALSE}
+ggplot(rt_wt_df, aes(x=Date, y=R_hat, color=Method)) +  
+  #geom_ribbon(aes(x=Date,  ymin=lower, ymax=upper, color=NULL), alpha=0.1) +
+  geom_line(aes(x=Date,  ymin=lower, ymax=upper, color=NULL), alpha=0.1) +
+  geom_line(aes(x=Date, y=R_hat, color=Method), lwd=1) + 
+   geom_line(data=Ret_true, aes(x=Date, y=R_hat, color=Method), lwd=3) + 
+   geom_line(data=rt_irt_df,  lwd=1) + 
+  #geom_line(data=rt_exp2_df, lwd=1) + 
+  #geom_line(data=rt_rki_df,  lwd=1) + 
+  #geom_line(data=rt_exp_df,  lwd=1) + 
+  geom_line(lwd=1.2) +
+  scale_color_brewer(type="qual",palette="Set2", name="Method:") +
+  coord_cartesian(ylim=c(0, 5)) +
+  ylab(expression(R (t))) +
+  theme(legend.position="bottom")
+```
+
+One observes that the change of the estimate in timing corresponds to the intervention, but it takes  time to adjust to the new situation and, hence, provides too high values reproduction number values for some days after the intervention, which is the point of [Lipsitch et al](https://github.com/keyajoshi/Pan_response). The plot shows how difficult it is to use reproduction number estimates to assess interventions, where the change is abrupt and at a time scale shorter than the serial interval.
+
+At this point it is good to remember why one started to consider the effective reproduction number in the first place. That is, as a real-time (i.e. with interventions and immunity) extension of the basic reproduction number $R_0$. To me this definition is inherently forward in time.
+
 ## Discussion
 
 In this post we showed how to compute the effective reproduction number in R using both own implementations and the [`R0`](https://cran.r-project.org/web/packages/R0/index.html) package. We illustrated this with data from a hypothetical outbreak. An important message is that there is a mathematical relationship between the daily growth factor and the reproduction number - this relationship is governed by the generation time distribution.
 
 In the present analysis the RKI method, which basically is identical to the approach of inserting the point mass distribution into the formula of @wallinga_lipsitch2006, showed a bias when the generation time had the anticipated mean, but had a standard deviation larger than zero. The bias is more pronounced when $R_e(t)$ is further away from 1. However, once the lockdown is gradually lifted, $R_e(t)$ is likely to raise again making this potentially a relevant bias. The exponential growth approach using the moment generating function of the (discretized) best estimate of the serial interval distribution, can be realized with any statistics package and is computationally fast. Further algorithmic improvements such as @wallinga_teunis2004 are readily available in R.
 
-A nice site, which computes time varying reproduction rates for many countries in the world is [Temporal variation in transmission during the COVID-19 outbreak](https://epiforecasts.io/covid/) by the LSHTM. It is realized using the  [`EpiEstim`](https://cran.r-project.org/web/packages/EpiEstim/index.html) package [@cori_etal2013], which also provides $R_e(t)$ estimation functions.
+A nice site, which computes time varying reproduction rates for many countries in the world is [Temporal variation in transmission during the COVID-19 outbreak](https://epiforecasts.io/covid/) by the LSHTM. 
 
- 
 
 
 ## Literature

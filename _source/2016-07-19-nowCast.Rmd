@@ -48,6 +48,8 @@ quick analysis for the O157 outbreak with the currently available code in the `s
 the nowcasting functionality in the package currently is a little
 rough and certainly in need of a user-friendliness polishing.
 
+** Update 2020-04-21**: Regarding the lack of convincing answer mentioned above. Four years after writing this blog I can now add: The nowcast functionality of the package is now in use by the public health authorities in several German federal states as part of their Covid-19 outbreak response, see. e.g. [Bavaria](https://corona.stat.uni-muenchen.de/nowcast/).
+
 So this little blog-note serves three purposes:
 
 1. Illustrate how you can nowcasts with R, if you ever have to.
