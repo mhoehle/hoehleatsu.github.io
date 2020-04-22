@@ -324,7 +324,7 @@ $$
 
 It can be interpreted as the average number of secondary cases that each symptomatic individual at time $t$ would infect if the conditions remained as they were at time $t$.
 
-Opposite to the forward looking approach of @wallinga_teunis2004, this estimator is defined backwards im time. As illustrated by this comment to a JAMA paper by [Lipsitch et al](https://github.com/keyajoshi/Pan_response), the definition of timing of $R(t)$ can make a big difference when comparing it with intervention measures. The instantaneous reproduction number estimator is implemented in the  [`EpiEstim`](https://cran.r-project.org/web/packages/EpiEstim/index.html) package [@cori_etal2013]. For our small simulation and without any smoothing window for the instantaneous estimator we obtain
+Opposite to the forward looking approach of @wallinga_teunis2004, this estimator is defined backwards im time. As illustrated by this comment to a JAMA paper by [Lipsitch et al.](https://github.com/keyajoshi/Pan_response), the definition of timing of $R(t)$ can make a big difference when comparing it with intervention measures. The instantaneous reproduction number estimator is implemented in the  [`EpiEstim`](https://cran.r-project.org/web/packages/EpiEstim/index.html) package [@cori_etal2013]. For our small simulation and without any smoothing window for the instantaneous estimator we obtain
 
 ```{r INSTANTANEOUSR0, warning=FALSE, message=FALSE}
 library(EpiEstim)
@@ -359,7 +359,7 @@ ggplot(rt_wt_df, aes(x=Date, y=R_hat, color=Method)) +
   theme(legend.position="bottom")
 ```
 
-One observes that the change of the estimate in timing corresponds to the intervention, but it takes  time to adjust to the new situation and, hence, provides too high values reproduction number values for some days after the intervention, which is the point of [Lipsitch et al](https://github.com/keyajoshi/Pan_response). The plot shows how difficult it is to use reproduction number estimates to assess interventions, where the change is abrupt and at a time scale shorter than the serial interval.
+One observes that the change of the estimate in timing corresponds to the intervention, but it takes  time to adjust to the new situation and, hence, provides too high values reproduction number values for some days after the intervention, which is the point of [Lipsitch et al.](https://github.com/keyajoshi/Pan_response). The plot shows how difficult it is to use reproduction number estimates to assess interventions, where the change is abrupt and at a time scale shorter than the serial interval.
 
 At this point it is good to remember why one started to consider the effective reproduction number in the first place. That is, as a real-time (i.e. with interventions and immunity) extension of the basic reproduction number $R_0$. To me this definition is inherently forward in time.
 
