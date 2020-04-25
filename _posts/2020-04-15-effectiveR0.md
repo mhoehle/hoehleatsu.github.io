@@ -155,7 +155,7 @@ est_rt_exp <- function(ts, GT_obj, half_window_width=3L) {
 
 ### RKI Method
 
-In a recent [report](https://www.rki.de/DE/Content/Infekt/EpidBull/Archiv/2020/Ausgaben/17_20_SARS-CoV2_vorab.pdf?__blob=publicationFile) [@anderheiden_hamouda2020] the RKI described their method for computing $R_e(t)$ as part of the COVID-19 outbreak as follows (p. 13): *For a constant generation time of 4 days, one obtains $R$ as the ratio of new infections in two consecutive time periods each consisting of 4 days*. 
+In a recent [report](https://www.rki.de/DE/Content/Infekt/EpidBull/Archiv/2020/Ausgaben/17_20_SARS-CoV2_vorab.pdf?__blob=publicationFile) [@anderheiden_hamouda2020][^1] the RKI described their method for computing $R_e(t)$ as part of the COVID-19 outbreak as follows (p. 13): *For a constant generation time of 4 days, one obtains $R$ as the ratio of new infections in two consecutive time periods each consisting of 4 days*. 
 Mathematically, this estimation could be formulated as part of a statistical model: 
 $$
 \begin{align*}
@@ -267,6 +267,6 @@ In the present analysis the RKI method, which basically is identical to the appr
 
 A nice site, which computes time varying reproduction rates for many countries in the world is [Temporal variation in transmission during the COVID-19 outbreak](https://epiforecasts.io/covid/) by the LSHTM. 
 
-
+[^1]: My remarks are based on the 1st published version (2020-04-09) of the article
 
 ## Literature
