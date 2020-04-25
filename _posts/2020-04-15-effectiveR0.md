@@ -162,27 +162,32 @@ $$
 y_{s+4} \>| \> y_s &\sim \operatorname{Po}(R \cdot y_s), \quad s=1,2,3,4.
 \end{align*}
 $$
-where $y_1,\ldots, y_4$ are considered as fixed. From this we obtain $\hat{R}_{RKI}=\sum_{s=1}^4 y_{s+4} / \sum_{s=1}^4 y_{s}$. If we use a GLM to fit the model, we not only get $\hat{R}_{RKI}$ but also a confidence interval for $R$ out-of-the box. Somewhat arbitrary, we denote by $R_e(t)$ the above estimate for $R$ when $s=1$ corresponds to time $t$. 
+where $y_1,\ldots, y_4$ are considered as fixed. From this we obtain $\hat{R}_{RKI}=\sum_{s=1}^4 y_{s+4} / \sum_{s=1}^4 y_{s}$. If we use a GLM to fit the model, we not only get $\hat{R}$ but also a confidence interval for $R$ out-of-the box. Somewhat arbitrary, we denote by $R_e(t)$ the above estimate for $R$ when $s=1$ corresponds to time $t-8$, i.e. we assign the obtained value to the last of the 8 values used in the computation.
 
 In code:
 
+
 ```r
-#' RKI R_e(t) estimator with generation time GT (default GT=4)
+#' RKI R_e(t) estimator with generation time GT (default GT=4). Note: The time t
+#' is assigned to the last day in the blocks of cases on [t,t+1,t+2, t+3] vs.
+#' [t+4,t+5,t+6, t+7], i.e. s=t-8 (c.f. p. 14 of 2020-04-24 version of the RKI paper)
 #' @param ts - Vector of integer values containing the time series of incident cases
 #' @param GT - PMF of the generation time is a fixed point mass at the value GT.
 
-est_rt_rki <- function(ts, GT=4L) {
+est_rt_rki_last <- function(ts, GT=4L) {
   # Sanity check
   if (!is.integer(GT) | !(GT>0)) stop("GT has to be postive integer.")
-  # Estimate
-  sapply( (1+GT):(length(ts)-GT), function(t) {
-    sum(ts[t+(0:(GT-1))]) / sum(ts[t-(1:GT)]) 
+  # Estimate, if s=1 is t-7
+  res <- sapply( (2*GT):length(ts), function(t) {
+    sum(ts[t-(0:(GT-1))]) / sum(ts[t-2*GT+1:GT])
   })
+  names(res) <- names(ts)[(2*GT):length(ts)]
+  return(res)
 }
 ```
 Basically, the method appears to be the @wallinga_lipsitch2006 approach using a point mass generation time distribution, but with a slightly different timing of the sliding windows. However, since no references were given in the RKI publication, I got curious: what happens for this approach when the generation time distribution is not a point mass at $G$? What happens if the mean generation time is not an integer? 
 That these are not purely hypothetical question is underlined by the fact that @nishiura_serial_2020 find a serial interval distribution with mean 4.7 days and standard deviation 2.9 as the most suitable fit to data from 28 COVID-19 infector-infectee pairs. Such a serial interval distribution has the following shape:
-<img src="{{ site.baseurl }}/figure/source/2020-04-15-effectiveR0/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
+<img src="{{ site.baseurl }}/figure/source/2020-04-15-effectiveR0/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
 
 ### The Comparison
 The aim of this post is thus to compare the performance of the RKI estimator with both the @wallinga_teunis2004 and the @wallinga_lipsitch2006 estimators for the single outbreak simulated in this post. Results do, however, generalize to other configurations.
@@ -190,8 +195,8 @@ The aim of this post is thus to compare the performance of the RKI estimator wit
 We compute and plot of the $R_e(t)$ estimates:
 
 ```r
-# RKI method
-rt_rki <- est_rt_rki(out$y, GT=4L)
+# RKI method as specified in 2020-04-24 version of the article
+rt_rki_last <- est_rt_rki_last(out$y  %>% setNames(out$Date), GT=4L)
 
 # Exponential growth with discrete Laplace transform of a GT \equiv = 4 distribution
 rt_exp2 <- est_rt_exp( out$y %>% setNames(out$Date), GT_obj=R0::generation.time("empirical", c(0,0,0,0,1,0,0,0)), half_window_width=3)
@@ -207,24 +212,29 @@ Ret_true <- data.frame(Date=out$Date) %>% mutate(R_hat=Ret(Date), Method="Truth"
 ```
 
 
+
+
+
 <img src="{{ site.baseurl }}/figure/source/2020-04-15-effectiveR0/EFFECTIVERPLOT-1.png" style="display: block; margin: auto;" />
-The shaded area indicates the pointwise confidence intervals of the @wallinga_teunis2004 method. To make the results of the graph more explicit, we take a look at 3 time points in the beginning of the outbreak
+The shaded area indicates the pointwise confidence intervals of the @wallinga_teunis2004 method. To make the results of the graph more explicit, we take a look at 3 time points in the beginning of the outbreak:
+
+
 
 
 
 ```
 ##         Date W & T, correct GT RKI, GT=4 Truth Exp-G, correct GT
-## 1 2020-03-07               2.5  2.748057   2.5          2.500058
-## 2 2020-03-08               2.5  2.748072   2.5          2.500011
-## 3 2020-03-09               2.5  2.748074   2.5          2.500006
+## 1 2020-03-11          2.418862  2.748119   2.5          2.499998
+## 2 2020-03-12          2.303251  2.748070   2.5          2.500003
+## 3 2020-03-13          2.140055  2.748073   2.5          2.500000
 ```
 and 3 time points at the end of the outbreak:
 
 ```
 ##         Date W & T, correct GT RKI, GT=4 Truth Exp-G, correct GT
-## 1 2020-04-04              0.95 0.9502227  0.95         0.9498103
-## 2 2020-04-05              0.95 0.9501683  0.95         0.9502002
-## 3 2020-04-06              0.95 0.9502230  0.95         0.9501288
+## 1 2020-04-05              0.95 0.9499707  0.95         0.9502002
+## 2 2020-04-06              0.95 0.9500350  0.95         0.9501288
+## 3 2020-04-07              0.95 0.9499612  0.95         0.9500405
 ```
 
 One observes that the RKI method has a bias in this situation. To some extent this is not surprising, because both the W & T method as well as the exponential growth model use the correct generation time distribution, whereas the RKI method and the exponential growth with point mass distribution use an incorrect serial interval distribution. In practice "the correct" serial interval distribution would not be available -- only an estimate. However, one could reflect estimation uncertainty through additional bootstrapping of the two more advanced methods. A more thorough investigation of the methods would of course also have to investigate the effect of misspecification for the W & T (2004) method or the exponential growth approach. The point is, however, that the RKI method as stated in the report is not able to handle a non-point-mass generation time distribution, which does seem necessary.
@@ -238,14 +248,14 @@ $$
 \hat{R}(t) = \frac{y_t}{\sum_{s=1}^{t} g_{s} \cdot y_{t-s}}
 $$
 
-It can be interpreted as the average number of secondary cases that each symptomatic individual at time $t$ would infect if the conditions remained as they were at time $t$.
+It can be interpreted as the average number of secondary cases that each symptomatic individual at time $t$ would infect, if the conditions remained as they were at time $t$.
 
-Opposite to the forward looking approach of @wallinga_teunis2004, this estimator is defined backwards im time. As illustrated by this comment to a JAMA paper by [Lipsitch et al](https://github.com/keyajoshi/Pan_response), the definition of timing of $R(t)$ can make a big difference when comparing it with intervention measures. The instantaneous reproduction number estimator is implemented in the  [`EpiEstim`](https://cran.r-project.org/web/packages/EpiEstim/index.html) package [@cori_etal2013]. For our small simulation and without any smoothing window for the instantaneous estimator we obtain
+Opposite to the forward looking approach of @wallinga_teunis2004, this estimator is defined backwards in time. As illustrated by this comment to a JAMA paper by [Lipsitch et al.](https://github.com/keyajoshi/Pan_response), the definition of timing of $R(t)$ can make a big difference when comparing it with intervention measures. The instantaneous reproduction number estimator is implemented in the  [`EpiEstim`](https://cran.r-project.org/web/packages/EpiEstim/index.html) package [@cori_etal2013]. For our small simulation and without any smoothing window for the instantaneous estimator we obtain
 
 
 <img src="{{ site.baseurl }}/figure/source/2020-04-15-effectiveR0/PLOTINSTANTANEOUSR0-1.png" style="display: block; margin: auto;" />
 
-One observes that the change of the estimate in timing corresponds to the intervention, but it takes  time to adjust to the new situation and, hence, provides too high values reproduction number values for some days after the intervention, which is the point of [Lipsitch et al](https://github.com/keyajoshi/Pan_response). The plot shows how difficult it is to use reproduction number estimates to assess interventions, where the change is abrupt and at a time scale shorter than the serial interval.
+One observes that the change of the estimate in timing corresponds to the intervention, but it takes  time to adjust to the new situation and, hence, provides too high values reproduction number values for some days after the intervention, which is the point of [Lipsitch et al.](https://github.com/keyajoshi/Pan_response). The plot shows how difficult it is to use reproduction number estimates to assess interventions, where the change is abrupt and at a time scale shorter than the serial interval. Furthermore, since the RKI method is assigned to the last time point of the two 4-blocks compared, it appears in interpretation to be closer to the instantenous reproduction number.
 
 At this point it is good to remember why one started to consider the effective reproduction number in the first place. That is, as a real-time (i.e. with interventions and immunity) extension of the basic reproduction number $R_0$. To me this definition is inherently forward in time.
 
