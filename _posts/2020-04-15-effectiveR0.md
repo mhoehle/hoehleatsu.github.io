@@ -187,7 +187,7 @@ est_rt_rki_last <- function(ts, GT=4L) {
 ```
 Basically, the method appears to be the @wallinga_lipsitch2006 approach using a point mass generation time distribution, but with a slightly different timing of the sliding windows. However, since no references were given in the RKI publication, I got curious: what happens for this approach when the generation time distribution is not a point mass at $G$? What happens if the mean generation time is not an integer? 
 That these are not purely hypothetical question is underlined by the fact that @nishiura_serial_2020 find a serial interval distribution with mean 4.7 days and standard deviation 2.9 as the most suitable fit to data from 28 COVID-19 infector-infectee pairs. Such a serial interval distribution has the following shape:
-<img src="{{ site.baseurl }}/figure/source/2020-04-15-effectiveR0/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
+<img src="{{ site.baseurl }}/figure/source/2020-04-15-effectiveR0/SIDISTPLOT-1.png" style="display: block; margin: auto;" />
 
 ### The Comparison
 The aim of this post is thus to compare the performance of the RKI estimator with both the @wallinga_teunis2004 and the @wallinga_lipsitch2006 estimators for the single outbreak simulated in this post. Results do, however, generalize to other configurations.

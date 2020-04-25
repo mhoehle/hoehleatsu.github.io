@@ -267,7 +267,7 @@ est_rt_rki_last <- function(ts, GT=4L) {
 ```
 Basically, the method appears to be the @wallinga_lipsitch2006 approach using a point mass generation time distribution, but with a slightly different timing of the sliding windows. However, since no references were given in the RKI publication, I got curious: what happens for this approach when the generation time distribution is not a point mass at $G$? What happens if the mean generation time is not an integer? 
 That these are not purely hypothetical question is underlined by the fact that @nishiura_serial_2020 find a serial interval distribution with mean 4.7 days and standard deviation 2.9 as the most suitable fit to data from 28 COVID-19 infector-infectee pairs. Such a serial interval distribution has the following shape:
-```{r, echo=FALSE}
+```{r SIDISTPLOT, echo=FALSE}
 gt <- R0::generation.time("lognormal", c(mean=4.7, sd=2.9))
 gt_df <- data.frame(time = gt$time, PMF = gt$GT)
 ggplot( gt_df, aes(x=time, xend=time, y=0, yend=PMF)) + geom_segment() + xlab("Time between symptoms in secondary and primary case (days)") + ylab("PMF")
