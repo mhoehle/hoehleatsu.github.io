@@ -1,0 +1,233 @@
+---
+layout: post
+title: "Superspreading and the Gini Coefficient"
+tags: [rstats, dataviz, R, COVID-19, SARS-CoV-2, epidemic models]
+#  bibliography: ~/Literature/Bibtex/jabref.bib
+header-includes:
+   - \usepackage{bm}
+comments: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r,include=FALSE,echo=TRUE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2020-05-31-superspreader/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2020-05-31-superspreader")
+
+knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=4,fig.cap='',fig.align='center',echo=TRUE,dpi=72*2)#, global.par = TRUE)
+options(width=150, scipen=1e3)
+
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(kableExtra))
+suppressPackageStartupMessages(library(viridis))
+
+# Non CRAN packages
+# devtools::install_github("hadley/emo")
+
+##Configuration
+options(knitr.table.format = "html")
+theme_set(theme_minimal())
+#if there are more than n rows in the tibble, print only the first m rows.
+options(tibble.print_max = 10, tibble.print_min = 5)
+```
+
+## Abstract:
+
+We look at superspreading in infectious disease transmission from a statistical point of view. We characterise heterogeneity in the offspring distribution by the Gini coefficient instead of the usual dispersion parameter of the negative binomial distribution. This allows us to consider more flexible offspring distributions.
+
+<center>
+```{r,results='asis',echo=FALSE,fig.cap=""}
+cat(paste0("<img src=\"{{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"PLOTMODIFIEDLORENZ-1.png\" width=\"550\">\n"))
+```
+</center>
+
+{% include license.html %}
+
+## Motivation
+
+The recent Science report on [Superspreading during the COVID-19 pandemic](https://www.sciencemag.org/news/2020/05/why-do-some-covid-19-patients-infect-many-others-whereas-most-don-t-spread-virus-all) by Kai Kupferschmidt has made the dispersion parameter $k$ of the negative binomial distribution a hot quantity[^1] in the discussions of how to determine effective interventions. This short blog post aims at understanding the math behind statements such as “Probably about 10% of cases lead to 80% of the spread” and replicate them with computations in [R](https://www.r-project.org). 
+
+**Warning**: This post reflects more my own learning process of what is superspreading than trying to make any statements of importance.
+
+## Superspreading
+
+@lloydsmith_etal2005 show that the 2002-2004 SARS-CoV-1 epidemic was driven by a small number of events where one case directly infected a large number of secondary cases - a so called superspreading event. This means that for SARS-CoV-1 the distribution of how many secondary cases each primary case generates is heavy tailed. More specifically, the [effective reproduction number](https://staff.math.su.se/hoehle/blog/2020/04/15/effectiveR0.html) describes the mean number of secondary cases a primary case generates during the outbreak, i.e. it is the mean of the offspring distribution. In order to address dispersion around this mean, @lloydsmith_etal2005 use the [negative binomial distribution](https://en.wikipedia.org/wiki/Negative_binomial_distribution) with mean $R(t)$ and over-dispersion parameter $k$ as a probability model for the offspring distribution. The number of offspring that case $i$, which got infected at time $t_i$, causes is given by
+$$
+Y_{i} \sim \operatorname{NegBin}(R(t_i), k),
+$$
+s.t. $\operatorname{E}(Y_{i}) = R(t_i)$ and $\operatorname{Var}(Y_{i}) = R(t_i) (1 + \frac{1}{k} R(t_i))$. This parametrisation makes it easy to see that the negative binomial model has an additional factor $1 + \frac{1}{k} R(t_i)$ for the variance, which allows it to have excess variance (aka. over-dispersion) compared to the Poisson distribution, which has $\operatorname{Var}(Y_{i}) = R(t_i)$. If $k\rightarrow \infty$ we get the Poisson distribution and the closer $k$ is to zero the larger the variance, i.e. the heterogeneity, in the distribution is. Note the deliberate use of the effective reproduction number $R(t_i)$ instead of the basic reproduction number $R_0$ (as done in @lloydsmith_etal2005) in the model. This is to highlight, that one is likely to observe clusters in the context of interventions and depletion of susceptibles.
+
+That the dispersion parameter $k$ is making epidemiological fame is a little surprising, because it is a parameter in a specific parametric model. A parametric model, which might be inadequate for the observed data. A secondary objective of this post is thus to focus more on describing the heterogeneity of the offspring distribution using classical statistical concepts such as the [**Gini coefficient**](https://en.wikipedia.org/wiki/Gini_coefficient).
+
+## Negative binomial distributed number of secondary cases
+```{r PARAMETERS, echo=FALSE}
+Rt <- 2.5
+k  <- 0.45 
+```
+
+Let's assume $k=`r k`$ as done in @adam_etal2020. This is a slightly higher estimate than the $k=0.1$ estimate by @endo_etal2020[^2] quoted in the Science article. We want to derive statements like "the x% most active spreaders infected y% of all cases" as a function of $k$. The PMF of the offspring distribution with mean `r Rt` and dispersion `r k` looks as follows:
+```{r}
+<<PARAMETERS>>
+
+# Evaluate on a larger enough grid, so E(Y_t) is determined accurate enough
+# We also include -1 in the grid to get a point (0,0) needed for the Lorenz curve
+df <- data.frame(x=-1:250) %>% mutate(pmf= dnbinom(x, mu=Rt, size=k))
+```
+```{r PMFNEGBIN, echo=FALSE}
+ggplot(df, aes(x=x, ymin=0, ymax=pmf)) + geom_linerange() + 
+  xlab("Number of secondary cases") + ylab("PMF") + coord_cartesian(xlim=c(0,20))
+
+```
+
+So we observe that `r scales::percent(df %>% filter(x==0) %>% pull(pmf))` of the cases never manage to infect a secondary case, whereas some cases manage to generate more than 10 new cases. The mean of the distribution is checked empirically to equal the specified $R(t)$ of `r Rt`:
+```{r}
+sum(df$x * df$pmf)
+```
+
+@lloydsmith_etal2005 define a **superspreader** to be a primary case, which generates more secondary cases than the 99th quantile of the Poisson distribution with mean $R(t)$. We use this to compute the proportion of superspreaders in our distribution:
+
+```{r}
+(superspreader_threshold <- qpois(0.99, lambda=Rt))
+(p_superspreader <- pnbinom(superspreader_threshold, mu=Rt, size=k, lower.tail=FALSE))
+```
+
+So `r scales::percent(p_superspreader)` of the cases will generate more than `r superspreader_threshold` new cases. To get to statements such as "10% generate 80% of the cases" we also need to know how many cases those `r scales::percent(p_superspreader)` generate out of the `r Rt` average. 
+
+```{r}
+# Compute proportion of the overall expected number of new cases
+df <- df %>% mutate(cdf = pnbinom(x, mu=Rt, size=k), 
+                    expected_cases=x*pmf, 
+                    prop_of_Rt=expected_cases/Rt,
+                    cum_prop_of_Rt = cumsum(prop_of_Rt))
+
+# Summarise
+info <- df %>% filter(x > superspreader_threshold) %>% 
+  summarise(expected_cases = sum(expected_cases), prop_of_Rt = sum(prop_of_Rt))
+info
+```
+In other words, the superspreaders generate  (on average) `r sprintf("%.2f",info$expected_cases)` of the `r Rt` new cases of a generation, i.e. `r scales::percent(info$prop_of_Rt)`.
+
+These statements can also be made without formulating a superspreader threshold by graphing the cumulative share of the distribution of primary cases against the cumulative share of secondary cases these generate. This is exactly what the [Lorenz curve](https://en.wikipedia.org/wiki/Lorenz_curve) is doing. However, for outbreak analysis it appears clearer to graph the cumulative distribution in decreasing order of the number of offspring, i.e. following @lloydsmith_etal2005 we plot the cumulative share as $P(Y\geq y)$ instead of $P(Y \leq y)$. This is a variation of the Lorenz curve, but allows statements such as "the %x cases with highest number of offspring generate %y of the secondary cases".
+
+```{r MODIFIEDLORENZ}
+# Add information for plotting the modified Lorenz curve
+df <- df %>% 
+  mutate(cdf_decreasing = pnbinom(x-1, mu=Rt, size=k, lower.tail=FALSE)) %>%
+  arrange(desc(x)) %>%  
+  mutate(cum_prop_of_Rt_decreasing = cumsum(prop_of_Rt))
+```
+
+```{r PLOTMODIFIEDLORENZ}
+# Plot the modified Lorenz curve as in Fig 1b of Lloyd-Smith et al. (2005)
+ggplot(df, aes(x=cdf_decreasing, y=cum_prop_of_Rt_decreasing)) + geom_line() + 
+  coord_cartesian(xlim=c(0,1)) + 
+  xlab("Proportion of the infectious cases (cases with most secondary cases first)") + 
+  ylab("Proportion of the secondary cases") +
+  scale_x_continuous(labels=scales::percent, breaks=seq(0,1,length=6)) +
+  scale_y_continuous(labels=scales::percent, breaks=seq(0,1,length=6)) +
+  geom_line(data=data.frame(x=seq(0,1,length=100)) %>% mutate(y=x), aes(x=x, y=y), lty=2, col="gray") + ggtitle(str_c("Scenario: R(t) = ", Rt, ", k = ", k))
+```
+
+Using the standard formulas to compute the [Gini coefficient](https://en.wikipedia.org/wiki/Gini_coefficient#Discrete_probability_distribution) for a discrete distribution with support on the non-negative integers, i.e. 
+$$
+G = \frac{1}{2\mu} \sum_{y=0}^\infty \sum_{z=0}^\infty f(y) f(z) |y-z|,
+$$
+where $f(y)$, $y=0,1,\ldots$ denotes the PMF of the distribution and $\mu=\sum_{y=0}^\infty y f(y)$ is the mean of the distribution. In our case $\mu=R(t)$. From this we get
+
+```{r GINIFUNC}
+# Gini index for a discrete probability distribution
+gini_coeff <- function(df) {
+  mu <- sum(df$x * df$pmf)
+  sum <- 0
+  for (i in 1:nrow(df)) {
+    for (j in 1:nrow(df)) {
+      sum <- sum + df$pmf[i] * df$pmf[j] * abs(df$x[i] - df$x[j])
+    }
+  }
+  return(sum/(2*mu))
+}
+
+gini_coeff(df)  
+```
+
+A plot of the relationship between the dispersion parameter and the Gini index, given a fixed value of $R(t)=`r Rt`$, looks as follows
+```{r PLOTGINIKRELATIONSHIP, echo=FALSE, warning=FALSE}
+# Faster computation, if ordered. See 
+# https://en.wikipedia.org/wiki/Gini_coefficient#Discrete_probability_distribution
+gini_coeff2 <- function(df) {
+  df <- df %>% mutate(S_temp = x * pmf, S = cumsum(S_temp), S_diff = S + lag(S))
+  1 - sum(df %>% mutate(sum = pmf * S_diff) %>% pull(sum), na.rm=TRUE) / tail(df$S, n=1)
+}
+
+# Calculate gini for a grid of k values
+k_grid <- seq(0,5,length=1000)
+gini_grid <- sapply(k_grid, function(k) {
+  gini_coeff2( data.frame(x=0:250) %>% mutate(pmf = dnbinom(x, mu=Rt, size=k)))
+})
+
+# Show it
+plot_df <- data.frame(k=k_grid, gini=gini_grid)
+ggplot(plot_df, aes(x=k, y=gini)) + geom_line() + scale_y_continuous(limit=c(0,1))
+```
+
+We see that the Gini index converges from above to the Gini index of the Poisson distribution with mean $R(t)$. In our case this limit is
+```{r POISSONGINI}
+gini_coeff( data.frame(x=0:250) %>% mutate(pmf = dpois(x, lambda=Rt)))
+```
+
+### Red Marble Toy Example
+For the [toy example offspring distribution](https://youtu.be/fOHB6PtcoMU?t=1259) used by [Christian Drosten](https://twitter.com/c_drosten) in his Coronavirus Update podcast episode 44 on COVID-19 superspreading (in German).
+The described hypothetical scenario is translated to an offspring distribution, where a primary case either generates 1 (with probability 9/10) or 10 (with probability 1/10) secondary cases:
+
+```{r TOYEXAMPLE, warning=FALSE}
+# Offspring distribution
+df_toyoffspring <- data.frame( x=c(1,10), pmf=c(9/10, 1/10))
+
+# Hypothetical outbreak with 10000 cases from this offspring distribution
+y_obs <- sample(df_toyoffspring$x, size=10000, replace=TRUE, prob=df_toyoffspring$pmf)
+
+# Fit the negative binomial distribution to the observed offspring distribution
+# Note It would be better to fit the PMF directly instead of to the hypothetical
+# outbreak data
+(fit <- MASS::fitdistr(y_obs, "negative binomial"))
+
+# Note: different parametrisation of the k parameter
+(k.hat <- 1/fit$estimate["size"])
+```
+
+In other words, when fitting a negative binomial distribution to these data (probably not a good idea) we get a dispersion parameter of `r sprintf("%.2f",k.hat)`. 
+```{r PLOTNEGBINTOYPMF, echo=FALSE}
+df_negbin <- data.frame(x=0:20L) %>% mutate(pmf = dnbinom(x, size=k.hat, mu=fit$estimate["mu"]))
+ggplot(df_negbin, aes(x=x, ymin=0, ymax=pmf, color="Fitted NegBin")) + geom_linerange() + 
+  geom_linerange(data=df_toyoffspring, aes(x=x+0.2, ymin=0, ymax=pmf, color="Toy Example")) + 
+  xlab("Number of secondary cases") + ylab("PMF") + coord_cartesian(xlim=c(0,15)) +
+  scale_color_brewer(palette="Set1", name="Distribution:")
+```
+
+The Gini coefficient allows for a more sensible description for offspring distributions, which are clearly not negative-binomial. 
+```{r GINITOYEXAMPLE}
+gini_coeff(df_toyoffspring) 
+```
+```{r GINIEMPIRICAL, eval=FALSE, echo=FALSE}
+reldist::gini(y_obs)
+```
+
+## Discussion
+
+The effect of superspreaders underlines the stochastic nature of the dynamics of an person-to-person transmitted disease in a population. The dispersion parameter $k$ is conditional on the assumption of a given parametric model for the offspring distribution (negative binomial). The Gini index is an alternative characterisation to measure heterogeneity. However, in both cases the parameters are to be interpreted together with the expectation of the distribution. Estimation of the dispersion parameter is orthogonal to the mean in the negative binomial and its straightforward to also get confidence intervals for it. This is less straightforward for the Gini index. 
+
+A heavy tailed offspring distribution can make the disease easier to control by
+targeting intervention measures to restrict superspreading [@lloydsmith_etal2005]. The hope is that such interventions are "cheaper" than interventions which target the entire population of infectious contacts. However, the success of such a targeted strategy also depends on how large the contribution of superspreaders really is. Hence, some effort is needed to quantify the effect of superspreaders. Furthermore, the above treatment also underlines that heterogeneity can be a helpful feature to exploit when trying to control a disease. Another aspect of such heterogeneity, namely its influence on the threshold of herd immunity, has recently been invested by my colleagues at Stockholm University [@britton_etal2020]. 
+
+
+[^1]: To be added to the list of characterising quantities such as doubling time, reproduction number, generation time, serial interval, ...
+[^2]: @lloydsmith_etal2005 estimated $k=0.16$ for SARS-CoV-1.
+
+## Literature
+
