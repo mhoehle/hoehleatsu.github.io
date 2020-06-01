@@ -104,7 +104,7 @@ info
 ```
 In other words, the superspreaders generate  (on average) 1.19 of the 2.5 new cases of a generation, i.e. 48%.
 
-These statements can also be made without formulating a superspreader threshold by graphing the cumulative share of the distribution of primary cases against the cumulative share of secondary cases these generate. This is exactly what the [Lorenz curve](https://en.wikipedia.org/wiki/Lorenz_curve) is doing. However, for outbreak analysis it appears clearer to graph the cumulative distribution in decreasing order of the number of offspring, i.e. following @lloydsmith_etal2005 we plot the cumulative share as $P(Y\geq y)$ instead of $P(Y \leq y)$. This is a variation of the Lorenz curve, but allows statements such as "the %x cases with highest number of offspring generate %y of the secondary cases".
+These statements can also be made without formulating a superspreader threshold by graphing the cumulative share of primary cases against the cumulative share of secondary cases these primary cases generate. This is exactly what the [Lorenz curve](https://en.wikipedia.org/wiki/Lorenz_curve) is doing. However, for outbreak analysis it appears clearer to graph the cumulative distribution in decreasing order of the number of offspring generated, i.e. following @lloydsmith_etal2005 we plot the cumulative share as $P(Y\geq y)$ instead of $P(Y \leq y)$. This is a variation of the Lorenz curve, but allows statements such as "the %x cases with highest number of offspring generate %y of the secondary cases".
 
 
 ```r
@@ -128,6 +128,25 @@ ggplot(df, aes(x=cdf_decreasing, y=cum_prop_of_Rt_decreasing)) + geom_line() +
 ```
 
 <img src="{{ site.baseurl }}/figure/source/2020-05-31-superspreader/PLOTMODIFIEDLORENZ-1.png" style="display: block; margin: auto;" />
+
+**Update 2020-06-01**: [Hernando Cortina](https://twitter.com/cortinah) made me aware that plotting the Lorenz curve for decreasing values is easily done using the [`gglorenz`](https://cran.r-project.org/web/packages/gglorenz/index.html) package. However, it requires a sample. So a quick way to do all the above for the negative binomial without thinking about CDFs, proportions of $R(t)$ etc. is to just generate a sample of arbitrary size from the PMF and then plot the decreasing Lorenz curve.
+
+
+```r
+# Sample an articial population so we can use the empirical lorenz curve
+outbreak <- data.frame(secondary_cases=rnbinom(10000, mu=Rt, size=k))
+
+ggplot(outbreak, aes(secondary_cases)) + gglorenz::stat_lorenz(desc=TRUE) +
+  xlab("Proportion of the infectious cases (cases with most secondary cases first)") +
+  ylab("Proportion of the secondary cases") +
+  scale_x_continuous(labels=scales::percent, breaks=seq(0,1,length=6)) +
+  scale_y_continuous(labels=scales::percent, breaks=seq(0,1,length=6)) +
+  geom_line(data=data.frame(x=seq(0,1,length=100)) %>% mutate(y=x), aes(x=x, y=y), lty=2, col="gray") + ggtitle(str_c("Scenario: R(t) = ", Rt, ", k = ", k))
+```
+
+<img src="{{ site.baseurl }}/figure/source/2020-05-31-superspreader/GGLORENZ-1.png" style="display: block; margin: auto;" />
+
+### Gini Coefficient
 
 Using the standard formulas to compute the [Gini coefficient](https://en.wikipedia.org/wiki/Gini_coefficient#Discrete_probability_distribution) for a discrete distribution with support on the non-negative integers, i.e. 
 $$
@@ -169,8 +188,9 @@ gini_coeff( data.frame(x=0:250) %>% mutate(pmf = dpois(x, lambda=Rt)))
 ## [1] 0.3475131
 ```
 
+
 ### Red Marble Toy Example
-For the [toy example offspring distribution](https://youtu.be/fOHB6PtcoMU?t=1259) used by [Christian Drosten](https://twitter.com/c_drosten) in his Coronavirus Update podcast episode 44 on COVID-19 superspreading (in German).
+For the [toy example offspring distribution](https://youtu.be/fOHB6PtcoMU?t=1259) used by [Christian Drosten](https://twitter.com/c_drosten) in his Coronavirus Update podcast on COVID-19 superspreading (episode 44, in German).
 The described hypothetical scenario is translated to an offspring distribution, where a primary case either generates 1 (with probability 9/10) or 10 (with probability 1/10) secondary cases:
 
 
@@ -189,8 +209,8 @@ y_obs <- sample(df_toyoffspring$x, size=10000, replace=TRUE, prob=df_toyoffsprin
 
 ```
 ##       size          mu    
-##   1.69483494   1.90263640 
-##  (0.03724779) (0.02009563)
+##   1.73380924   1.87481616 
+##  (0.03857807) (0.01975387)
 ```
 
 ```r
@@ -199,14 +219,13 @@ y_obs <- sample(df_toyoffspring$x, size=10000, replace=TRUE, prob=df_toyoffsprin
 ```
 
 ```
-##     size 
-## 0.590028
+##      size 
+## 0.5767647
 ```
 
-In other words, when fitting a negative binomial distribution to these data (probably not a good idea) we get a dispersion parameter of 0.59. 
+In other words, when fitting a negative binomial distribution to these data (probably not a good idea) we get a dispersion parameter of 0.58. 
 <img src="{{ site.baseurl }}/figure/source/2020-05-31-superspreader/PLOTNEGBINTOYPMF-1.png" style="display: block; margin: auto;" />
-
-The Gini coefficient allows for a more sensible description for offspring distributions, which are clearly not negative-binomial. 
+The Gini coefficient of this fitted negative distribution is 0.68. If we instead compute the Gini coefficient for the distribution directly we get
 
 ```r
 gini_coeff(df_toyoffspring) 
@@ -215,6 +234,28 @@ gini_coeff(df_toyoffspring)
 ```
 ## [1] 0.4263158
 ```
+
+
+Altogether, it can be discussed how much gain there is in using more flexible distributions to model the COVID-19 offspring distribution. The distribution is likely to center around 0-5, but with some mass above 10+. Too many additional parameters probably do not make sense. However, one consequnce of assuming negative binomial distributed offspring distribution is that we accept Poisson-offspring as the minimum lvl of heterogeneity. This might be theoretically justified, but the Gini index would allow for a unified reporting of heterogeneity independent of assumptions about the parametric shape of the offspring distribution. In the toy example case, a negative binomial distribution was certainly not an adequate distribution, but of course this is just a toy example.
+
+### Simulation
+
+We can use the `R0::sim.epid` function to simulate 1000 trajectories of an outbreak with negative binomial offspring distribution (c.f. [effective reproduction number](https://staff.math.su.se/hoehle/blog/2020/04/15/effectiveR0.html) post) having mean 2.5 and dispersion parameter 0.45. For ease of exposition we use a constant generation time of 1 day, start with 1 infectious case at generation time 0, and then simulate the epidemic for 10 additional generations.
+
+
+```r
+# Fixed generation time GT, for simplicity time scale is equal to GT, i.e. GT=1
+gt <- R0::generation.time(type="empirical", val=c(0,1))
+
+# Simulate 10 epidemics, 
+raw_sims <- R0::sim.epid(epid.nb=1000, GT=gt, R0=Rt, epid.length=10, peak.value=1e5, family="negbin", negbin.size=k)
+```
+
+<img src="{{ site.baseurl }}/figure/source/2020-05-31-superspreader/PLOTSIMS-1.png" style="display: block; margin: auto;" />
+Note that the plot uses a log-10 logarithmic y-axis. Furthermore, we see that 44% of the simulations become extinct in generation 1, because the initial case does not manage to generate any new cases. This matches the $P(Y_i=0)$ probability under the corresponding negative binomial distribution. Furthermore, 59% of the simulations have a final size of 10 or less cases.
+
+
+
 
 
 ## Discussion
