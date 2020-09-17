@@ -239,7 +239,7 @@ $$
 wt_j = \max\left(30, \sum_{i\in  I^*} \mathcal{I}\left(l_j  \leq \text{attenuation}(i) < u_j \right) \times \text{duration}(i) \times w_{j}\right)
 \end{align}
 $$
-where $mathcal{I}(A)$ denotes the indicator function which is 1 if the condition $A$ is fulfilled and zero otherwise. Furthermore, $I^* = \{ i \in I : \text{TR}(i)>0\}$, $w_1=0, w_2=0.5$ and $w_3=1$ and the limits $(l_j, u_j)$ of the three classes are [chosen](https://github.com/corona-warn-app/cwa-server/blob/f3d66840ef59e2ced10fb9b42f08a8938e76075a/services/distribution/src/main/resources/master-config/attenuation-duration.yaml#L13) as $[63, \infty)$, $[55,63)$ and $[0,55)$ dB. 
+where $\mathcal{I}(A)$ denotes the indicator function which is 1 if the condition $A$ is fulfilled and zero otherwise. Furthermore, $I^* = \{ i \in I : \text{TR}(i)>0\}$, $w_1=0, w_2=0.5$ and $w_3=1$ and the limits $(l_j, u_j)$ of the three classes are [chosen](https://github.com/corona-warn-app/cwa-server/blob/f3d66840ef59e2ced10fb9b42f08a8938e76075a/services/distribution/src/main/resources/master-config/attenuation-duration.yaml#L13) as $[63, \infty)$, $[55,63)$ and $[0,55)$ dB. 
 Note that for reasons beyond my knowledge, the time in each class is capped at 30 minutes. The total time is then calculated
 as 
 $$
