@@ -324,6 +324,10 @@ Despite an honest effort to try to understand the code and the documentation, th
 
 More details on the use of mathematics in digital contact tracing can be found in my lecture given as part of the 2020 summer course on "The Mathematics and Statistics of Infectious Disease Outbreaks" at Stockholm University [[ slides](https://github.com/hoehleatsu/mt3002-summer2020/blob/master/Lectures/Lecture12/lecture12.pdf) | [video part 1]( https://youtu.be/KdY62_KmJEE ) | [video part 2](https://youtu.be/DvS6-S3S6vc)].
 
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/KdY62_KmJEE" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</center>
+
 ## Literature
 
 [^1]: Code snippets have recently been published [[google](https://github.com/google/exposure-notifications-internals) | [apple](https://developer.apple.com/exposure-notification/) | [inofficial GitHub  of the apple code](https://github.com/rettichschnidi/ExposureNotification)]. Unfortunately, most of the published code appears to cover later releases of the GAEN. Furthermore, as far as I can tell, both the Google and the Apple snippets don't cover the full code used for the risk scoring in v1. Hence, some of my above explanations deduced from the code may fail to truly capture the state and functioning of the v1 risk scoring.
