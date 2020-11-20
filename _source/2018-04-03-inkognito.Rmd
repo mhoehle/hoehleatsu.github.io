@@ -69,7 +69,7 @@ are two types of revelations depending on which figures meet:
    one (of the four) builds. At least one of the three statements has
    to be correct, for example, if the opponent is Agent X and has the
    thin figure, then the statement could be: I'm Lord Fiddlebottom or
-   Madame Zsa Zsa and have the thing figure. Conversely, if the
+   Madame Zsa Zsa and have the thin figure. Conversely, if the
    question is *build* then two builds and one identity is stated --
    again at least one of the statements has to be true.
 2. **Ambassador question** about either identity or build: If about

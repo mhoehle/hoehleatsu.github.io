@@ -49,7 +49,7 @@ are two types of revelations depending on which figures meet:
    one (of the four) builds. At least one of the three statements has
    to be correct, for example, if the opponent is Agent X and has the
    thin figure, then the statement could be: I'm Lord Fiddlebottom or
-   Madame Zsa Zsa and have the thing figure. Conversely, if the
+   Madame Zsa Zsa and have the thin figure. Conversely, if the
    question is *build* then two builds and one identity is stated --
    again at least one of the statements has to be true.
 2. **Ambassador question** about either identity or build: If about
@@ -184,10 +184,10 @@ Mprime[sample(1:nrow(Mprime), size=3), ]
 ```
 
 ```
-##        ib identity build I1 I2 I3 I4 B1 B2 B3 B4 atleast1   pqI   pqB   aqI   aqB
-## 368 I4/B4        4     4  0  0  0  1  1  1  0  0     TRUE FALSE  TRUE FALSE FALSE
-## 364 I4/B3        4     3  0  0  0  1  1  1  0  0     TRUE FALSE  TRUE FALSE FALSE
-## 722 I2/B1        2     1  0  0  0  0  1  0  0  1     TRUE FALSE FALSE FALSE  TRUE
+##        ib identity build I1 I2 I3 I4 B1 B2 B3 B4 atleast1   pqI  pqB   aqI   aqB
+## 783 I3/B4        3     4  0  0  1  0  1  0  0  1     TRUE FALSE TRUE FALSE FALSE
+## 769 I1/B1        1     1  0  0  1  0  1  0  0  1     TRUE FALSE TRUE FALSE FALSE
+## 308 I4/B1        4     1  1  0  0  0  1  1  0  0     TRUE FALSE TRUE FALSE FALSE
 ```
 
 #### Likelihood

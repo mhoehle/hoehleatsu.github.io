@@ -36,14 +36,14 @@ In particular I was interested in the
 
 ## The Risk Scoring
 
-A phone using the GAEN framework scans the immediate surroundings in regular time intervals[^2] using the [BLE](https://en.wikipedia.org/wiki/Bluetooth_Low_Energy) protocol. Doing so the phone collects anonymous identifier keys of the devices  running BLE near you. If a GAEN user is tested positive, they can voluntarily decide to upload their anonymous identifier keys to a server. With regular intervals the app on your phone downloads these keys and investigates whether there is a match between the keys you encountered and those available on the server. If there is a match, an algorithm decides based on attributes of the contact, e.g. duration, distance and infectiousness of the potential infector, whether the user should be displayed a warning about an increased risk for infection. It is this classification algorithm, which I am interested in.
+A phone using the GAEN framework scans the immediate surroundings in regular time intervals[^2] using the [BLE](https://en.wikipedia.org/wiki/Bluetooth_Low_Energy) protocol. Doing so, the phone collects anonymous identifier keys of the devices  running BLE near you. If a GAEN user is tested positive, they can voluntarily decide to upload their anonymous identifier keys to a server. With regular intervals the app on your phone downloads these keys and investigates whether there is a match between the keys you encountered and those available on the server. If there is a match, an algorithm decides based on attributes of the contact, e.g. duration, distance and infectiousness of the potential infector, whether the user should be displayed a warning about an increased risk for infection. It is this classification algorithm I am interested in.
 
-Introducing mathematical notation, let $E$ be the set of encounters recorded by your phone during the last 14 days. We assume each entry $e\in E$ consists of attributes[^3] containing the identifier key of the phone you met, $\text{key}(e)$, (aka. *temporary exposure key* (TEK)), the calendar day the contact happened, $\text{date}(e)$, the duration of the contact, $\text{duration}(e)$, and the average attenuation of the signal during the contact, $\text{antennuation}(e)$. The later serves as proxy for the distance between the two phones. 
+Introducing mathematical notation, let $E$ be the set of encounters recorded by your phone during the last 14 days. We assume each entry $e\in E$ consists of attributes[^3] containing the identifier key - also known as *temporary exposure key* (TEK) - of the phone you met, i.e. $\text{key}(e)$, the calendar day the contact happened, $\text{date}(e)$, the duration of the contact, $\text{duration}(e)$, and the average attenuation of the signal during the contact, $\text{antennuation}(e)$. The later serves as proxy for the distance between the two phones. 
 
-Furthermore, the server contains the set of uploaded keys by CWA users, who tested positive for COVID-19 and who gave consent to upload their keys. Uploaded keys of test positives are also called *diagnosis keys* - technically they are however just TEKs. For simplicity we shall assume in this document that a phone is using one key per calendar day and that an upload of keys consists of the keys used on the day of upload and the previous 13 days[^4]. Let $S$ denote the set of uploaded keys and for $s\in S$ let $\text{key}(s)$ denote the diagnosis key, $\text{day_valid}(s)$ the calendar day the key was in use and  $\text{TRL}(s)$ the transmission risk. The later is a numerical value for how infectious the potential infector was on $\text{day_valid}(s)$.
-For simplicity, in what follows we shall consider only the so called **level** of the duration, attenuation and transmission risk, which in the GAEN API is a discretized version of the continuous quantity represented by an integer between 0-8.
+Furthermore, the server contains the set of uploaded keys by CWA users, who tested positive for COVID-19 and who gave consent to upload their keys. Uploaded keys of test positives are also called *diagnosis keys* - technically they are  just TEKs. For simplicity we shall assume in this document that phones are using one key per calendar day and that an upload of keys consists of the keys used on the day of upload and the previous 13 days[^4]. Let $S$ denote the set of uploaded keys on the server and for $s\in S$ let $\text{key}(s)$ denote the diagnosis key, $\text{day_valid}(s)$ the calendar day the key was in use and  $\text{TRL}(s)$ the transmission risk. The later is a numerical value for how infectious the potential infector was on $\text{day_valid}(s)$.
+For simplicity, in what follows, we shall consider only the so called **level** of the duration, attenuation and transmission risk, which in the GAEN framework is a discretized version of the continuous quantity represented by an integer between 0-8.
 
-We shall denote by $I$ the subset of $E$, which consists of keys known to have been positively tested for COVID-19, that is the keys have been uploaded to the server. For simplicity we shall extend the elements of $E$ with additional information provided by the server about the key, i.e. we let
+We shall denote by $I$ the subset of $E$, which consists of keys known to have been positively tested for COVID-19, that is, the key was uploaded to the server. For simplicity we shall extend the elements of $E$ with additional information provided by the server about the key, i.e. we let
 $$
 I = \{ (e, s) : e \in E , s \in S , \text{key}(s) = \text{key}(e) \}.
 $$
@@ -90,8 +90,7 @@ The $\text{days}(e)$ parameter of an $e\in E$ exposure reflects the possibility 
 
 
 
-Anton had his CWA running since 2020-09-13, while Aisha has been running her app since 2020-09-01.
-For each of the two we build a tibble containing the uploaded keys at the day of transmission, i.e. on the 20th and 21st, respectively[^5]. Furthermore, we construct two tibbles mimicking the state of the diagnosis key server on 2020-09-20 and 2020-09-21, respectively.
+Anton had his CWA running since 2020-09-13, while Aisha has been running her app since 2020-09-01. For each of the two we build a tibble containing the uploaded keys at the day of transmission, i.e. on the 20th and 21st, respectively[^5]. Furthermore, we construct two tibbles mimicking the state of the diagnosis key server on 2020-09-20 and 2020-09-21, respectively.
 
 
 ```r
@@ -127,7 +126,7 @@ dk20200920
 
 #### Part 2: Betty's exposure history
 
-Betty's sighting history on the 20th would look as follows:
+Betty's sighting history would look as follows:
 
 
 ```
@@ -159,7 +158,8 @@ i_set
 
 ## Risk scoring
 
-The description of the risk scoring in the CWA app is centered around [Fig. 12 and 13](https://github.com/corona-warn-app/cwa-documentation/blob/master/solution_architecture.md) of the solution architecture documentation. An illustrative example of how this computation looks can be found [here](https://github.com/corona-warn-app/cwa-documentation/blob/master/cwa-risk-assessment.md). For further details the source code for the risk scoring in the CWA can be consulted [[Android version](https://github.com/corona-warn-app/cwa-app-android/blob/5240f1baf92b9d3082d38570c4e11a4f72edde6b/Corona-Warn-App/src/main/java/de/rki/coronawarnapp/risk/DefaultRiskLevelCalculation.kt)| [iOS]()]. However, for the Android version, which is the one I checked most, it is [not 100% transparent](https://github.com/google/exposure-notifications-internals/issues/17#issuecomment-692981452) (to me) how the important [`exposureSummary`](https://developers.google.com/android/exposure-notifications/exposure-notifications-api#modes) object is generated by the API. Nevertheless, the computation of the GAEN risk scoring algorithm consists of two steps: a per-exposure risk score calculation followed by an aggregation over all exposures.
+The description of the risk scoring in the CWA app is centered around [Fig. 12 and 13](https://github.com/corona-warn-app/cwa-documentation/blob/master/solution_architecture.md) of the solution architecture documentation. An illustrative example of how this computation looks can be found [here](https://github.com/corona-warn-app/cwa-documentation/blob/master/cwa-risk-assessment.md). For further details the source code for the risk scoring in the CWA can be consulted [[Android version](https://github.com/corona-warn-app/cwa-app-android/blob/5240f1baf92b9d3082d38570c4e11a4f72edde6b/Corona-Warn-App/src/main/java/de/rki/coronawarnapp/risk/DefaultRiskLevelCalculation.kt)| [iOS]()]. However, for the Android version, which is the one I checked most, it is [not 100% transparent](https://github.com/google/exposure-notifications-internals/issues/17#issuecomment-692981452) (to me) how the important [`exposureSummary`](https://developers.google.com/android/exposure-notifications/exposure-notifications-api#modes) object is generated by the API. Nevertheless, the computation of the GAEN risk scoring algorithm consists of two steps: a per-exposure risk score calculation followed by an aggregation over all exposures. The best approximation I could find is [`KeyExposureEvaluator.java`](
+https://github.com/google/exposure-notifications-internals/blob/413b561f59cd4a63b571cac83821959e6e022ce8/exposurenotification/src/main/java/com/google/samples/exposurenotification/matching/KeyExposureEvaluator.java), which might be from a later release than v1, though.
 
 ## Risk Score 
 
@@ -221,14 +221,14 @@ c(maxTR, ntrs)
 
 In order to reflect that the accumulation of several exposures with a test positive increases your risk, a weighted summation of time spent in three 3 attenuation buckets (distance: far, intermediate and close) is computed.
 
-For each class $j=1,2,3$ (low, mid and high) a weighted time in the class is computed
+For each class $j=1,2,3$ (signal strength is low, mid and high) a weighted time in the class is computed
 $$
 \begin{align}
 wt_j = \max\left(30, \sum_{i\in  I^*} \mathcal{I}\left(l_j  \leq \text{attenuation}(i) < u_j \right) \times \text{duration}(i) \times w_{j}\right)
 \end{align}
 $$
 where $\mathcal{I}(A)$ denotes the indicator function which is 1 if the condition $A$ is fulfilled and zero otherwise. Furthermore, $I^* = \{ i \in I : \text{TR}(i)>0\}$, $w_1=0, w_2=0.5$ and $w_3=1$ and the limits $(l_j, u_j)$ of the three classes are [chosen](https://github.com/corona-warn-app/cwa-server/blob/f3d66840ef59e2ced10fb9b42f08a8938e76075a/services/distribution/src/main/resources/master-config/attenuation-duration.yaml#L13) as $[63, \infty)$, $[55,63)$ and $[0,55)$ dB. 
-Note that for reasons beyond my knowledge, the time in each class is capped at 30 minutes. The total time is then calculated
+Note that for reasons beyond my knowledge, the time in each class is capped at 30 minutes. The total time is then calculated as
 as 
 $$
 \text{Total time} = \sum_{j=1}^4 wt_j, 
@@ -282,7 +282,7 @@ Hence, Betty receives an alarm on the 20th.
 
 #### The classifier in a nutshell
 
-To summarise, the resulting binary classifier of the CWA can be expressed mathematically as
+To summarise, the resulting binary risk classifier of the CWA can be expressed mathematically by the single formula
 
 $$ 
 \begin{align*}
@@ -332,7 +332,7 @@ cwa_classifier <- function(i_set) {
 }
 ```
 
-To illustrate use of the function we will repeat the classification with the server information available on 2020-09-21. Note that this information is slightly different than on 2020-09-20, because now also Aisha's keys are available:
+Note that the server information on 2020-09-21 is slightly different from  2020-09-20, because now also Aisha's keys are available:
 
 
 ```r
@@ -370,7 +370,7 @@ cwa_classifier(i_set)
 ## $alarm
 ## [1] TRUE
 ```
-In other words and not so surprising we also get an alarm, if Betty runs the risk scoring on the 21st. The combined risk score is now also higher due to the multiple exposures.
+In other words and not so surprising: we also get an alarm, if Betty runs the risk scoring on the 21st. However, the combined risk score is now also higher due to the multiple exposures.
 
 ## Discussion
 
