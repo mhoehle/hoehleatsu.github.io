@@ -140,5 +140,7 @@ blog entry! No less than amazing are IMHO the automatically generated
 subtitles on Youtube - a lot of machine learning has happened in
 speech recognition!
 
+**Update Feb 2020**: Hanh Nguyen from [Bettermarks](https://nl.bettermarks.com/) used the web-app together with a blackboard + mobile phone setup to hold a Dutch freehand circle drawing championship at the 2020 edition of the
+[National Mathematics Days](https://www.uu.nl/onderwijs/nationale-wiskunde-dagen/2020-editie). The competition had more than 100 participants (mostly mathematics high school teachers), some of them taking the app to their classroom! Feedback like this makes this makes me happy.
 
 ## Literature
