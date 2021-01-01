@@ -342,6 +342,44 @@ oe_ratio_withtotal %>% rename(`Age group`=Altersgruppe10, `Percent change` = rat
 <p>
 So in these numbers the mild mortality in the older age groups during the first weeks balances some, but not all, of the excess in these age-groups since Mar-Apr. The total proportion of 2020-W1 to 2020-`r str_c("W", isoweek(prelim_destatis_date))` mortalities in the 80+ age group is currently `r scales::percent(prop80_2020)`. However, it is also important to realize that the current observed 2020 numbers contain the consequences of all type of effects from the pandemic management, which includes changes in the population behavior due to interventions. Disentangling the complex effects of all-cause mortality and the COVID-19 pandemic is a delicate matter, which takes experts in several disciplines (demographers, statisticians, epidemiologists) to solve. However, should you based on the above numbers happen to think that COVID-19 is not a serious problem, it is insightful to think about the [prevention paradox](https://en.wikipedia.org/wiki/Prevention_paradox) and take a look at the [all-cause mortality statistics](https://www.ft.com/content/a2901ce8-5eb7-4633-b89c-cbdf5b386938) from other countries. 
 
+The preliminary all-cause mortality data are also available for each of the 16 federal states, however, with a coarser age discretization. We show for each of the two age-groups the weekly mortality relative to the mean of the same week in 2016-2019.
+
+```{r MORTBL, message=FALSE, warning=FALSE, results="hide"}
+bl_destatis_deaths <- readxl::read_xlsx(path=destatis_file, sheet="BL_2016_2020_KW_AG_Ins", skip=8) %>% 
+  rename("Jahr"="...2", "Bundesland"="...3", "Altersgruppe"="unter … Jahren") %>% 
+  filter(Altersgruppe != "Insgesamt") %>% select(-`Nr.`) %>% 
+  mutate(`53` = NA) %>% 
+  select(-`53`) %>%  #Remove week 53 for now
+  pivot_longer(cols=-c(Jahr, Bundesland, Altersgruppe), names_to="Woche", values_to="Anzahl") %>% 
+  mutate(Woche = as.numeric(Woche), Jahr = as.numeric(Jahr)) %>% 
+  mutate(Vorjahr = Jahr < 2020)
+
+bl_deaths <- bl_destatis_deaths %>% group_by(Woche, Altersgruppe, Bundesland, Vorjahr) %>% 
+  summarise(mean_Anzahl= mean(Anzahl)) %>% 
+  pivot_wider(id_cols=c(Woche, Altersgruppe, Bundesland), names_from=Vorjahr, values_from=mean_Anzahl) %>% 
+  mutate(oe_ratio = `FALSE` / `TRUE`)
+
+bl_max <- bl_deaths %>% ungroup %>% filter(Altersgruppe == "65 u. mehr") %>% filter(oe_ratio == max(oe_ratio, na.rm=TRUE))
+```
+
+```{r MORTBLREL, message=FALSE, warning=FALSE}
+# Palette for plotting
+pal2 <- rev(brewer_pal(palette="Dark2")(3)[2:3]) #dont use the green
+
+ggplot(bl_deaths, aes(x=Woche, y=oe_ratio, color=Altersgruppe)) + geom_line() +
+  scale_color_manual(labels=c("[00,65)", "[65, Inf)"), values=c("0-65"=pal2[1], "65 u. mehr"=pal2[2]), name="Age group:") +
+  facet_wrap(~ Bundesland) +
+  geom_hline(yintercept=1, lty=2, col="darkgray") +
+  xlab("Week") +
+  ylab("2020 all-cause / Mean 2016-2019") +
+  #ggtitle("Vorläufige relative Gesamtmortalität in den Bundesländern (2020 bis W48)") +
+  theme_minimal() +
+  theme(legend.position = 'bottom') 
+```
+
+As an example, the highest mortality in the 65+ age-group occurs in `r sprintf("2020-W%0.2d",bl_max$Woche)` in the federal state of `r bl_max$Bundesland`, where the mortality is `r scales::percent(bl_max$oe_ratio - 1)` above the mean of 2016-2019.
+
+
 ### All-Cause Mortality and COVID-19 Associated Deaths
 
 To see, how much of the all-cause mortality is directly contributed by deaths in association with COVID-19, we match the age-stratified all-cause mortality data with the age-stratified COVID-19 deaths reported by the RKI since Sep 2020 (2020-W35). One complication of this matching is that the RKI deaths are reported by the week that the information about the death reached the RKI and not the week of death. In order to match it with the Destatis all-cause mortality time series, we extrapolate week of death from the week of report by the simple assumption that the death occurred 2 weeks before the report[^2].
@@ -477,7 +515,7 @@ expected <- destatis_deaths %>% filter(Vorjahr & Woche <= max(prediction$Woche))
 ratio <- predicted / expected 
 ```
 
-We note that the COVID-19 associated deaths in the most recent weeks in the 80+ age groups make up more than [`r scales::percent(death_prop$proportion %>% max(na.rm=TRUE), accuracy=5)` of all deaths reported on average over the years 2016-2019](deaths_covid19_proportion.png). 
+We note that the COVID-19 associated deaths in the most recent weeks in the 80+ age groups make up approximately [`r scales::percent(death_prop$proportion %>% max(na.rm=TRUE), accuracy=5)` of all deaths reported on average over the years 2016-2019](deaths_covid19_proportion.png). 
 This would mean an excess of mortality for the period of 2020-W01 to `r last_week_of_predict` of `r scales::percent(ratio-1, accuracy=1)`, which is likely to increase even further as the remaining weeks of 2020 are added[^4].
 
 ## Discussion
