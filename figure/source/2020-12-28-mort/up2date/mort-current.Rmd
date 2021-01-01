@@ -51,7 +51,7 @@ prelim_destatis_date <- date_of_analysis %m-% days(3) %m-% weeks(4)
 
 ## Abstract:
 
-This page is an updated version of the 2020-12-28 blog post [Age Stratified All-Cause and COVID-19 Associated Mortality](https://staff.math.su.se/hoehle/blog/2020/12/28/mort.html) containing the numbers as of `r date_of_analysis` (i.e. up to `r str_c(isoyear(prelim_destatis_date), "-W", isoweek(prelim_destatis_date))`). It considers the age stratified all-cause and COVID-19 associated mortality in Germany during 2020 based on numbers provided by the Federal Statistical Office and the Robert Koch Institute.
+This page is an updated version of the 2020-12-28 blog post [Age Stratified All-Cause and COVID-19 Associated Mortality](https://staff.math.su.se/hoehle/blog/2020/12/28/mort.html) containing the numbers as of `r date_of_analysis`, i.e. up to week `r str_c(isoyear(prelim_destatis_date), "-W", isoweek(prelim_destatis_date))` which covers the days from `r (prelim_destatis_date - 6)` to `r prelim_destatis_date`. The post considers the age stratified all-cause and COVID-19 associated mortality in Germany during 2020 based on numbers provided by the Federal Statistical Office and the Robert Koch Institute.
 
 <br>
 <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"/></a>
@@ -334,9 +334,11 @@ prop80_2020 <- oe_ratio_withtotal %>% ungroup %>% filter(Altersgruppe10 != "Tota
 oe_ratio_withtotal %>% rename(`Age group`=Altersgruppe10, `Percent change` = ratio_percent) %>%
   mutate(expected_20162019 = round(expected_20162019)) %>%
   select(`Age group`, observed, expected_20162019, `Percent change`, everything()) %>% 
+  mutate(`Age group` = ifelse(`Age group`=="Total", "", `Age group`)) %>% 
   kbl(align=('lrrrrr')) %>%
   kable_classic() %>%
   pack_rows("Total", 9, 9) %>% 
+  row_spec(9, color = 'black', background = 'lightgray') %>%
   footnote(alphabet = c("Min and max for row 'Total' is obtained by first summing each of the years 2016-2019 and then take the min and max."))
 ```
 <p>
