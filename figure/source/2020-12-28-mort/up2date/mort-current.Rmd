@@ -51,7 +51,18 @@ prelim_destatis_date <- date_of_analysis %m-% days(3) %m-% weeks(4)
 
 ## Abstract:
 
-This page is an updated version of the 2020-12-28 blog post [Age Stratified All-Cause and COVID-19 Associated Mortality](https://staff.math.su.se/hoehle/blog/2020/12/28/mort.html) containing the numbers as of `r date_of_analysis`, i.e. up to week `r str_c(isoyear(prelim_destatis_date), "-W", isoweek(prelim_destatis_date))` which covers the days from `r (prelim_destatis_date - 6)` to `r prelim_destatis_date`. The post considers the age stratified all-cause and COVID-19 associated mortality in Germany during 2020 based on numbers provided by the Federal Statistical Office and the Robert Koch Institute.
+This page is an updated version of the 2020-12-28 blog post [Age Stratified All-Cause and COVID-19 Associated Mortality](https://staff.math.su.se/hoehle/blog/2020/12/28/mort.html).
+The post considers the age stratified all-cause and COVID-19 associated mortality in Germany during 2020 based on numbers provided by the Federal Statistical Office and the Robert Koch Institute.
+Important changes compared to the original post consist of
+
+* an improved population adjusted expected mortality calculation 
+* an update of the analysis containing the numbers as of `r date_of_analysis`, i.e. up to week `r str_c(isoyear(prelim_destatis_date), "-W", isoweek(prelim_destatis_date))` which covers the days from `r (prelim_destatis_date - 6)` to `r prelim_destatis_date`. 
+
+<center>
+```{r,results='asis',echo=FALSE,fig.cap=""}
+cat(paste0("<img src=\"sterbefaelle_incidence.png\" width=\"550\">\n"))
+```
+</center>
 
 <br>
 <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"/></a>
@@ -61,6 +72,7 @@ Attribution-ShareAlike 4.0 International License</a>.
 The markdown+Rknitr source code of this blog is available under a [GNU
 General Public License (GPL
 v3)](https://www.gnu.org/licenses/gpl-3.0.html) license from github.
+
 
 
 ## Introduction
@@ -177,12 +189,6 @@ pop_total <- pop_total_stichtag %>% group_by(agegrp10) %>% do( {
   res <- tibble(Stichtag = dates, agegrp10=.$agegrp10[1], Anzahl = Anzahl)
   res %>% mutate(Jahr = isoyear(Stichtag), Woche = isoweek(Stichtag))
 })
-
-#Visualize the dynamics in the age group sizes. Quite some changes!
-if (FALSE) {
-  ggplot(pop_total, aes(x=Stichtag, y=Anzahl, color=agegrp10)) + geom_line() + theme_bw() +
-    coord_cartesian(ylim=c(0,NA))
-}
 
 # Merge first 3 classes into a [00,30) y class to match the other destatis data.
 pop_total_0030 <- pop_total %>% 
@@ -317,7 +323,41 @@ prop80 <- total20162019 %>% filter(Altersgruppe10 %in% c("[80,90)", "[90,Inf)"))
 prop60 <- total20162019 %>% filter(Altersgruppe10 %in% c("[60,70)", "[70,80)", "[80,90)", "[90,Inf)")) %>% summarise(proportion = sum(proportion)) %>% as.numeric()
 ```
 
-Since the age-groups contain different population sizes and - as pointed out by @ragnitz2021 - population sizes of the age-groups changed relevantly 2016-2019, a better comparison between age-groups instead of absolute numbers is by [incidence rate](sterbefaelle_incidence.png) (i.e. deaths per 100,000 population in the age group). For this, the yearly Destatis [population data](https://www-genesis.destatis.de/genesis//online?operation=table&code=12411-0012&bypass=true&levelindex=0&levelid=1610148266727#abreadcrumb) are linearly interpolated for the weeks, the incidence per week and age-group is computed. Then the min/max of the incidence 2016-2019 is compared to the incidence 2020. 
+Since the age-groups contain different population sizes and - as pointed out by @ragnitz2021 - population sizes of the age-groups changed relevantly 2016-2019, a better comparison between age-groups instead of absolute numbers is by [incidence rate](sterbefaelle_incidence.png) (i.e. deaths per 100,000 population in the age group). For this, the yearly Destatis [age-specific population data](https://www-genesis.destatis.de/genesis//online?operation=table&code=12411-0012&bypass=true&levelindex=0&levelid=1610148266727#abreadcrumb) 
+available for the cut-off-date Dec 31st for 2015-2019  
+are linearly interpolated for the weeks. The 2020 population is estimated by a linear extrapolation from the data of 2018-12-31 and 2019-12-31 (this could be additionally improved using [destatis population projections](https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Bevoelkerungsvorausberechnung/Publikationen/Downloads-Vorausberechnung/bevoelkerung-bundeslaender-2060-5124205199024.html)).
+
+```{r POPDYNAMICS, fig.width=8, fig.height=6}
+# Small helper data.frame used for plotting
+pop_draw <- pop_total %>% 
+  rename(`Age group`=agegrp10) %>% 
+  mutate(is2020 = Jahr == 2020) 
+
+ggplot(pop_draw, aes(x=Stichtag, y=Anzahl, color=`Age group`, linetype=is2020)) + geom_line() + 
+  geom_point(data=pop_draw %>% filter(isoweek(Stichtag)==1),aes(shape=`Age group`)) +
+  theme_bw() +
+  coord_cartesian(ylim=c(0,NA)) +
+  guides(linetype=FALSE) + 
+  scale_shape_manual(values=1:10) +
+  #scale_color_viridis(discrete=TRUE, option="C") +
+  xlab("Date") + ylab("Population")
+```
+```{r POPINC, results="hide"}
+pop_increase <- function(agegrp10_str) {
+ pop <- pop_total_0030 %>% filter(agegrp10 == agegrp10_str) 
+ pop2016 <- pop %>% filter(Woche == 1 & Jahr == 2016) %>% pull(Population)
+ pop2020 <- pop %>% filter(Woche == 52 & Jahr == 2020) %>% pull(Population)
+ return(pop2020/pop2016)
+}
+
+pop_increase("[80,90)")
+pop_increase("[90,Inf)")
+```
+We notice the strong increase in size of the [80,90) year old age group (increase by `r scales::percent(pop_increase("[80,90)")-1, accuracy=1)`) and the noticable decline in the groups of [40,50) (`r scales::percent(pop_increase("[40,50)")-1, accuracy=1)`) and [70,80) (`r scales::percent(pop_increase("[70,80)")-1, accuracy=1)`) in just 5 years. Although not large in absolute size, even the [90,Inf] group increased by  `r scales::percent(pop_increase("[90,Inf)")-1, accuracy=1)`.
+Especially the changes in these higher age groups will be relevant for the analysis of excess mortality.
+
+
+Once we have the weekly age-specific population estimates available we can compute the incidence per week and age-group. Below the weekly mortality incidence rate (per 100 000) is shown for 2020 compared to the minimum, mean and maximum of the corresponding week for the years 2016-2019.
 
 ```{r AGEMORTINC, echo=FALSE, warning=FALSE}
 # Make an incidence polygon
@@ -342,14 +382,13 @@ p_inc + facet_wrap(~ Altersgruppe10, scales = "free_y")
 ggsave(filename=file.path(filePath,"sterbefaelle_incidence.png"), width=8, height=5, dpi=300)
 ```
 
-Compared to the previous graphic, one notices that this population adjustment leads to a smaller excess in the [80-90) group (because the population in this group became larger). On the other hand, the 2020 curve in the [70-80) group now is in excess of the expected. For further insights see also @kauermann_etal2021 and @ragnitz2021.
+Compared to the graphic with the absolute number of deaths, one notices that the population adjustment leads to a smaller excess in the [80-90) group (because the population in this group became larger). On the other hand, the 2020 curve in the [70-80) group now is in excess of the expected. For further insights see also @kauermann_etal2021 and @ragnitz2021.
 
 To underline the age-gradient of mortality: `r scales::percent(prop80)` of the deaths 2016-2019 occured in the age group of 80+ years (`r scales::percent(prop60)` in the age group of 60+). It becomes clear that 2020 mortality in the 80+ age groups was rather low during the first 10-12 weeks and then had a spike in connection with the first COVID-19 wave (March-April). Subsequently, a summer peak (possibly associated with heat) is followed by an increasing and ongoing upward trend. One challenge for a statistical analysis of these numbers is to figure out how much of the upwards trend is  "catch-up mortality" due to the lower mortality in the beginning of the year and how much is excess related to COVID-19. 
 
 
 An initial analysis of this question consists of summing the all-cause mortalities from W1 until `r str_c("W", max_destatis_week)` for 2020 (observed) and compare this to the summation of the weekly mean of 2016-2019 for the corresponding time period (expected)[^1]. Note: This calculation method ignores the population changes in the years 2016-2020. 
-
-```{r, results="asis", echo=FALSE, message=FALSE}
+```{r oe_raw, results="asis", echo=FALSE, message=FALSE}
 # Range of total per year (with age stratification)
 total_20162019 <- destatis_deaths_long10 %>%
   filter(Woche <= max_destatis_week) %>%
@@ -359,27 +398,28 @@ total_20162019 <- destatis_deaths_long10 %>%
 oe_ratio <- total_20162019 %>% summarise(mean_Anzahl= mean(Anzahl), min_Anzahl = min(Anzahl), max_Anzahl=max(Anzahl)) %>%
    pivot_wider( id_cols=Altersgruppe10, names_from=Vorjahr, values_from=c(mean_Anzahl, min_Anzahl, max_Anzahl)) %>%
   select(-min_Anzahl_FALSE, -max_Anzahl_FALSE) %>%
-  rename(observed=`mean_Anzahl_FALSE`, expected_20162019=`mean_Anzahl_TRUE`, min_20162019=`min_Anzahl_TRUE`, max_20162019=`max_Anzahl_TRUE`)
+  rename(observed_2020=`mean_Anzahl_FALSE`, expected_20162019=`mean_Anzahl_TRUE`, min_20162019=`min_Anzahl_TRUE`, max_20162019=`max_Anzahl_TRUE`)
 
 #Total per year (up to most recent week)
 total_year <- total_20162019 %>% group_by(Jahr) %>% summarise(Anzahl = sum(Anzahl))
 
 oe_ratio_total <- oe_ratio %>% ungroup %>%
-  summarise(Altersgruppe10 = "Total", observed=sum(observed), expected_20162019=sum(expected_20162019), min_20162019=total_year %>% pull(Anzahl) %>% min(), max_20162019=total_year %>% pull(Anzahl) %>% max())
+  summarise(Altersgruppe10 = "Total", observed_2020=sum(observed_2020), expected_20162019=sum(expected_20162019), min_20162019=total_year %>% pull(Anzahl) %>% min(), max_20162019=total_year %>% pull(Anzahl) %>% max())
 
 oe_ratio_withtotal <- bind_rows(oe_ratio, oe_ratio_total) %>%
-  mutate(ratio = observed / expected_20162019, ratio_percent= scales::percent(ratio-1, accuracy=1)) %>%
+  mutate(ratio = observed_2020 / expected_20162019, 
+         ratio_percent= scales::percent(ratio-1, accuracy=1)) %>%
   select(-ratio)
 
 prop80_2020 <- oe_ratio_withtotal %>% ungroup %>% filter(Altersgruppe10 != "Total") %>%
-  mutate(proportion = observed / sum(observed)) %>%
+  mutate(proportion = observed_2020 / sum(observed_2020)) %>%
   filter(Altersgruppe10 %in% c("[80,90)", "[90,Inf)")) %>%
   summarise(proportion = sum(proportion)) %>% as.numeric()
 
 # Make the table using kableExtra
 oe_ratio_withtotal %>% rename(`Age group`=Altersgruppe10, `Percent change` = ratio_percent) %>%
   mutate(expected_20162019 = round(expected_20162019)) %>%
-  select(`Age group`, observed, expected_20162019, `Percent change`, everything()) %>%
+  select(`Age group`, observed_2020, expected_20162019, `Percent change`, everything()) %>%
   mutate(`Age group` = ifelse(`Age group`=="Total", "", `Age group`)) %>%
   kbl(align=('lrrrrr')) %>%
   kable_classic() %>%
@@ -388,10 +428,55 @@ oe_ratio_withtotal %>% rename(`Age group`=Altersgruppe10, `Percent change` = rat
   footnote(alphabet = c("Min and max for row 'Total' is obtained by first summing each of the years 2016-2019 and then take the min and max."))
 ```
 <p>
-So in these numbers the mild mortality in the older age groups during the first weeks balances some, but not all, of the excess in these age-groups since Mar-Apr. The total proportion of 2020-W1 to 2020-`r str_c("W", isoweek(prelim_destatis_date))` mortalities in the 80+ age group is currently `r scales::percent(prop80_2020)`. However, it is also important to realize that the current observed 2020 numbers contain the consequences of all type of effects from the pandemic management, which includes changes in the population behavior due to interventions. Disentangling the complex effects of all-cause mortality and the COVID-19 pandemic is a delicate matter, which takes experts in several disciplines (demographers, statisticians, epidemiologists) to solve. However, should you based on the above numbers happen to think that COVID-19 is not a serious problem, it is insightful to think about the [prevention paradox](https://en.wikipedia.org/wiki/Prevention_paradox) and take a look at the [all-cause mortality statistics](https://www.ft.com/content/a2901ce8-5eb7-4633-b89c-cbdf5b386938) from other countries. 
+ The total proportion of 2020-W1 to 2020-`r str_c("W", isoweek(prelim_destatis_date))` mortalities in the 80+ age group is currently `r scales::percent(prop80_2020)`.
+ 
+A population adjusted estimate can be obtained using an indirect standardization approach [@keiding_clayton2014]: We compute the expected weekly incidence rate per week and age-group based on the years 2016-2019 as done in the figure above and then multiply this expected incidence on the 2020 population to get the expected number of deaths. Because the estimated incidence rates for 2016-2019 are based on slightly different population sizes, one could take this into consideration by computing a population weighted mean of these rates or use logistic regression. However, numerical differences are neglible so we proceed with the equal weighting of the mean. The computations lead to the following table:
 
+```{r oe_standardized, warning=FALSE, message=FALSE}
+# Compute indirect standardized incidence rate and, hence, expected
+# number of cases for 2020
+oe_adj <- destatis_deaths_range %>% 
+  filter(Woche <= max_destatis_week) %>% 
+  pivot_wider(id_cols=c(Woche, Altersgruppe10), names_from="Vorjahr", values_from=c(mean_Population, mean_Anzahl, mean_inc)) %>% 
+  rename( observed_2020 = mean_Anzahl_FALSE, 
+          `Age group`=Altersgruppe10) %>% 
+  mutate( expected_20162019 = mean_Population_FALSE * mean_inc_TRUE / 1e5) 
 
-The preliminary all-cause mortality data are also available for each of the 16 federal states, however, with a coarser age discretization. We show for each of the two age-groups the weekly mortality relative to the mean of the same week in 2016-2019. Note again that no adjustment forchanging populations is currently done in this calculation.
+# Summarise
+summary <- function(x) {
+  x %>% 
+  summarise(observed_2020=sum(observed_2020),
+            expected_20162019=sum(expected_20162019))  %>% 
+    mutate(ratio = observed_2020 / expected_20162019,
+           `Percent change` = scales::percent((ratio-1), accuracy=1)) %>% select(-ratio)
+}
+
+s1 <- oe_adj %>% group_by(`Age group`) %>% summary()
+s2 <- oe_adj %>% ungroup %>% summary() %>% 
+  mutate(`Age group`="Total") %>% 
+  select(`Age group`, everything())
+
+# Combine into one table
+oe_tab <- bind_rows(s1, s2)
+
+# Make the table using kableExtra
+oe_tab %>% 
+  mutate(expected_20162019 = round(expected_20162019)) %>%
+  select(`Age group`, observed_2020, expected_20162019, `Percent change`, everything()) %>%
+  mutate(`Age group` = ifelse(`Age group`=="Total", "", `Age group`)) %>%
+  kbl(align=('lrrrrr')) %>%
+  kable_classic() %>%
+  pack_rows("Total", 9, 9) %>%
+  row_spec(9, color = 'black', background = 'lightgray') #
+```
+
+What looked like a small excess in the raw calculations becomes a small negative excess after population adjustment. This shows the importance of computing the expected number of cases in a population adjustment way, which was the point of @ragnitz2021.
+
+Altogether, the mild mortality in the older age groups during the first weeks (e.g. due to a mild influenza season) so far balances the excess in the higher age-groups since Mar-Apr, which coincides with the start of the COVID-19 pandemic. If one is interested in COVID-19 associated deaths an alternative might be to focus on this period alone, but then one ignore the low influenza season in the beginning of the year, which is IMO relevant for all-cause mortality excess analysis. Finally, as seen from the population adjusted graphs, the mortality incidence has currently a strong upward trend in the older age groups and the analysis is currently only up to week 50. It it thus too early to make general statements about the year 2020.
+
+However, it is important to realize that the current observed 2020 mortality numbers contain the consequences of all type of effects from the pandemic management, which includes changes in the population behavior due to interventions. Disentangling the complex effects of all-cause mortality and the COVID-19 pandemic is a delicate matter, which takes experts in several disciplines (demographers, statisticians, epidemiologists) to solve. However, should you based on the above numbers happen to think that COVID-19 is not a serious problem, it is insightful to think about the [prevention paradox](https://en.wikipedia.org/wiki/Prevention_paradox) and take a look at the [all-cause mortality statistics](https://www.ft.com/content/a2901ce8-5eb7-4633-b89c-cbdf5b386938) from other countries. Furthermore, mortality will remain high in 2021 so looking at just 2020 is too simple.
+
+The preliminary all-cause mortality data are also available for each of the 16 federal states, however, with a coarser age discretization. We show for each of the two age-groups the weekly mortality relative to the mean of the same week in 2016-2019. Note that these are only raw calculation and do not contain any adjustments for changing populations.
 
 ```{r MORTBL, message=FALSE, warning=FALSE, results="hide"}
 bl_destatis_deaths <- readxl::read_xlsx(path=destatis_file, sheet="BL_2016_2020_KW_AG_Ins", skip=8) %>% 
@@ -426,7 +511,7 @@ ggplot(bl_deaths, aes(x=Woche, y=oe_ratio, color=Altersgruppe)) + geom_line() +
   theme(legend.position = 'bottom') 
 ```
 
-As an example, the highest mortality in the 65+ age-group occurs in `r sprintf("2020-W%0.2d",bl_max$Woche)` in the federal state of `r bl_max$Bundesland`, where the mortality is `r scales::percent(bl_max$oe_ratio - 1)` above the mean of 2016-2019.
+As an example, the highest mortality in the 65+ age-group occurs in `r sprintf("2020-W%0.2d",bl_max$Woche)` in the federal state of `r bl_max$Bundesland`, where the unadjusted mortality is `r scales::percent(bl_max$oe_ratio - 1)` above the mean of 2016-2019.
 
 
 ### All-Cause Mortality and COVID-19 Associated Deaths
@@ -505,7 +590,7 @@ prediction <- future %>% left_join(end %>% select(-Woche), by=c("Altersgruppe10"
 last_week_of_predict <- str_c("2020-W", deaths_ts %>% filter(!Vorjahr) %>% pull(Woche) %>% max())
 ```
 
-Furthermore, to avoid a downward bias in the observed numbers by observed-but-not-yet-reported deaths, the previously shown Destatis analyses of all-cause mortality does not include the most recent weeks, where COVID-19 associated mortality increased substantially in Germany: the analysis is only done until `r str_c("2020-W", max_destatis_week)`, even though the date of analysis was `r date_of_analysis`. At this time the RKI in their situational report of `r corresponding_sit_rep %>% pull(Date)` already reported a total of `r corresponding_sit_rep %>% select(-Date) %>% sum()` COVID-19 associated deaths - of which only `r total_deaths_destatis` have their time of death up to `r str_c("2020-W", max_destatis_week)`. We thus expect the reported excess mortality to increase within the coming weeks. As a simple extrapolation, we assume that all COVID-19 associated mortality in the subsequent weeks above the level in  `r str_c("2020-W", max_destatis_week)`, is directly summable to the 2020 all-cause mortality[^3]. With this simple extrapolation, the excess mortality computations can be extended until `r last_week_of_predict` and leads to the following predictions:
+Furthermore, to avoid a downward bias in the observed numbers by observed-but-not-yet-reported deaths, the previously shown Destatis analyses of all-cause mortality does not include the most recent weeks, where COVID-19 associated mortality increased substantially in Germany: the analysis is only done until `r str_c("2020-W", max_destatis_week)`, even though the date of analysis was `r date_of_analysis`. At this time the RKI in their situational report of `r corresponding_sit_rep %>% pull(Date)` already reported a total of `r corresponding_sit_rep %>% select(-Date) %>% sum()` COVID-19 associated deaths - of which only `r total_deaths_destatis` have their time of death up to `r str_c("2020-W", max_destatis_week)`. We thus expect the reported excess mortality to increase within the coming weeks. As a simple extrapolation, we assume that all COVID-19 associated mortality in the subsequent weeks above the level in  `r str_c("2020-W", max_destatis_week)`, is directly summable to the 2020 all-cause mortality[^3]. With this simple extrapolation, the raw excess mortality computations can be extended until `r last_week_of_predict` and leads to the following unadjusted predictions:
 
 ```{r AGEMORTWCOVID, echo=FALSE, results="hide", warning=FALSE, message=FALSE}
 # Palette for plotting
@@ -577,12 +662,12 @@ max_excess
 ```
 
 We note that the COVID-19 associated deaths in the most recent weeks in the 80+ age groups make up approximately [`r scales::percent(death_prop$proportion %>% max(na.rm=TRUE), accuracy=5)` of all deaths reported on average over the years 2016-2019](deaths_covid19_proportion.png). 
-This would mean an excess of mortality for the period of 2020-W01 to `r last_week_of_predict` of `r scales::percent(ratio-1, accuracy=1)`[^4].
-The highest excess mortality in a single week is expected to be seen in `r sprintf("W%2d", max_excess$Woche)` in the `r max_excess$Altersgruppe10` age group with `r scales::percent(max_excess$excess-1)`.
+This would mean an unadjusted excess of mortality for the period of 2020-W01 to `r last_week_of_predict` of `r scales::percent(ratio-1, accuracy=1)`[^4].
+The highest unadjusted excess mortality in a single week is expected to be seen in `r sprintf("W%2d", max_excess$Woche)` in the `r max_excess$Altersgruppe10` age group with an unadjusted excess of `r scales::percent(max_excess$excess-1)`.
 
 ## Discussion
 
-Considering all-cause mortality and COVID-19 associated mortality as a measure for the impact of an pandemic is a rather simplistic view of the pandemic. COVID-19 infections can be very mild, but complicated progressions can occur without leading to death (see, e.g., [long COVID](https://en.wikipedia.org/wiki/Long_COVID)). Looking at mortality also ignores the complex interplay between age-groups, where it can be beneficial to reduce infections in a not-so-affected-by-the-disease age-group in order to protect the higher-risk groups. The motivation of this post was primarily to put COVID-19 associated mortality in relation to all-cause mortality in order to get a better understanding of the daily number of COVID-19 deaths. An age-stratified view is necessary for this.
+Considering all-cause mortality and COVID-19 associated mortality as a measure for the impact of an pandemic is a rather simplistic view of the pandemic. COVID-19 infections can be very mild, but complicated progressions can occur without leading to death (see, e.g., [long COVID](https://en.wikipedia.org/wiki/Long_COVID)). Looking at mortality also ignores the complex interplay between age-groups, where it can be beneficial to reduce infections in a not-so-affected-by-the-disease age-group in order to protect the higher-risk groups. The motivation of this post was primarily to put COVID-19 associated mortality in relation to all-cause mortality in order to get a better understanding of the daily number of COVID-19 deaths. An age-stratified view is necessary for this. Furthermore, as pointed out by @ragnitz2021, excess mortality calculations should take the changing population structure into account.
 
 We showed that the Destatis reported excess-mortality are expected to increase in the coming weeks. The extrapolations used in the present analysis are simplistic and could be improved by a [nowcasting approach](https://staff.math.su.se/hoehle/blog/2016/07/19/nowCast.html), which extrapolates not-yet-reported deaths from knowledge about the reporting delay [@schneble_etal2020]. For a more modelling based analysis of the German COVID-19 associated mortality data see also the work by @linden_etal2020 ([updated analysis](https://twitter.com/matthiaslinden/status/1344088091020165125?s=20)).
 More information on real-time mortality monitoring can be obtained from the [EuroMoMo methodology](https://www.euromomo.eu/how-it-works/methods/) page or @hoehle_mazick2010.
