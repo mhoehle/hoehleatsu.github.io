@@ -327,7 +327,7 @@ Since the age-groups contain different population sizes and - as pointed out by 
 available for the cut-off-date Dec 31st for 2015-2019  
 are linearly interpolated for the weeks. The 2020 population is estimated by a linear extrapolation from the data of 2018-12-31 and 2019-12-31 (this could be additionally improved using [destatis population projections](https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Bevoelkerungsvorausberechnung/Publikationen/Downloads-Vorausberechnung/bevoelkerung-bundeslaender-2060-5124205199024.html)).
 
-```{r POPDYNAMICS, fig.width=8, fig.height=6}
+```{r POPDYNAMICS, fig.width=8, fig.height=5}
 # Small helper data.frame used for plotting
 pop_draw <- pop_total %>% 
   rename(`Age group`=agegrp10) %>% 
@@ -340,7 +340,8 @@ ggplot(pop_draw, aes(x=Stichtag, y=Anzahl, color=`Age group`, linetype=is2020)) 
   guides(linetype=FALSE) + 
   scale_shape_manual(values=1:10) +
   #scale_color_viridis(discrete=TRUE, option="C") +
-  xlab("Date") + ylab("Population")
+  xlab("Date") + ylab("Population") +
+  theme(legend.position = 'bottom')
 ```
 ```{r POPINC, results="hide"}
 pop_increase <- function(agegrp10_str) {
