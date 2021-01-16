@@ -699,7 +699,7 @@ ggplot(death_prop, aes(x=Woche, y=proportion, linetype=type)) + geom_line() +
   #scale_color_brewer(palette="Set1", name="") +
   scale_linetype_manual(labels=c("2020 COVID-19 / 2020 All-Cause"), values=c(1, 2), name="") +
   theme_minimal() +
-  ylab("Proportion") +
+  ylab("Proportion") + xlab("Week") +
   scale_x_continuous(breaks = seq(min(death_prop$Woche)-1, max(death_prop$Woche), 10),
                      minor_breaks = seq(min(death_prop$Woche)-1, max(death_prop$Woche), 5)) +
   theme(legend.position = 'bottom')
