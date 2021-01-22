@@ -46,8 +46,8 @@ options(tibble.print_max = 10, tibble.print_min = 5)
 # Warning: Code is not yet 2021 ready, once new data arrive. Need to add ISO year to the Week variable.
 
 # Date of analysis
-date_of_analysis <- ymd("20210115")
-prelim_destatis_date <- date_of_analysis %m-% days(3) %m-% weeks(4) 
+date_of_analysis <- ymd("20210122")
+prelim_destatis_date <- date_of_analysis %m+% days(2) %m-% weeks(4) 
 ```
 
 ## Abstract:
@@ -606,6 +606,8 @@ bl_oe <- bl_destatis_deaths %>% group_by(Woche, Altersgruppe, Bundesland, Vorjah
 bl_oe %>% select(Woche, Altersgruppe, Bundesland, observed_2020, expected_20162019, oe_ratio)
 # Which week has max excess in 65+?
 bl_max <- bl_oe %>% ungroup %>% filter(Altersgruppe == "[65,Inf)") %>% filter(oe_ratio == max(oe_ratio, na.rm=TRUE))
+bl_top <- bl_oe %>% group_by(Bundesland) %>% filter(Altersgruppe == "[65,Inf)") %>% slice_max(oe_ratio, n=1) %>% 
+  ungroup %>% slice_max(oe_ratio, n=3)
 ```
 
 ```{r MORTBLREL, message=FALSE, warning=FALSE}
@@ -626,7 +628,19 @@ ggsave(filename=file.path(filePath,"allcause_bl.png"), width=8, height=5, dpi=30
 
 ```
 
-We note the strong regional differences in the plot. As an example, the highest mortality in the 65+ age-group occurs in `r sprintf("2020-W%0.2d",bl_max$Woche)` in the federal state of `r bl_max$Bundesland`, where the poulation adjusted mortality is `r scales::percent(bl_max$oe_ratio - 1)` above the mean of 2016-2019. Furthermore, for the [00,65) series for Berlin it looks like not all all cases up to week `r sprintf("W%02d",max_destatis_week)` are available. This underlines the preliminary character of the Destatis data.
+We note the strong regional differences in the plot. As an example, the highest mortality in the 65+ age-group occurs in `r sprintf("2020-W%0.2d",bl_max$Woche)` in the federal state of `r bl_max$Bundesland`, where the poulation adjusted mortality is `r scales::percent(bl_max$oe_ratio - 1)` above the mean of 2016-2019. Note that for `r bl_max$Bundesland`, even the <65 age-group currently has a visible excess. The `r nrow(bl_top)` federal states with the highest excess mortality week in the 65+ age-group are:
+```{r}
+tab <- bl_top %>% select(Bundesland, Woche, oe_ratio) %>% rename(`Federal state`=Bundesland, `Week`=Woche) %>% 
+  mutate(`Week` = sprintf("2020-W%02d", Week),
+         `Excess mortality` = scales::percent(oe_ratio-1, accuracy=1)) %>% select(-oe_ratio)
+tab %>% kbl(align=('llr')) %>%
+  kable_classic() 
+```
+```{r, eval=FALSE}
+tab %>% kable(format="markdown")
+```
+
+Furthermore, for the [00,65) series for Berlin it looks like not all all cases up to week `r sprintf("W%02d",max_destatis_week)` are available. This underlines the preliminary character of the Destatis data.
 
 ### All-Cause Mortality and COVID-19 Associated Deaths
 
