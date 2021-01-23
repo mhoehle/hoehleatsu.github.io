@@ -88,7 +88,7 @@ The age-stratified analyses are unfortunately not continuously updated, however,
 
 The age-stratified reported COVID-19 associated deaths (by week of death) are obtained from an [export of the RKI](https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Projekte_RKI/COVID-19_Todesfaelle.html). In order to compensate for reporting delays of deaths, the Destatis analysis only goes until 4 weeks before the time point of analysis.
 
-The aim of the present post is to provide an **up-to-date age-stratified view including COVID-19 associated deaths**. As additional data source we use the age-stratified cumulative number of deaths reported every Tuesday in the RKI [situational report](https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Situationsberichte/Dez_2020/2020-12-30-en.pdf?__blob=publicationFile). 
+The aim of the present post is to provide an **up-to-date age-stratified view including COVID-19 associated deaths**. As additional data source we use the [age-stratified weekly time series by time of death](https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Projekte_RKI/COVID-19_Todesfaelle.html) reported by RKI. 
 
 ```{r DATAIO, echo=FALSE, results="hide", warning=FALSE, message=FALSE}
 #################################################
@@ -722,6 +722,69 @@ ggsave(filename=file.path(filePath,"deaths_covid19_proportion.png"), width=8, he
 ```
 
 We note that the COVID-19 associated deaths in the most recent weeks in the `r max_prop$Altersgruppe10` age groups make up approximately [`r scales::percent(max_prop$proportion, accuracy=5)` of all deaths reported in the week](deaths_covid19_proportion.png). 
+
+#### All-Cause and COVID-19 Mortality Stratified by Federal State
+
+Since the time series of COVID-19 associated deaths by time of death are also available at federal state level (though without age-stratification), we can repeat the above analysis stratified by federal state. 
+
+```{r BLALLCAUSEANDCOVID, warning=FALSE, message=FALSE}
+# Load data and impute "<4" entries (i.e. values 1-3) as 1.5
+covid_bl_deaths_long <- readxl::read_xlsx(path=dest_file, sheet="COVID_Todesfälle_BL") %>% 
+  rename(`Anzahl`=`Anzahl verstorbene COVID-19 Fälle`) %>% 
+  select(-SterbeZeit) %>% 
+  mutate(Sterbejahr = 2020,
+         Anzahl = as.numeric(ifelse(Anzahl == "<4", 1.5, Anzahl))) %>%   
+mutate(Date=ISOweek::ISOweek2date(sprintf("%d-W%02d-1",Sterbejahr,Sterbewoche)),
+         Woche = isoweek(Date), Jahr=isoyear(Date)) %>% 
+  select(-Sterbejahr,-Sterbewoche) %>% 
+   left_join(tt, by=c("Bundesland"="Bundesland_kurz")) %>% 
+  rename(Bundesland_kurz=Bundesland, Bundesland=Bundesland_lang)
+
+# Reduce all-cause mortality and populations to a non-age-stratified version
+bl_destatis_deaths_noage <- bl_destatis_deaths %>% group_by(Jahr, Woche, Bundesland) %>% 
+  summarise(Anzahl=sum(Anzahl), Population=sum(Population))
+
+# Joined dataset of all cause deaths (Destatis) and COVID deaths (RKI)
+bl_deaths_noage_long <- bl_destatis_deaths_noage %>% rename(Anzahl_AllCause = `Anzahl`)  %>% 
+  left_join(covid_bl_deaths_long %>% rename(Anzahl_COVID = Anzahl) %>% select(-Bundesland_kurz, -Date), 
+            by=c("Jahr", "Woche", "Bundesland")) %>% 
+  pivot_longer( cols=c(Anzahl_AllCause, Anzahl_COVID), names_to="Todesart", values_to="Anzahl") %>% 
+  mutate(Todesart = gsub("Anzahl_", "", Todesart), 
+         Vorjahr = Jahr < 2020, inc = Anzahl / Population) 
+
+# Compute the indirect standardization
+bl_oe_noage <-   bl_deaths_noage_long %>% 
+  group_by(Woche, Bundesland, Vorjahr, Todesart) %>% 
+  summarise(mean_Anzahl= mean(Anzahl), mean_inc = mean(inc), mean_Population = mean(Population)) %>% 
+  pivot_wider(id_cols=c(Woche, Bundesland), names_from=c(Vorjahr, Todesart), values_from=c(mean_Anzahl, mean_inc, mean_Population)) %>% 
+  rename( observed_2020_AllCause = mean_Anzahl_FALSE_AllCause,
+          observed_2020_COVID = mean_Anzahl_FALSE_COVID) %>% 
+  # perform the indirect standardisation
+  mutate( expected_20162019_AllCause = mean_Population_FALSE_AllCause * mean_inc_TRUE_AllCause,
+          oe_ratio_AllCause = observed_2020_AllCause / expected_20162019_AllCause,
+          oe_ratio_AllCauseMinusCOVID = (observed_2020_AllCause - observed_2020_COVID) / (expected_20162019_AllCause)) 
+```
+
+```{r PLOTBLALLCAUSEANDCOVID, warning=FALSE, message=FALSE}
+# Palette for plotting
+pal2 <- rev(brewer_pal(palette="Dark2")(3)[2:3]) #dont use the green
+
+bl_oe_noage_long <- bl_oe_noage %>% select(Woche, Bundesland, oe_ratio_AllCause, oe_ratio_AllCauseMinusCOVID) %>% 
+  pivot_longer( cols=c(-Woche, -Bundesland), names_to="Type", values_to="SMR") %>% 
+  mutate(Type = case_when( Type == "oe_ratio_AllCause" ~ "2020 All-Cause", Type == "oe_ratio_AllCauseMinusCOVID" ~ "2020 All-cause minus COVID-19", TRUE~Type))
+
+ggplot(bl_oe_noage_long, aes(x=Woche, y=SMR, color=Type)) + geom_line() +
+  scale_color_manual(values=c("2020 All-Cause"=pal2[1], "2020 All-cause minus COVID-19"=pal2[2], name="Type:")) +
+  facet_wrap(~ Bundesland) +
+  geom_hline(yintercept=1, lty=2, col="darkgray") +
+  xlab("Week") +
+  ylab("SMR") +
+  theme_minimal() +
+  theme(legend.position = 'bottom') 
+```
+
+Opposite to the aggregated analysis for entire Germany, we see that for Sachsen there even is an excess in deaths after substracting the known COVID-19 associated deaths. This is slightly worrying: either the reporting lag for deaths in Sachsen has increased such that not all deaths occurred by week `r sprintf("2020-W%02d",max_destatis_week)` have been reported as of `r  date_of_analysis`, i.e. more of the deaths will be reported as COVID-19 associated, or this is a first sign of either failing to detect mortalities as being COVID-19 associated or there is failure to provide non COVID patients with appropriate care such as ICU. This has to be monitored closely in the coming weeks. To a lesser degree this effect is also visible for Brandenburg and Thüringen.
+Again, the Berlin time series should not be over-interpreted at the end due to the longer reporting delay.
 
 ## Discussion
 
