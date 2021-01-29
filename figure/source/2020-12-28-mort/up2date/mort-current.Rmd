@@ -46,7 +46,7 @@ options(tibble.print_max = 10, tibble.print_min = 5)
 # Warning: Code is not yet 2021 ready, once new data arrive. Need to add ISO year to the Week variable.
 
 # Date of analysis
-date_of_analysis <- ymd("20210122")
+date_of_analysis <- ymd("20210129")
 prelim_destatis_date <- date_of_analysis %m+% days(2) %m-% weeks(4) 
 ```
 
@@ -58,6 +58,7 @@ Important changes compared to the original post consist of
 
 * an improved population adjusted expected mortality calculation 
 * an update of the analysis containing the numbers as of `r date_of_analysis`, i.e. up to week `r str_c(isoyear(prelim_destatis_date), "-W", isoweek(prelim_destatis_date))` which covers the days from `r (prelim_destatis_date - 6)` to `r prelim_destatis_date`. 
+Because week 53 also covers parts of 2021, the analysis is currently done only up to week 52 in order to better compare with the previous years (who did not have a week 53). This can be improved.
 
 <center>
 ```{r,results='asis',echo=FALSE,fig.cap=""}
@@ -104,6 +105,8 @@ destatis_deaths <- readxl::read_xlsx(path=destatis_file, sheet="D_2016_2020_KW_A
 names(destatis_deaths)[2:3] <- c("Jahr", "Altersgruppe")
 destatis_deaths <- destatis_deaths %>% 
   filter(Altersgruppe != "Insgesamt") %>% select(-`Nr.`) %>% 
+  # Note that we delete week 53 for the data to have an easier comparison
+  # This needs to be fixed in an improved version of the week 53 handling. (no time at the moment)
   mutate(`53` = NA)
 
 # Destatis all cause deaths regrouped to age groups to spans of 10y
@@ -299,7 +302,7 @@ destatis_deaths_range <- destatis_deaths %>% #
             mean_Population = mean(Population)) %>% #2016-2019 this will be a mean. 2020: interpolated value
   mutate(Datum    = ISOweek::ISOweek2date(str_c("2020-W", sprintf("%02d",Woche), "-1")))
 
-# Last available week in the destatis all-cause mortality data.
+# Last available week in the Destatis all-cause mortality data.
 max_destatis_week <- destatis_deaths_range %>% 
   filter(!Vorjahr & !is.na(mean_Anzahl)) %>% 
   pull(Woche) %>% max()
@@ -437,6 +440,7 @@ An initial analysis of this question consists of summing the all-cause mortaliti
 ```{r oe_raw, results="asis", echo=FALSE, message=FALSE}
 # Range of total per year (with age stratification)
 total_20162019 <- destatis_deaths_long10 %>%
+  #Note: No week 53 at the moment.
   filter(Woche <= max_destatis_week) %>%
   group_by(Vorjahr, Altersgruppe10, Jahr) %>%
   summarise(Anzahl=sum(Anzahl))
@@ -474,7 +478,7 @@ oe_ratio_withtotal %>% rename(`Age group`=Altersgruppe10, `Percent change` = rat
   footnote(alphabet = c("Min and max for row 'Total' is obtained by first summing each of the years 2016-2019 and then take the min and max."))
 ```
 <p>
- The total proportion of 2020-W1 to 2020-`r str_c("W", isoweek(prelim_destatis_date))` mortalities in the 80+ age group is currently `r scales::percent(prop80_2020)`.
+ The total proportion of 2020-W1 to 2020-`r str_c("W", max_destatis_week)` mortalities in the 80+ age group is currently `r scales::percent(prop80_2020)`.
  
 A population age-structure adjusted estimate can be obtained using an indirect standardization approach [@keiding_clayton2014]: For each age group we compute the weekly incidence rates 2016-2019, then for each week we take the min, mean and max of the 2016-2020 incidences. If we for a given age-group and week want an expected number of deaths based on the 2016-2019 data, we would multiply the 2016-2019 mean incidence on the corresponding 2020 population in order to get the expected number of deaths in the corresponding age-group and week of 2020. Because the estimated incidence rates for 2016-2019 are based on slightly different population sizes, one could acknowledge this in the mean-calculation by instead computing an inverse variance weighted mean (or use logistic regression). However, numerical differences are neglible so we proceed with the equal weighting of the mean. The computations lead to the following table for the age-population adjusted mortality until `r sprintf("W%.02d", max_destatis_week)`:
 
