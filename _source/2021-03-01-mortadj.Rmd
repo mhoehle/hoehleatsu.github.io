@@ -1,0 +1,819 @@
+---
+layout: post
+title: "Age-Structure Adjusted All-Cause Mortality"
+tags: [rstats, dataviz, R, COVID-19, SARS-CoV-2, demography]
+#  bibliography: ~/Literature/Bibtex/jabref.bib
+header-includes:
+   - \usepackage{bm}
+comments: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2021-03-01-mortadj/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2021-03-01-mortadj")
+
+knitr::opts_chunk$set(echo = FALSE, fig.width=8, fig.height=6, fig.cap='', fig.align='center', dpi=72*2)#, global.par = TRUE)
+options(width=150, scipen=1e3)
+
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(scales))
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(kableExtra))
+suppressPackageStartupMessages(library(viridis))
+# Analyse DeStatis Death data
+suppressPackageStartupMessages(library(ISOweek))
+suppressPackageStartupMessages(library(lubridate))
+suppressPackageStartupMessages(library(readxl))
+
+# Non CRAN packages
+# devtools::install_github("hadley/emo")
+
+##Configuration
+options(knitr.table.format = "html")
+theme_set(theme_minimal())
+#if there are more than n rows in the tibble, print only the first m rows.
+options(tibble.print_max = 10, tibble.print_min = 5)
+```
+
+```{r}
+# Date of analysis
+date_of_analysis <- ymd("20210313")
+prelim_destatis_date <- date_of_analysis %m+% days(2) %m-% weeks(4)
+```
+
+## Abstract:
+
+This page is an updated version of the 2020-12-28 blog post [Age Stratified All-Cause and COVID-19 Associated Mortality](https://staff.math.su.se/hoehle/blog/2020/12/28/mort.html).
+The post considers the age stratified all-cause and COVID-19 associated mortality in Germany during 2020 based on numbers provided by the Federal Statistical Office and the Robert Koch Institute.
+Important extensions compared to the original post are:
+
+* an improved population adjusted expected mortality calculation 
+* an update of the analysis containing the 2020 numbers as of `r date_of_analysis`
+
+Note: The present analyses were previously kept in a separate updated R-Markdown file, which was updated until 2021-01-29. The present text
+is a conversion of this document into a blog post including a treamtnet of week 53, but does not contain any updated interpretations compared to the 2021-01-29 version.
+
+<center>
+```{r,results='asis',echo=FALSE,fig.cap=""}
+cat(paste0("<img src=\"{{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"sterbefaelle_incidence.png\" width=\"550\">\n"))
+```
+</center>
+
+<br>
+<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"/></a>
+This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
+Attribution-ShareAlike 4.0 International License</a>.
+The markdown+Rknitr source code of this blog is available under a [GNU
+General Public License (GPL
+v3)](https://www.gnu.org/licenses/gpl-3.0.html) license from github.
+
+
+
+## Introduction
+
+All-cause mortality is one of indicators used to measure the impact of the COVID-19 pandemic, because this indicator is less biased by the testing strategy needed to identify cases to have died while having a recent COVID-19 diagnosis. Several ressources ([OurWorldInData](https://ourworldindata.org/covid-excess-mortality), [Financial Times](https://www.ft.com/content/a2901ce8-5eb7-4633-b89c-cbdf5b386938), @aburto_etal2021) have used this indicator to compare the COVID-19 response between countries. Since both death and COVID-19 have a strong age component, it appears crucial to take an age-stratified view on both all-cause mortality as well as deaths associated with COVID-19. 
+
+## Age Stratified Mortality
+
+Real-time mortality monitoring is not common in Germany, as can be seen from the coverage of the [EuroMoMo monitoring](https://www.euromomo.eu/) for Germany, where only the two federal states Hesse and Berlin participate. However, as part of the COVID-19 response, the Federal Statistical Office (Destatis) now provides weekly updated [preliminary mortality statistics of all-cause mortality in 2020](https://www.destatis.de/DE/Themen/Querschnitt/Corona/Gesellschaft/kontextinformationen-gesellschaft.html#Sterbe). The methodology behind the numbers as well as age-stratified additional analyses are described in an accompanying [publication](https://www.destatis.de/DE/Methoden/WISTA-Wirtschaft-und-Statistik/2020/04/sonderauswertung-sterbefallzahlen-042020.pdf?__blob=publicationFile) [@zurnieden_etal2020]. 
+The age-stratified analyses are unfortunately not continuously updated, however, up-to-date data are made publicly [available](https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Sterbefaelle-Lebenserwartung/Tabellen/sonderauswertung-sterbefaelle.html?nn=209016).
+
+
+The age-stratified reported COVID-19 associated deaths (by week of death) are obtained from an [export of the RKI](https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Projekte_RKI/COVID-19_Todesfaelle.html). In order to compensate for reporting delays of deaths, the Destatis analysis only goes until 4 weeks before the time point of analysis, but in this post we shall only be interested in the 2020 results. As additional data source we use the [age-stratified weekly time series by time of death](https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Projekte_RKI/COVID-19_Todesfaelle.html) reported by RKI. 
+
+```{r DATAIO, echo=FALSE, results="hide", warning=FALSE, message=FALSE}
+#################################################
+# Load Destatis age-stratified mortality data
+#################################################
+destatis_file <- file.path(filePath, str_c("sonderauswertung-sterbefaelle-", date_of_analysis, ".xlsx"))
+if (!file.exists(destatis_file)) {
+  download.file("https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Sterbefaelle-Lebenserwartung/Tabellen/sonderauswertung-sterbefaelle.xlsx?__blob=publicationFile", destfile = destatis_file)
+}
+
+# Data now contain 2021 as well as 2020-W53
+destatis_deaths <- readxl::read_xlsx(path=destatis_file, sheet="D_2016_2021_KW_AG_Ins", skip=8)
+names(destatis_deaths)[2:3] <- c("Jahr", "Altersgruppe")
+destatis_deaths <- destatis_deaths %>% 
+  filter(Altersgruppe != "Insgesamt") %>% select(-`Nr.`) 
+
+# Destatis all cause deaths regrouped to age groups to spans of 10y
+destatis_deaths_long <- destatis_deaths %>% 
+  # Some non-available W53 have an "X" some have an NA -> change all to NA
+  mutate(`53` = as.numeric(`53`)) %>% 
+  pivot_longer(cols=-c(Jahr,Altersgruppe), names_to="Woche", values_to="Anzahl") %>% 
+  filter(!(Woche == 53 & is.na(Anzahl))) %>% 
+  mutate(Woche = as.numeric(Woche), Jahr = as.numeric(Jahr),
+         Altersgruppe = if_else(Altersgruppe == "95 u. mehr", "95-120", Altersgruppe)) %>% 
+  mutate(Altersgruppe_mid = unlist(lapply(str_split(Altersgruppe, "-"), function(x) mean(as.numeric(x)))),
+         Altersgruppe10 = cut(Altersgruppe_mid, breaks=c(0,30,40,50,60,70,80,90,Inf),right=FALSE),
+         Altersgruppe10 = fct_recode(Altersgruppe10,`[00,30)`="[0,30)"))
+
+# Use 10y age groups  
+destatis_deaths_long10 <- destatis_deaths_long %>% group_by(Jahr, Woche, Altersgruppe10) %>% 
+  summarise(Anzahl=sum(Anzahl)) %>% 
+  mutate(Vorjahr = Jahr < 2020)
+
+# Get estimates for artificial week 53 for 2016-2019 by averaging
+# week 201X-W52 and 201(X+1)-W01
+extra_W53 <- map_df( 2016:2019, function(y) {
+  tab <- destatis_deaths_long10 %>% filter( (Jahr == y & Woche == 52) | 
+                                      ((Jahr == y+1) & Woche == 01))
+  tab %>% group_by(Altersgruppe10) %>% 
+    summarise(Anzahl = mean(Anzahl)) %>% 
+    mutate(Jahr = y, Woche = 53, Vorjahr = TRUE)
+}) %>% arrange(Jahr, Woche)
+
+destatis_deaths_long10 <- 
+  full_join(destatis_deaths_long10 %>% filter(Jahr <= 2020), extra_W53) %>% 
+  arrange(Jahr, Woche, Altersgruppe10)
+
+###########################################################################
+# Extract 2019 Destatis population data (available by age-year)
+###########################################################################
+
+# Define age groups to study - these are actually finer than used later.
+age_breaks <- c(0,seq(30,90,by=10),Inf)
+
+# Improved version of the population numbers : Use population data 2015-2019 instead of just the 2019 data in
+# order to address changes in the population. Use Destatis projection for 2020 and then
+# interpolate linearly for the weeks
+# Note: ISO-Latin encoding converted to UTF-8.
+# Data can be found through query on genesis:
+# https://www-genesis.destatis.de/genesis//online?operation=table&code=12411-0012&bypass=true&levelindex=0&levelid=1615666096343#abreadcrumb
+pop <- read_csv2(file=file.path(filePath, "12411-0012_2015-2019.csv"), skip=5) 
+names(pop)[1:2] <- c("Stichtag","Altersgruppe")
+pop <- pop %>% filter(!is.na(Altersgruppe) & Altersgruppe != "Insgesamt")
+
+
+# Helper function to read 2020 population projection for one BL
+read_onebl <- function(BL) {
+  pop <- readxl::read_xlsx(path=file.path(filePath, "bevoelkerung-bundeslaender-2060-5124205199025.xlsx"), sheet=str_c(BL,"_Alter"), skip=10) %>% 
+    slice(-c(1:3)) %>% 
+    rename("Alter"=`...1`)
+  
+  # See when male/female start and only do the joint calculation
+  idx <- which(pop$`Alter` == "Zusammen")
+  pop <- pop %>% slice(1:(idx[1]-2))
+  
+  pop2020 <- pop %>% select(Alter, `2020`) %>% 
+    mutate(Bundesland = BL, Population = `2020` * 1e3, 
+           Stichtag = ymd("20201231"),
+           Alter = as.numeric(case_when( Alter == "100 und älter" ~ "100", TRUE~Alter))) %>% 
+    select(-`2020`)
+  
+  return(pop2020)
+}
+
+# Read the list of BLs
+bl_list <- c("BY", "BW", "BE", "BB", "HB", "HH", "HE", "MV", "NI", "NW", "RP", "SL", "SN", "ST", "SH", "TH")
+length(bl_list)
+# Get the population estimate for each BL in 2020
+pop2020_raw <- map_df(bl_list , read_onebl)
+
+
+
+# Small helper function to cut the ages into desired groups
+cut_agegrp <- function(alter, age_breaks) {
+  cut(as.numeric(alter), 
+      breaks=age_breaks, 
+      labels=sprintf("[%02s,%02s)", head(age_breaks,n=-1), tail(age_breaks,n=-1)), right=FALSE)
+}
+
+# Implement age-groups on the data by appropriate grouping
+pop <- pop %>% 
+  mutate(Stichtag = dmy(Stichtag),
+         alter = str_extract(Altersgruppe, "^[0-9]+")) %>% 
+  # Make age group for single digits into two digit, i.e. 0-9 becomes 00-09 for better sorting
+  mutate(altersgrp = sprintf("[%02s,%02s)",as.numeric(alter), as.numeric(alter)+1)) %>% 
+  mutate(alter = case_when( Altersgruppe == "unter 1 Jahr" ~ "0", TRUE~alter),
+         altersgrp = case_when( Altersgruppe == "unter 1 Jahr" ~ "[00,01)", 
+                                Altersgruppe == "90 Jahre und mehr" ~ "[90,Inf)",
+                                TRUE ~ altersgrp),
+         agegrp10 = cut_agegrp(alter, age_breaks),
+  ) 
+
+
+# Translation table between short and long name of the federal states
+tt <- c("Baden-Württemberg"="BW", "Bayern"="BY" , "Berlin"="BE", "Brandenburg"="BB", "Bremen"="HB", "Hamburg"="HH",
+        "Hessen"="HE", "Mecklenburg-Vorpommern"="MV",  "Niedersachsen"="NI", "Nordrhein-Westfalen"="NW",
+        "Rheinland-Pfalz"="RP", "Saarland"="SL", "Sachsen"="SN", "Sachsen-Anhalt"="ST", "Schleswig-Holstein"="SH",
+        "Thüringen"="TH")
+tt <- tibble(Bundesland_lang = names(tt), Bundesland_kurz = as.character(tt))
+
+# Convert to long format and sum out values over the BL
+pop_20162019 <- pop %>% select(-Altersgruppe, -alter, -altersgrp) %>% 
+  pivot_longer(-c(agegrp10, Stichtag), names_to="Bundesland", values_to="Population") %>% 
+  left_join(tt, by=c("Bundesland"="Bundesland_lang")) %>% 
+  group_by(Stichtag, Bundesland, agegrp10) %>% 
+  summarise(Population = sum(Population))
+
+# Implement age-groups on the 2020 data by appropriate grouping
+pop2020 <- pop2020_raw %>% 
+  mutate(agegrp10 = cut_agegrp(Alter, age_breaks)) %>% 
+  left_join(tt, by=c("Bundesland"="Bundesland_kurz")) %>% 
+  rename(Bundesland_kurz = Bundesland) %>% rename(Bundesland=Bundesland_lang) %>% 
+  group_by(Stichtag, Bundesland, agegrp10) %>% 
+  summarise(Population = sum(Population))
+
+# Check result
+pop2020 %>% ungroup %>% summarise(Population = sum(Population))
+pop2020 %>% group_by(agegrp10) %>% summarise(Population = sum(Population))
+
+# Join 2016-2019 and 2020 population
+pop_20162020 <- bind_rows( pop_20162019, pop2020 %>% select(Stichtag, agegrp10, Bundesland, Population))
+# Check totals each year
+pop_20162020 %>% group_by(year(Stichtag)) %>% summarise(Population = sum(Population))
+
+# Relative change
+rel_pop_change <- pop_20162020 %>% group_by(year(Stichtag)) %>% 
+  summarise(Population = sum(Population)) %>% 
+  mutate(rel_change = Population/lag(Population))
+
+
+# Use linear interpolation on the population numbers within the years
+# One problem is that the extrapolation beyond the end is done by carrying last value
+# forward. Might be necessary to fix this.
+pop_interp <- pop_20162020 %>% group_by(Bundesland, agegrp10) %>% 
+  do( {
+  #browser()
+  #print(.)
+  f <- approxfun( x=.$Stichtag, y=.$Population, method="linear", rule=2)
+  dates <- seq(ymd("20160104"), ymd("20201231"), by="1 week") #mondays in 2016-W01 and 2019-W52
+  res <- tibble(Stichtag = dates, Bundesland = .$Bundesland[1], agegrp10=.$agegrp10[1], Population = f(dates)) %>% 
+    mutate(Jahr = isoyear(Stichtag), Woche = isoweek(Stichtag))
+  #browser()
+  foo <- res %>% filter(Jahr < 2020 & Woche == 52) %>% mutate(Woche=53)
+  res2 <- full_join(res, foo)
+  res2
+})
+
+# Check the estimate at end of each year
+pop_interp %>% group_by(Jahr) %>% filter(Woche == 52) %>% summarise(Population = sum(Population))
+
+# # Make de
+pop_de_0030 <- pop_interp %>%
+  group_by(Stichtag, Jahr, Woche, agegrp10) %>%
+  summarise(Population = sum(Population)) %>%
+  mutate(Vorjahr = Jahr < 2020)
+
+# Double check totals
+pop_de_0030
+pop_de_0030 %>% filter(Woche==52) %>%  group_by(Jahr) %>% summarise(Total = sum(Population))
+
+######################################################################
+# RKI COVID-19 deaths by week of death - new as of 2020-01-14
+######################################################################
+
+#####################################################
+# Load RKI data for deaths dates by week of death (week of the day of death).
+# Note: These data are without age stratification
+#####################################################
+
+dest_file <- file.path(filePath,str_c("COVID-19_Todesfaelle-", date_of_analysis, ".xlsx"))
+if (!file.exists(dest_file)) {
+  #New format with age groups
+  download.file("https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Projekte_RKI/COVID-19_Todesfaelle.xlsx;jsessionid=0E20A75BBAEA5B70D1021F40A2409B81.internet082?__blob=publicationFile", destfile=dest_file)
+}
+# Load data and impute "<4" entries (i.e. values 1-3) as 1.5
+covid_deaths_long <- readxl::read_xlsx(path=dest_file, sheet="COVID_Todesfälle_KW_AG10") %>% pivot_longer(cols=-c(Sterbjahr, Sterbewoche), names_to="Altersgruppe", values_to="Anzahl") %>% 
+  mutate(Altersgruppe10 = as.numeric(str_extract(Altersgruppe, "[0-9]+")) + 5,
+         agegrp10 = cut_agegrp(Altersgruppe10, age_breaks=age_breaks),
+ Anzahl = as.numeric(ifelse(Anzahl == "<4", 1.5, Anzahl))) %>% 
+  #Join counts from the 3 00-30 groups
+  group_by(Sterbjahr, Sterbewoche, agegrp10) %>% summarise(Anzahl=sum(Anzahl)) %>%  
+  mutate(Date=ISOweek::ISOweek2date(sprintf("%d-W%02d-1",Sterbjahr,Sterbewoche)),
+         Woche = isoweek(Date), Jahr=isoyear(Date)) %>% 
+  select(-Sterbjahr,-Sterbewoche) %>% 
+  left_join(pop_de_0030 %>% filter(Jahr==2020), by=c("Jahr"="Jahr", "Woche"="Woche", "agegrp10"="agegrp10")) %>% 
+  mutate(inc = Anzahl / Population)
+  
+
+####################################################
+# Compute the span of the 2016-2019 for each week
+####################################################
+
+# Join all-cause mortality data with population sizes
+destatis_deaths <- left_join(destatis_deaths_long10, pop_de_0030, 
+                             by=c("Jahr"="Jahr", "Woche"="Woche", "Vorjahr"="Vorjahr", "Altersgruppe10" = "agegrp10")) %>% 
+  mutate(inc = Anzahl / Population)
+
+# Compute min,mean,max both in absolute numbers and in years
+destatis_deaths_range <- destatis_deaths %>% #
+  group_by(Woche, Altersgruppe10, Vorjahr) %>% 
+  summarise(min_Anzahl = min(Anzahl), 
+            mean_Anzahl= mean(Anzahl), 
+            max_Anzahl = max(Anzahl),
+            min_inc = min(inc) * 1e5,
+            mean_inc = mean(inc) * 1e5,
+            max_inc = max(inc) * 1e5,
+            mean_Population = mean(Population)) %>% #2016-2019 this will be a mean. 2020: interpolated value
+  mutate(Datum    = ISOweek::ISOweek2date(str_c("2020-W", sprintf("%02d",Woche), "-1")))
+
+# Last available week in the Destatis all-cause mortality data.
+max_destatis_week <- destatis_deaths_range %>% 
+  filter(!Vorjahr & !is.na(mean_Anzahl)) %>% 
+  pull(Woche) %>% max()
+```
+
+## Preliminary Destatis Mortality Data
+
+Available all-cause deaths (by week of death) are available from [Destatis](https://www.destatis.de/EN/Home/_node.html) until `r str_c(isoyear(prelim_destatis_date),"-W", sprintf("%.02d",isoweek(prelim_destatis_date)))`. Hwoever, we will only use the data until the end of 2020 in this post. Note that Destatis stresses the [preliminary character of the data](https://twitter.com/FlorianBurg2/status/1343903541849681922?s=20) - the numbers might change as further deaths arrive, however, as of `r date_of_analysis` changes are expected to be small. Stratified by age the times series for 2020 compared to the years 2016-2019 looks as follows - please beware of the different y-axes for the age-groups in the plot:
+
+```{r AGEMORT, echo=FALSE, warning=FALSE}
+###########################################################
+# Helper function to construct a polygon
+# @param col_reponse Name of the column where to store the response
+# @param col_lower Name of the column containing the lower limit value
+# @param col_upper Name of the column containing the upper limit value
+# @return A data.frame representing a polygon using Woche as x-axis column and
+#         col_response for the y-values.
+###########################################################
+make_poly <- function(col_response, col_lower, col_upper) {
+  poly <- NULL
+  col_lower <- sym(col_lower)
+  col_upper <- sym(col_upper)
+  
+  for (ag in unique(destatis_deaths_range$Altersgruppe10)) {
+    ts <- destatis_deaths_range %>% filter(Vorjahr) %>% filter(Altersgruppe10 == ag)
+    poly_ag <- tibble( Woche= c(ts %>% pull(Woche), rev(ts %>% pull(Woche))),
+                       `__response__` = c(ts %>% pull(!!col_upper), rev(ts %>% pull(!!col_lower))),
+                       Altersgruppe10 = ag)
+    poly <- rbind(poly, poly_ag)
+  }
+  names(poly) <- names(poly) %>% str_replace("__response__", col_response)
+  return(poly)
+}
+
+# Make a polygon containing the span of the 2016-2019 data 
+poly_anzahl <- make_poly(col_response="mean_Anzahl", col_lower="min_Anzahl", col_upper="max_Anzahl")
+
+# Make a range plot with 2020 a line
+p_sterbefaelle <- ggplot(destatis_deaths_range %>% filter(!Vorjahr), aes(x=Woche, y=mean_Anzahl)) +
+  geom_polygon(data=poly_anzahl, aes(fill="Range 2016-2019 All-Cause")) +
+  geom_line(data=destatis_deaths_range %>% filter(Vorjahr), aes(color="Mean 2016-2019")) +
+  geom_line(aes(color="2020 All-Cause")) +
+  scale_fill_manual(values=c("Range 2016-2019 All-Cause"="gray"), name="") +
+  scale_color_manual(values=c("2020 All-Cause"="black", "Mean 2016-2019"="darkgray"), name="") +
+  xlab("Week") +
+  ylab("No. Deaths") +
+  ggtitle("All-Cause Mortality") +
+  theme_minimal() +
+  theme(legend.position = 'bottom') 
+
+p_sterbefaelle + facet_wrap(~ Altersgruppe10, scales = "free_y") 
+```
+
+```{r, results="hide", warning=FALSE, message=FALSE}
+# Total mean number of deaths per age group
+total20162019 <- destatis_deaths_range %>% filter(Vorjahr) %>% 
+  group_by(Altersgruppe10) %>% 
+  summarise(Anzahl = sum(mean_Anzahl)) %>% mutate(proportion = Anzahl / sum(Anzahl))
+total20162019
+
+# Proportion of deaths, which are of age >= 80y
+prop80 <- total20162019 %>% filter(Altersgruppe10 %in% c("[80,90)", "[90,Inf)")) %>% summarise(proportion = sum(proportion)) %>% as.numeric()
+
+# Proportion of deaths, which are of age >= 60y
+prop60 <- total20162019 %>% filter(Altersgruppe10 %in% c("[60,70)", "[70,80)", "[80,90)", "[90,Inf)")) %>% summarise(proportion = sum(proportion)) %>% as.numeric()
+```
+Note: Because the years 2016-2019 do not contain a week 53, we obtain a hypothetical week 53 value for year $Y, Y=2016,\ldots, 2019$, for comparison in the plot by averaging the observed counts in $Y$-W52 and $(Y+1)$-W01.
+
+Since the age-groups contain different population sizes and - as pointed out by @ragnitz2021 - population sizes of the age-groups changed relevantly 2016-2019, a better comparison between age-groups instead of absolute numbers is by [incidence rate](sterbefaelle_incidence.png) (i.e. deaths per 100,000 population in the age group). For this, the yearly Destatis [age-specific population data](https://www-genesis.destatis.de/genesis//online?operation=table&code=12411-0012&bypass=true&levelindex=0&levelid=1610148266727#abreadcrumb) 
+available for the cut-off-date Dec 31st for 2015-2019  are linearly interpolated for the weeks. An estimate of the 2020 population is obtained from the 2020 value of the  [destatis population projection](https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Bevoelkerungsvorausberechnung/Publikationen/Downloads-Vorausberechnung/bevoelkerung-bundeslaender-2060-5124205199024.html) (Variant 
+G2-L2-W2).
+
+```{r POPDYNAMICS, fig.width=8, fig.height=5}
+# Small helper data.frame used for plotting
+pop_draw <- pop_de_0030 %>% 
+  rename(`Age group`=agegrp10) %>% 
+  mutate(is2020 = Jahr == 2020) 
+
+ggplot(pop_draw, aes(x=Stichtag, y=Population, color=`Age group`, linetype=is2020)) + geom_line() + 
+  geom_point(data=pop_draw %>% filter(isoweek(Stichtag)==1),aes(shape=`Age group`)) +
+  theme_bw() +
+  coord_cartesian(ylim=c(0,NA)) +
+  guides(linetype=FALSE) + 
+  scale_shape_manual(values=1:8) +
+  scale_color_brewer(palette="Set2") +
+  #scale_color_viridis(discrete=TRUE, option="C") +
+  xlab("Date") + ylab("Population") +
+  theme(legend.position = 'bottom')
+```
+```{r POPINC, results="hide"}
+pop_increase <- function(agegrp10_str) {
+ pop <- pop_de_0030 %>% filter(agegrp10 == agegrp10_str) 
+ pop2016 <- pop %>% filter(Woche == 1 & Jahr == 2016) %>% pull(Population)
+ pop2020 <- pop %>% filter(Woche == 52 & Jahr == 2020) %>% pull(Population)
+ return(pop2020/pop2016)
+}
+
+# Check some projections
+pop_increase("[80,90)")
+pop_increase("[90,Inf)")
+```
+We notice the strong increase in size of the [80,90) year old age group (increase by `r scales::percent(pop_increase("[80,90)")-1, accuracy=1)`) and the noticable decline in the groups of [40,50) (`r scales::percent(pop_increase("[40,50)")-1, accuracy=1)`) and [70,80) (`r scales::percent(pop_increase("[70,80)")-1, accuracy=1)`) in just 5 years. Although not large in absolute size compared to the other age groups, the [90,Inf) group increased by  `r scales::percent(pop_increase("[90,Inf)")-1, accuracy=1)`.
+These changes, and in particular those in the higher age groups, will be relevant for the analysis of excess mortality.
+
+
+Once we have the weekly age-specific population estimates available we can compute the incidence per week and age-group. Below the weekly mortality incidence rate (per 100 000 population) is shown for 2020 compared to the minimum, mean and maximum of the corresponding week for the years 2016-2019.
+
+```{r AGEMORTINC, echo=FALSE, warning=FALSE}
+# Make an incidence polygon
+poly_inc <- make_poly(col_response="mean_inc", col_lower="min_inc", col_upper="max_inc")
+
+# Plot of the incidence
+p_inc <- ggplot(destatis_deaths_range %>% filter(!Vorjahr), aes(x=Woche, y=mean_inc)) +
+  geom_polygon(data=poly_inc, aes(x=Woche, y=mean_inc, fill="Range 2016-2019 All-Cause")) +
+  geom_line(data=destatis_deaths_range %>% filter(Vorjahr), aes(color="Mean 2016-2019")) +
+  geom_line(aes(color="2020 All-Cause")) +
+  scale_fill_manual(values=c("Range 2016-2019 All-Cause"="gray"), name="") +
+#  scale_color_manual(values=c("2020 All-Cause"="black"), name="") +
+  scale_color_manual(values=c("2020 All-Cause"="black", "Mean 2016-2019"="darkgray"), name="") +
+  ylab("7D Mortality incidence rate (per 100,000 population)") +
+  ggtitle("All-Cause mortality") + 
+  xlab("Week") +
+  theme_minimal() +
+  theme(legend.position = 'bottom') 
+
+# Make and store the image
+p_inc + facet_wrap(~ Altersgruppe10, scales = "free_y") 
+ggsave(filename=file.path(filePath,"sterbefaelle_incidence.png"), width=8, height=5, dpi=300)
+```
+```{r fig_for_ms, eval=FALSE}
+fig <- p_inc + facet_wrap(~ Altersgruppe10, scales = "free_y") 
+fig$labels$title <- NULL
+fig
+ggsave(filename=file.path(filePath,"sterbefaelle_incidence_notitle.png"), width=8, height=5, dpi=300)
+```
+
+Compared to the graphic with the absolute number of deaths, one notices that the population adjustment leads to a smaller excess in the [80-90) group (because the population in this group became larger). On the other hand, the Nov-Dec 2020 curve in the [70-80) group now is clearer in excess of the expected. For further insights see also @kauermann_etal2021 and @ragnitz2021.
+
+To underline the age-gradient of all-cause mortality: `r scales::percent(prop80)` of the deaths 2016-2019 occured in the age group of 80+ years (`r scales::percent(prop60)` in the age group of 60+). It becomes clear that the 2020 mortality in the 80+ age groups was rather low during the first 10-12 weeks and then had a spike in connection with the first COVID-19 wave (March-April). Subsequently, a summer peak (possibly associated with heat) is followed by an increasing and ongoing upward trend in December. One challenge for a statistical analysis of these numbers is to figure out how much of the upward trend is "catch-up mortality" due to the lower mortality in the beginning of the year and how much is excess related to COVID-19. However, both @kauermann_etal2021 and @ragnitz2021 show that the excess can be well explained by COVID-19 associated deaths.
+
+
+An initial analysis of this question consists of summing the all-cause mortalities from W1 until `r str_c("W", max_destatis_week)` for 2020 (observed) and compare this to the summation of the weekly mean of 2016-2019 for the corresponding time period (expected). Since both 2021-W01 and 2020-W53 contains days outside the year 2020 we weight these two weeks in the summation according to the number of days in 2020 (i.e. 5/7 and 4/7). As a consequence, our number of deaths deviates slightly against a more exact calculation based on daily deaths (which however does not have age-strata publically available).
+Note: This calculation method ignores the population changes in the years 2016-2020. Furthermore: 
+
+```{r oe_raw, results="asis", echo=FALSE, message=FALSE}
+# Range of total per year (with age stratification)
+total_20162019 <- destatis_deaths_long10 %>%
+  filter( !((Woche == 53) & (Jahr<2020))) %>% 
+  mutate(weight = case_when( (Jahr == 2020 & Woche == 01) ~ 5/7,
+                             (Jahr == 2020 & Woche == 53) ~ 4/7,
+                             TRUE ~ 1)) %>% 
+  group_by(Vorjahr, Altersgruppe10, Jahr) %>%
+  summarise(Anzahl=sum(weight * Anzahl))
+
+oe_ratio <- total_20162019 %>% 
+  summarise(mean_Anzahl= mean(Anzahl), min_Anzahl = min(Anzahl), max_Anzahl=max(Anzahl)) %>%
+   pivot_wider( id_cols=Altersgruppe10, names_from=Vorjahr, values_from=c(mean_Anzahl, min_Anzahl, max_Anzahl)) %>%
+  select(-min_Anzahl_FALSE, -max_Anzahl_FALSE) %>%
+  rename(observed_2020=`mean_Anzahl_FALSE`, expected_20162019=`mean_Anzahl_TRUE`, min_20162019=`min_Anzahl_TRUE`, max_20162019=`max_Anzahl_TRUE`)
+
+#Total per year (up to most recent week)
+total_year <- total_20162019 %>% group_by(Jahr) %>% 
+  summarise(Anzahl = sum(Anzahl))
+
+oe_ratio_total <- oe_ratio %>% ungroup %>%
+  summarise(Altersgruppe10 = "Total", observed_2020=sum(observed_2020), expected_20162019=sum(expected_20162019), min_20162019=total_year %>% pull(Anzahl) %>% min(), max_20162019=total_year %>% pull(Anzahl) %>% max())
+
+oe_ratio_withtotal <- bind_rows(oe_ratio, oe_ratio_total) %>%
+  mutate(ratio = observed_2020 / expected_20162019, 
+         ratio_percent= scales::percent(ratio-1, accuracy=1)) %>%
+  select(-ratio)
+
+prop80_2020 <- oe_ratio_withtotal %>% ungroup %>% filter(Altersgruppe10 != "Total") %>%
+  mutate(proportion = observed_2020 / sum(observed_2020)) %>%
+  filter(Altersgruppe10 %in% c("[80,90)", "[90,Inf)")) %>%
+  summarise(proportion = sum(proportion)) %>% as.numeric()
+
+# Make the table using kableExtra
+oe_ratio_withtotal %>% rename(`Age group`=Altersgruppe10, `Percent change` = ratio_percent) %>%
+  mutate(observed_2020 = round(observed_2020),
+         expected_20162019 = round(expected_20162019),
+         min_20162019 = round(min_20162019),
+         max_20162019 = round(max_20162019)) %>%
+  select(`Age group`, observed_2020, expected_20162019, `Percent change`, everything()) %>%
+  mutate(`Age group` = ifelse(`Age group`=="Total", "", `Age group`)) %>%
+  kbl(align=('lrrrrr')) %>%
+  kable_classic() %>%
+  pack_rows("Total", 9, 9) %>%
+  row_spec(9, color = 'black', background = 'lightgray') %>%
+  footnote(alphabet = c("Min and max for row 'Total' is obtained by first summing each of the years 2016-2019 and then take the min and max."))
+```
+```{r, message=FALSE}
+# Read year totals from file
+destatis_deaths_daily <- readxl::read_xlsx(path=destatis_file, sheet="D_2016_2021_Tage", skip=8) %>% rename(Jahr = `...1`) %>% select(Jahr, Insgesamt)
+```
+<p>
+Note: The exact mortality count for 2020 by Destatis using daily data is `r destatis_deaths_daily %>% filter(Jahr==2020) %>% pull(Insgesamt)`, hence, the weighted weekly summation does produce a small discrepancy from this value. The total proportion of 2020-W1 to 2020-`r str_c("W", max_destatis_week)` mortalities in the 80+ age group is currently `r scales::percent(prop80_2020)`, i.e. a slightly higher proportion than in the previous years.
+ 
+A population age-structure adjusted estimate can be obtained using an indirect standardization approach [@keiding_clayton2014]: For each age group we compute the weekly incidence rates 2016-2019, then for each week we take the min, mean and max of the 2016-2020 incidences. If we for a given age-group and week want an expected number of deaths based on the 2016-2019 data, we would multiply the 2016-2019 mean incidence on the corresponding 2020 population in order to get the expected number of deaths in the corresponding age-group and week of 2020. Because the estimated incidence rates for 2016-2019 are based on slightly different population sizes, one could acknowledge this in the mean-calculation by instead computing an inverse variance weighted mean (or use logistic regression). However, numerical differences are neglible so we proceed with the equal weighting of the mean. The computations lead to the following table for the age-population adjusted 2020 mortality:
+
+```{r oe_standardized, warning=FALSE, message=FALSE}
+# Compute indirect standardized incidence rate and, hence, expected
+# number of cases for 2020
+oe_adj <- destatis_deaths_range %>% 
+  pivot_wider(id_cols=c(Woche, Altersgruppe10), names_from="Vorjahr", values_from=c(mean_Population, mean_Anzahl, mean_inc)) %>% 
+  rename( observed_2020 = mean_Anzahl_FALSE, 
+          `Age group`=Altersgruppe10) %>% 
+  mutate( expected_20162019 = mean_Population_FALSE * mean_inc_TRUE / 1e5) %>% 
+  mutate(weight = case_when( (Woche == 01) ~ 5/7,
+                             (Woche == 53) ~ 4/7,
+                             TRUE ~ 1))
+  
+
+summary <- function(x) {
+  x %>% 
+    
+  summarise(observed_2020=sum(weight*observed_2020),
+            expected_20162019=sum(weight*expected_20162019))  %>% 
+    mutate(ratio = observed_2020 / expected_20162019,
+           `Percent change` = scales::percent((ratio-1), accuracy=1)) %>% select(-ratio)
+}
+
+s1 <- oe_adj %>% group_by(`Age group`) %>% summary()
+s2 <- oe_adj %>% ungroup %>% summary() %>% 
+  mutate(`Age group`="Total") %>% 
+  select(`Age group`, everything())
+
+# Combine into one table
+oe_tab <- bind_rows(s1, s2)
+
+# Make the table using kableExtra
+oe_tab %>% 
+  #mutate(expected_20162019 = round(expected_20162019)) %>%
+  mutate(observed_2020 = round(observed_2020),
+         expected_20162019 = round(expected_20162019)) %>%
+  select(`Age group`, observed_2020, expected_20162019, `Percent change`, everything()) %>%
+  mutate(`Age group` = ifelse(`Age group`=="Total", "", `Age group`)) %>%
+  kbl(align=('lrrrrr')) %>%
+  kable_classic() %>%
+  pack_rows("Total", 9, 9) %>%
+  row_spec(9, color = 'black', background = 'lightgray') #
+```
+```{r tab_for_ms, eval=FALSE}
+xtab <- oe_tab %>% 
+  mutate(expected_20162019 = round(expected_20162019)) %>%
+  select(`Age group`, observed_2020, expected_20162019, `Percent change`, everything()) %>%
+  mutate(`Age group` = ifelse(`Age group`=="Total", "", `Age group`)) %>% xtable::xtable(digits=c(0,0,0,0,0))
+print(xtab, include.rownames = FALSE)
+```
+
+What looked like a small excess in the raw calculations becomes a small negative excess after population adjustment by the proposed method. This shows the importance of computing the expected number of cases in a population adjustment way, which was the point of @ragnitz2021.
+
+Altogether, the mild mortality in the older age groups during the first weeks (e.g. due to a mild influenza season) so far balances the continuing excess in the higher age-groups since Mar-Apr, which coincides with the start of the COVID-19 pandemic. If one is interested in COVID-19 associated deaths an alternative might be to focus on the period since Mar 2020, but then one would ignore the low influenza season in the beginning of the year, which is IMO relevant for all-cause mortality excess analysis. For comparison, excess mortality computations for influenza are in the northern hemisphere often done not by calendar year but by season, i.e. for the period from July in Year $X$ to June in Year $X+1$ [@nielsen_etal2011]. In this case one would associate the first COVID-19 peak to the analysis of the season 2019/2020 and the ongoing 2nd wave to an analysis of the ongoing season 2020/2021. The present analysis, however, focused on the calendar year 2020 following the Destatis presentation of
+the data.
+
+When interpreting the above results it is important to realize that the 2020 population numbers are currently projections. In a recent [press release](https://www.destatis.de/DE/Presse/Pressemitteilungen/2021/01/PD21_016_12411.html) Destatis announced that the population in 2020 might not have increases as projected, because of a smaller migration surplus, higher mortality and lower birth numbers. As a consequence, Destatis now estimates that the 2020 population consisted of 83.20 mio (no population increase compared to 2019) individuals whereas in the G2-L2-W2 projection variant the projection was `r  sprintf("%.2f",rel_pop_change %>% tail(n=1) %>% pull(Population) / 1e6)` mio (population increase by `r scales::percent(rel_pop_change %>% pull(rel_change) %>% tail(n=1)-1, accuracy=0.1)` compared to 2019). Final figures, including more detailed age-stratified data, will be available mid 2021 and it will be interesting to see how these impact the excess mortality calculations.
+
+Furthermore, it is important to realize that the current observed 2020 mortality numbers contain the consequences of all type of effects from the pandemic management, which includes changes in the population behavior due to interventions. Disentangling the complex effects of all-cause mortality and the COVID-19 pandemic is a delicate matter, which takes experts in several disciplines (demographers, statisticians, epidemiologists) to solve. However, should you based on the above numbers happen to think that COVID-19 is not a serious problem, it is insightful to think about the [prevention paradox](https://en.wikipedia.org/wiki/Prevention_paradox) and take a look at the [all-cause mortality statistics](https://www.ft.com/content/a2901ce8-5eb7-4633-b89c-cbdf5b386938) from other countries and consider a more regional analysis as done in the next section.
+
+### Analysis for the 16 Federal States
+
+The preliminary all-cause mortality data are also available for each of the 16 federal states, however, with a coarser age discretization. We show for each of the two age-groups the weekly population adjusted mortality relative to the  same week in 2016-2019. Note that since the age-groups are also coarser, i.e. the data contains only the two groups [00,65) and [65,Inf), the effect of the changing populations on the estimates is less pronounced.
+
+```{r MORTBL, message=FALSE, warning=FALSE, results="hide"}
+# Use new age groups available for BL data
+age_breaks2 <- c(0, 65, Inf)
+pop <- pop %>% mutate(agegrp10 = cut_agegrp(alter, age_breaks2))
+
+# Todo: This section woul dbe better places in a function, because it overlaps with
+# previous code where groups of 10 are used.
+
+# Convert to long format and sum out values over the BL
+pop_20162019 <- pop %>% select(-Altersgruppe, -alter, -altersgrp) %>% 
+  pivot_longer(-c(agegrp10, Stichtag), names_to="Bundesland", values_to="Population") %>% 
+  left_join(tt, by=c("Bundesland"="Bundesland_lang")) %>% 
+  group_by(Stichtag, Bundesland, agegrp10) %>% 
+  summarise(Population = sum(Population))
+
+# Implement age-groups on the data by appropriate grouping
+pop2020 <- pop2020_raw %>% 
+  mutate(agegrp10 = cut_agegrp(Alter, age_breaks2)) %>% 
+  left_join(tt, by=c("Bundesland"="Bundesland_kurz")) %>% 
+  rename(Bundesland_kurz = Bundesland) %>% rename(Bundesland=Bundesland_lang) %>% 
+  group_by(Stichtag, Bundesland, agegrp10) %>% 
+  summarise(Population = sum(Population))
+
+# Check result
+pop2020 %>% ungroup %>% summarise(Population = sum(Population))
+pop2020 %>% group_by(agegrp10) %>% summarise(Population = sum(Population))
+
+# Join
+pop_20162020 <- bind_rows( pop_20162019, pop2020 %>% select(Stichtag, agegrp10, Bundesland, Population))
+
+pop_20162020 %>% group_by(year(Stichtag)) %>% summarise(Population = sum(Population))
+
+# Use linear interpolation on the population numbers within the years
+# One problem is that the extrapolation beyond the end is done by carrying last value
+# forward. Might be necessary to fix this if we extrapolate beyond 2020-12-31.
+pop_interp <- pop_20162020 %>% group_by(Bundesland, agegrp10) %>% do( {
+  #browser()
+  #print(.)
+  f <- approxfun( x=.$Stichtag, y=.$Population, method="linear", rule=2)
+  dates <- seq(ymd("20160104"), ymd("20201231"), by="1 week") #mondays in 2016-W01 and 2019-W52
+  res <- tibble(Stichtag = dates, Bundesland = .$Bundesland[1], agegrp10=.$agegrp10[1], Population = f(dates)) %>% 
+    mutate(Jahr = isoyear(Stichtag), Woche = isoweek(Stichtag))
+  #Make artifical week 53 for comparison
+  foo <- res %>% filter(Jahr < 2020 & Woche == 52) %>% mutate(Woche=53)
+  res2 <- full_join(res, foo)
+  res2
+})
+
+
+pop_interp %>% group_by(Jahr) %>% filter(Woche == 52) %>% summarise(Population = sum(Population))
+
+# Make Bundesländer
+pop_bl <-  pop_interp 
+
+#Match with all-cause Mortality, now by BL, and add Population information
+bl_destatis_deaths <- readxl::read_xlsx(path=destatis_file, sheet="BL_2016_2021_KW_AG_Ins", skip=8) %>% 
+  rename("Jahr"="...2", "Bundesland"="...3", "Altersgruppe"="unter … Jahren") %>% 
+  filter(Altersgruppe != "Insgesamt") %>% select(-`Nr.`) %>% 
+    mutate(`53` = as.numeric(`53`),
+         Altersgruppe = fct_recode(Altersgruppe,`[00,65)`="0-65", `[65,Inf)`="65 u. mehr")) %>% 
+  pivot_longer(cols=-c(Jahr, Bundesland, Altersgruppe), names_to="Woche", values_to="Anzahl") %>% 
+  #Remove non-existent week 53
+  filter(!(Woche == 53 & is.na(Anzahl))) %>% 
+  mutate(Woche = as.numeric(Woche), Jahr = as.numeric(Jahr)) 
+
+# Make week 53 adjustment
+# Get estimates for artificial week 53 for 2016-2019 by averaging
+# week 201X-W52 and 201(X+1)-W01
+extra_W53 <- map_df( 2016:2019, function(y) {
+  tab <- bl_destatis_deaths %>% filter( (Jahr == y & Woche == 52) | 
+                                      ((Jahr == y+1) & Woche == 01))
+  tab %>% group_by(Bundesland,Altersgruppe) %>% 
+    summarise(Anzahl = mean(Anzahl)) %>% 
+    mutate(Jahr = y, Woche = 53, Vorjahr = TRUE)
+}) %>% arrange(Jahr, Woche)
+
+# Restrict to <= 2020 and add artifical week 53
+bl_destatis_deaths <- 
+  full_join(bl_destatis_deaths %>% filter(Jahr <= 2020), extra_W53) %>% 
+  arrange(Jahr, Woche, Altersgruppe)
+
+# Add Population
+bl_destatis_deaths <- bl_destatis_deaths %>% 
+  left_join(pop_bl %>% select(-Stichtag), by=c("Jahr"="Jahr", "Woche"="Woche", "Bundesland"="Bundesland", Altersgruppe="agegrp10")) %>% 
+  ungroup() %>% 
+  mutate(inc = Anzahl / Population) %>% 
+  mutate(Vorjahr = Jahr < 2020) 
+
+
+# Compute indirect standardization
+bl_oe <- bl_destatis_deaths %>% group_by(Woche, Altersgruppe, Bundesland, Vorjahr) %>% 
+  summarise(mean_Anzahl= mean(Anzahl), mean_inc = mean(inc), mean_Population = mean(Population)) %>% 
+  pivot_wider(id_cols=c(Woche, Altersgruppe, Bundesland), names_from=Vorjahr, values_from=c(mean_Anzahl, mean_inc, mean_Population)) %>% 
+  rename( observed_2020 = mean_Anzahl_FALSE) %>% 
+  mutate( expected_20162019 = mean_Population_FALSE * mean_inc_TRUE,
+          oe_ratio = observed_2020 / expected_20162019)
+
+#Check result
+bl_oe %>% select(Woche, Altersgruppe, Bundesland, observed_2020, expected_20162019, oe_ratio)
+# Which week has max excess in 65+?
+bl_max <- bl_oe %>% ungroup %>% filter(Altersgruppe == "[65,Inf)") %>% filter(oe_ratio == max(oe_ratio, na.rm=TRUE))
+bl_top <- bl_oe %>% group_by(Bundesland) %>% filter(Altersgruppe == "[65,Inf)") %>% slice_max(oe_ratio, n=1) %>% 
+  ungroup %>% slice_max(oe_ratio, n=3)
+```
+
+```{r MORTBLREL, message=FALSE, warning=FALSE}
+# Palette for plotting
+pal2 <- rev(brewer_pal(palette="Dark2")(3)[2:3]) #dont use the green
+
+ggplot(bl_oe, aes(x=Woche, y=oe_ratio, color=Altersgruppe)) + geom_line() +
+  scale_color_manual(labels=c("[00,65)", "[65, Inf)"), values=c("[00,65)"=pal2[1], "[65,Inf)"=pal2[2]), name="Age group:") +
+  facet_wrap(~ Bundesland) +
+  geom_hline(yintercept=1, lty=2, col="darkgray") +
+  xlab("Week") +
+  ylab("2020 all-cause / Mean 2016-2019") +
+  theme_minimal() +
+  theme(legend.position = 'bottom') 
+
+ggsave(filename=file.path(filePath,"allcause_bl.png"), width=8, height=5, dpi=300)
+
+```
+
+The plot can also be compared to the recently introduced [Destatis visualization of absolute case numbers on state level](https://service.destatis.de/DE/bevoelkerung/sterbefallzahlen_bundeslaender.html). We note the strong regional differences in the plot. As an example, the highest mortality in the 65+ age-group occurs in `r sprintf("2020-W%0.2d",bl_max$Woche)` in the federal state of `r bl_max$Bundesland`, where the poulation adjusted mortality is `r scales::percent(bl_max$oe_ratio - 1)` above the mean of 2016-2019. Note that for `r bl_max$Bundesland`, even the <65 age-group has a visible excess. The `r nrow(bl_top)` federal states with the highest excess mortality week in the 65+ age-group are:
+```{r}
+tab <- bl_top %>% select(Bundesland, Woche, oe_ratio) %>% rename(`Federal state`=Bundesland, `Week`=Woche) %>% 
+  mutate(`Week` = sprintf("2020-W%02d", Week),
+         `Excess mortality` = scales::percent(oe_ratio-1, accuracy=1)) %>% select(-oe_ratio)
+tab %>% kbl(align=('llr')) %>%
+  kable_classic() 
+```
+```{r, eval=FALSE}
+tab %>% kable(format="markdown")
+```
+
+<!-- Furthermore, for the [00,65) series for Berlin it looks like not all all cases up to week `r sprintf("W%02d",max_destatis_week)` are available. This underlines the preliminary character of the Destatis data. -->
+
+### All-Cause Mortality and COVID-19 Associated Deaths
+
+To see, how much of the all-cause mortality is directly contributed by deaths in association with COVID-19, we match the age-stratified all-cause mortality data with the age-stratified COVID-19 deaths reported by the RKI. 
+As of 2020-01-14 the RKI provides [weekly time series of date of death in age groups of 10 years](https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Projekte_RKI/COVID-19_Todesfaelle.html). Hence, the previous rough extrapolation from day of report used in the original blog post is not needed anymore.
+
+```{r,echo=FALSE, results="hide", message=FALSE}
+# Join the two datasets
+deaths_ts <- full_join(destatis_deaths_range, 
+                       covid_deaths_long,
+                       by=c( "Vorjahr"="Vorjahr", "Woche", "Altersgruppe10"="agegrp10")) %>% 
+  mutate(Anzahl = ifelse(Vorjahr, NA, Anzahl)) %>% rename(COVID=Anzahl) %>% 
+  mutate(mean_Anzahl_minus_COVID = mean_Anzahl - COVID,
+         mean_Anzahl_minus_COVID_inc = mean_Anzahl_minus_COVID/Population*1e5,
+         COVID_inc = COVID/Population * 1e5)
+  
+
+# Range of weeks where we have data
+date_range <- seq(min(deaths_ts %>% pull(Woche)), 
+                destatis_deaths_range %>% filter(!Vorjahr & !is.na(mean_Anzahl)) %>% pull(Woche) %>% max(), by=1)
+
+```
+
+We note that a large part of the increase in mortality can be explained by COVID-19, i.e. after subtracting the COVID-19 associated deaths the remainder of the mortality seems comparable with previous years. This is good news, because deviations would be early signs of possible secondary adverse health effects due to the COVID-19 pandemic, i.e. patients trying to avoid the hospital, or care for emergencies which cannot be given due to lack of ressources.
+
+```{r AGEMORTWCOVID, echo=FALSE, results="hide", warning=FALSE, message=FALSE}
+# Palette for plotting
+pal <- brewer_pal(palette="Dark2")(4)[2:4] #dont use the green
+
+# Make a plot with the extrapolations added
+p_deaths_est <- ggplot(deaths_ts %>% filter(!Vorjahr), aes(x=Woche, y=mean_inc, fill=NA)) +
+  geom_polygon(data=poly_inc %>% filter(Woche >= date_range[1]), aes(fill="Range 2016-2019 All-Cause")) +
+  geom_line(aes(color="2020 All-Cause")) +
+  geom_line(data=deaths_ts %>% filter(!Vorjahr), aes(x=Woche, y=COVID_inc, color="2020 COVID-19")) +
+  geom_line(data=deaths_ts %>% filter(!Vorjahr), aes(x=Woche, y=mean_Anzahl_minus_COVID_inc, color="2020 All-Cause minus COVID-19")) +
+  scale_color_manual(values=c("2020 COVID-19"=pal[1], "2020 All-Cause"=pal[2], "2020 All-Cause minus COVID-19"=pal[3]), name="") +
+  scale_fill_manual(values=c("Range 2016-2019 All-Cause"="gray"), name="") +
+  scale_x_continuous(breaks = seq(min(deaths_ts$Woche)-1, max(deaths_ts$Woche), 10),
+                     minor_breaks = seq(min(deaths_ts$Woche)-1, max(deaths_ts$Woche), 5)) +
+  ylab("7D Mortality incidence rate (per 100,000 population)") +
+  xlab("Week") +
+  theme_minimal() +
+  #labs(caption="Data Source: Destatis and RKI.\n Note: Beware the different y-axes.") +
+  theme(legend.position = 'bottom') +
+  facet_wrap(~ Altersgruppe10, scales = "free_y") 
+
+p_deaths_est
+
+ggsave(filename=file.path(filePath,"deaths_covid19.png"), width=8, height=5, dpi=300)
+```
+
+```{r AGEMORTWCOVID-PERCENT, echo=FALSE, fig.keep="none", warning=FALSE}
+####################
+# Proportion
+####################
+
+death_prop <- deaths_ts %>% 
+  pivot_wider(id_cols=c(Woche, Altersgruppe10), names_from=c(Vorjahr), values_from=c(mean_Anzahl, COVID)) %>% 
+  mutate(proportion_allcause_historicmean = COVID_FALSE / mean_Anzahl_TRUE,
+         proportion_allcause2020 = COVID_FALSE / mean_Anzahl_FALSE) %>% 
+  select(Woche, Altersgruppe10, proportion_allcause2020) %>% 
+  pivot_longer(cols=c(proportion_allcause2020), names_to="type", values_to="proportion")
+
+# Week x age_group combination with highest share of COVID mortality of the all-cause mortality
+max_prop <- death_prop %>% ungroup %>% filter(proportion == max(proportion, na.rm=TRUE))
+
+ggplot(death_prop, aes(x=Woche, y=proportion, linetype=type)) + geom_line() +
+  facet_wrap( ~ Altersgruppe10) + 
+  scale_y_continuous(labels=scales::percent) +
+  #scale_color_brewer(palette="Set1", name="") +
+  scale_linetype_manual(labels=c("2020 COVID-19 / 2020 All-Cause"), values=c(1, 2), name="") +
+  theme_minimal() +
+  ylab("Proportion") + xlab("Week") +
+  scale_x_continuous(breaks = seq(min(death_prop$Woche)-1, max(death_prop$Woche), 10),
+                     minor_breaks = seq(min(death_prop$Woche)-1, max(death_prop$Woche), 5)) +
+  theme(legend.position = 'bottom')
+
+ggsave(filename=file.path(filePath,"deaths_covid19_proportion.png"), width=8, height=5, dpi=300)
+```
+
+We note that the COVID-19 associated deaths in the most recent weeks in the `r max_prop$Altersgruppe10` age groups make up approximately [`r scales::percent(max_prop$proportion, accuracy=5)` of all deaths reported in the week](deaths_covid19_proportion.png). 
+
+
+## Discussion
+
+Considering all-cause mortality and COVID-19 associated mortality as a measure for the impact of an pandemic is a rather simplistic view of the pandemic. COVID-19 infections can be very mild, but complicated progressions can occur without leading to death (see, e.g., [long COVID](https://en.wikipedia.org/wiki/Long_COVID)). Looking at mortality also ignores the complex interplay between age-groups, where it can be beneficial to reduce infections in a not-so-affected-by-the-disease age-group in order to protect the higher-risk groups. The motivation of this post was primarily to put COVID-19 associated mortality in relation to all-cause mortality in order to get a better understanding of the daily number of COVID-19 deaths. An age-stratified view is necessary for this. Furthermore, as pointed out by @ragnitz2021, excess mortality calculations should take the changing population structure into account.
+
+For a more modelling based analysis of the German COVID-19 associated mortality data based on reported infections see also the work by @linden_etal2020 ([updated analysis](https://twitter.com/matthiaslinden/status/1344088091020165125?s=20)).
+More information on real-time mortality monitoring can be obtained from the [EuroMoMo methodology](https://www.euromomo.eu/how-it-works/methods/) page or @hoehle_mazick2010.
+Comments and feedback to the analysis in this blog post are much appretiated.
+
+```{r, results="hide", message=FALSE}
+tibble( date = seq(ymd("20151201"), ymd("20210110"), by="1 day")) %>% 
+  mutate(isoyear=isoyear(date)) %>% group_by(isoyear) %>% summarise(n_days=n()) %>% 
+  filter(isoyear >= 2016)
+```
+
+## Literature
+
+
+
