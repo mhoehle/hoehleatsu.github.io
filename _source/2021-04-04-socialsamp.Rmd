@@ -1,0 +1,429 @@
+---
+layout: post
+title: "Long time, no see: Virtual Lunch Roulette"
+tags: [rstats, combinatorics, R]
+#  bibliography: ~/Literature/Bibtex/jabref.bib
+header-includes:
+   - \usepackage{bm}
+comments: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2021-04-04-socialsamp/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2021-04-04-socialsamp")
+
+knitr::opts_chunk$set(echo = FALSE, fig.width=8, fig.height=4, fig.cap='', fig.align='center', dpi=72*2)#, global.par = TRUE)
+options(width=150, scipen=1e3)
+
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(scales))
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(igraph))
+
+#igraph config
+igraph_options(vertex.label.family="sans", 
+               vertex.size=8,
+               #vertex.color="cyan",
+               vertex.label.cex=0.5,
+               vertex.frame.color="black",
+               edge.color="black",
+               edge.arrow.size=0.1)
+
+
+# Non CRAN packages
+# devtools::install_github("hadley/emo")
+
+##Configuration
+options(knitr.table.format = "html")
+theme_set(theme_minimal())
+#if there are more than n rows in the tibble, print only the first m rows.
+options(tibble.print_max = 10, tibble.print_min = 5)
+```
+
+
+## Abstract:
+
+When distributing individuals into groups every week for a virtual social mixer, e.g. using Zoom breakout rooms, it's boring to end up in a group with someone, who you already met last week. We compute the probility for this to happen and state a simple rejection sampling proposal for how to increase social diversity in such groupings.
+
+<center>
+```{r,results='asis',echo=FALSE,fig.cap=""}
+cat(paste0("<img src=\"{{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"plot_p_meetagain-1.png\" width=\"550\">\n"))
+```
+</center>
+
+<br>
+<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"/></a>
+This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
+Attribution-ShareAlike 4.0 International License</a>.
+The [R-markdown source code](`r paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`) of this blog is available under a [GNU General Public License (GPL v3)](https://www.gnu.org/licenses/gpl-3.0.html) license from GitHub.
+
+## Introduction
+
+As a pandemic replacement for the cross-division-chance-encounter in the coffee kitchen, it has become common to use a virtual social mixer format, where the $n$ participants are randomly divided into groups of at least $m$ people, e.g., for a video meeting or Zoom breakout rooms. Software exists to institutionalize such [Random Lunches](https://de.wikipedia.org/wiki/Random_Lunch) for, e.g., [Slack](https://lunchroulette.co/). In this post we shall be interested in the properties of such group assignment algorithms.
+
+A practical experience is that all too often, the algorithm assigns me to a group where at least one of the participants was already in my group the last time. Before accusing the programmers of writing a poor grouping algorithm: can we determine mathematically what the probability for such a "reunion" is? How can we modify the algorithm to avoid this?
+
+#### Survey of the field
+
+Arranging a fixed set of $n=k\times m$ individuals into $k$ groups of size $m$ in subsequent rounds ensuring that no overlap occurs between the groups for as many rounds as possible is also known as the [social golfer problem](http://www.mathpuzzle.com/MAA/54-Golf%20Tournaments/mathgames_08_14_07.html) or round robin scheduling in combinatorics - and can be solved using [constraint programming](https://www.metalevel.at/mst.pdf). Compared to the social golfer problem, we have the additional challenge that the group of people between rounds may be subject to change. Furthermore, $m$ might not be a divisor of $n$. Hence, somewhat closer to our problem is the so called
+[maximally diverse grouping problem](http://grafo.etsii.urjc.es/index.php/category/maximally-diverse-grouping/), where the grouping is to be done such that the requirements on group size are met and a diversity score over the elements in each group is maximized. For our setup, the score could, e.g., be 
+time since the last meet between individuals. Integer programming can be used to solve the NP-complete problem.
+
+However, in our application we will either ignore the diversity score altogether (i.e. set it to 1 always) or use a 0/1 diversity score (met last time or not). Furthermore, we are interested in random assignment algorithms selecting uniformly among the valid configurations. As a consequence, we choose a more probabilistic approach  and instead use a custom group assignment algorithm as described in the next section.
+
+### The Grouping 
+```{r make_participants, eval=FALSE}
+n <- 47
+people <- tibble(id = str_c("id", sprintf("%0.2d",seq_len(n)))) 
+```
+
+
+```{r make_participants_block, results="hide"}
+set.seed(1234)
+<<make_participants>>
+```
+
+
+We want to split the $n$ individuals into groups of preferably $m$ members. However, if $m$ is not a divisor of $n$ then after making $\lfloor n/m \rfloor$ groups of $m$ members we would have $l = n - \lfloor n/m \rfloor$ individuals left. Instead of assigning these to a single leftover group, which would be of size less than $m$ (particularly critical is size 1), we assign the remaining individuals to the $l$ groups in round robin fashion. This ensures that each group has size at least $m$. Note: Depending on $n$ and $m$ the resulting sizes might be larger $m+1$, but the difference in the resulting group size will never be larger than 1[^1]. 
+Let `people` be a tibble with a column `id` denoting a primary identifier key - this could, e.g., be the people's email address. An R function to perform a random assignment of the $n$=`nrow(people)` individuals into groups of at least $m$ could look like:
+
+```{r sample_groups, echo=TRUE}
+#' Sample people into groups (original algorithm)
+#'
+#' @param people tibble containing name and email of available ppl
+#' @param m requested group size. If m not a divisor of nrow(people) then put leftovers in existing groups
+#'
+#' @return A list of vectors where each vector containing the ids (row number in ppl) of those belonging to the same group
+#'
+sample_groups <- function(people, m) {
+  # Number of groups needed
+  n_g <- nrow(people) %/% m
+  # Group membership indicator
+  g <- rep(seq_len(n_g), length.out=nrow(people))
+  # Permutation order
+  perm <- sample(seq_len(nrow(people)))
+  
+  # Make a list of ids in each group
+  groups <- map(seq_len(n_g), function(i) {
+    idx <- perm[which(g == i)]
+    people %>% slice(idx) %>% pull(id)
+  })
+  
+  return(groups)
+}
+```
+
+```{r make_participants_example_code}
+<<make_participants>>
+m <- 4
+groups <- sample_groups(people, m=m)
+```
+Example: Let `people` denote the population of `r n` individuals to be assigned into groups of at least $m=4$ according to the above description.
+```{r, echo=TRUE, eval=FALSE}
+<<make_participants_example_code>>
+```
+
+This leads to `r length (groups)` groups with between `r map_dbl(groups, length) %>% min()` and `r map_dbl(groups, length) %>% max()` members. We can visualize the group allocation as a graph, where each group will correspond to a  fully connected sub-graph, but with no connections between the sub-graphs.
+
+```{r, fig.width=3.5, fig.height=3.5}
+#' Function which takes a group assigment and generates a tibble with all groups
+#' as edges (id1, id2)
+make_pairs <- function(groups) {
+  map_df(groups,  ~ expand_grid(id1=.x, id2=.x, group=rlang::hash(.)) %>%
+           filter(id1 != id2) %>%
+           mutate(hash = str_c(id1, "_", id2))) %>% 
+    mutate(group = as.numeric(factor(group)))
+}
+
+edges_df <- make_pairs(groups)
+
+#Get group of each
+vertex_groups <- edges_df %>%
+  nest_by(group) %>% 
+  mutate(ids = list(distinct(data, id1) %>% pull(id1))) %>% 
+  pull(ids)
+
+#Make a graph
+set.seed(123)
+G <- graph_from_data_frame(edges_df, directed=FALSE) %>%  set_edge_attr("width", value=1) 
+par(mar=c(0,0,0,0))
+plot(G, mark.groups = vertex_groups, layout=layout_with_fr)
+```
+
+
+### Mathematical Formulation
+
+The mathematical question is now: Given you were in the group with $l$ other persons the last time, what is the probability that after assigning $n$ individuals into groups of preferred size $m\geq 2$, that you will be in the same group with at least one of them again this time[^2]. Let $m \leq k$ be the size of your group in the current assignment. Combinatorical considerations tell us the probability to meet at least one of the $l$ persons again is:
+
+$$
+p(k, l, n) = 1 - \frac{1\cdot\prod_{i=2}^{k} (n-(l+i-1))}{1\cdot\prod_{i=2}^{k} (n-i+1)}.
+$$
+In order to determine the overall probability for a reunion after assignment, we need to determine the PMF $f_{n,m}$ of the group size, i.e. what is the probability that the algorithm dividing $n$ individuals into groups of size at least $m$ will assign me to a group of size $k, k\geq m$.  The probability of interest is then:
+$$
+p(n,m,l) = \sum_{k=1}^\infty p(k,l,n) f_{n,m}(k)
+$$
+Note: Even though we write the summation to be from 1 to $\infty$, the PMF will only have support on at most two integers.
+
+
+```{r prob_reunion}
+#' Function to calculation reunion probability in a fixed setup
+prob_reunion <- function(k, l, n) {
+  if (l>=n) return(1)
+  if (k>=n) return(1)
+  
+  k_idx <- 1 + seq_len(k-1)
+  1 - prod(n - (l + k_idx - 1)) / prod(n - k_idx + 1)
+}
+
+# Check if a group assignment distributes "me" into same
+# group as at least one of the ids in "other".
+same_group <- function(groups, me, other) {
+  any(map_lgl(groups, function(g) (me %in% g) & any(other %in% g)))
+}
+
+# One simulation run
+one <- function(l, me, other) {
+  g <- sample_groups(people, m=m)
+  same_group(g, me = me, other=other)
+}
+
+#How many other in last time's group
+l <- 3
+
+#Monte Carlo sampling approach
+#Define me to be the first individual and the ones from last meet to be 2:(l+1)
+me <- people %>% slice(1) %>% pull(id)
+other <- people %>% slice(seq_len(l)+1) %>% pull(id)
+#Use Monte Carlo Simulation
+p_reunion_mc <- replicate(1e3, one(l=l, me=me, other=other))  %>% mean()
+```
+
+The calculations in R and verified by 1000 Monte Carlo simulations:
+```{r prob_reunion_l, echo=TRUE}
+# Group membership indicator for the n individuals
+g <- rep(seq_len(n %/% m), length.out=n)
+
+# Which previous group sizes to consider. Note:
+# can be way beyond m, even if m was selected
+p_groupsize <- prop.table(table(table(g)))
+
+p_kln <- sapply(as.numeric(names(p_groupsize)), prob_reunion, l=l, n=n)
+c(p_analytical = sum(p_kln * p_groupsize), p_mc = p_reunion_mc) 
+```
+  
+We can illustrate this reunion probability as a function of $k$ and $n$.
+
+```{r plot_p_reunion}
+df <- expand_grid(n = 5:100, k=4:5) %>% 
+  mutate(l = k-1) %>% 
+  rowwise() %>% 
+  mutate(prob = prob_reunion(k=k,l=l, n=n))
+ggplot(df, aes(x=n, y=prob, color=factor(k))) + geom_line() +
+  scale_color_brewer(palette="Dark2", name="k") +
+  scale_y_continuous(labels=scales::percent, limits=c(0,NA), breaks=seq(0,1,length=6)) +
+  ylab("Probability of reunion")
+```
+
+As a next step we need to marginalise out the previous group size $l+1$. For simplicity, we will assume that exactly the same participants participate in each round. Hence, we can use the same group size PMF as before when summing out $l$:
+$$
+p(n,m) = \sum_{l=1}^\infty \sum_{k=1}^\infty p(k,l,n) f_{n,m}(k) f_{n,m}(l+1)
+$$
+
+The result thus denotes the probability that you in two consecutive assigments of $n$ individuals into groups of at least $m$ individuals will be in the same group with someone twice. We will denote this the *reunion probability*.
+
+```{r}
+p_meetagain <- function(m, n) {
+  # Numbner of groups needed
+  n_g <- n %/% m
+  # Group membership indicator
+  g <- rep(seq_len(n_g), length.out=n)
+  # Which previous group sizes to consider. Note:
+  # can be way beyond m, even if m was selected
+  p_groupsize <- prop.table(table(table(g)))
+  kl_vals <- as.numeric(names(p_groupsize))
+  tab <- tibble(kl=kl_vals, prob=p_groupsize)
+  
+  #Values of k and l to try and the probability to get such a cell
+  kl_grid <- expand_grid(k=kl_vals, l=kl_vals-1) %>% 
+    rowwise() %>% 
+    mutate(p_reunion = prob_reunion(k=k, l=l, n=n), lp1=l+1)
+  
+  probs <- left_join(kl_grid, tab, by=c("lp1"="kl")) %>% 
+    rename(prob_l=prob) %>% 
+    left_join(tab, by=c("k"="kl")) %>% 
+    rename(prob_k=prob) %>% 
+    mutate(prob = prob_l*prob_k,
+           p = prob * p_reunion)
+  
+  #Return
+  probs  %>% pull(p) %>% sum()
+}
+```
+```{r compute_p_meetagain, cache=TRUE}
+df <- expand_grid(m=2:50, n = 2:100) %>% 
+  filter(m <= n) %>% 
+  rowwise() %>% 
+  mutate(prob = p_meetagain(m=m, n=n),
+         n_rooms=n %/% m)
+```
+
+```{r plot_p_meetagain}
+ggplot(df %>% filter(between(m, 2,6)), aes(x=n, y=prob, color=factor(m))) + geom_line() +
+  scale_color_brewer(palette="Dark2", name="m") +
+  scale_x_continuous(limits=c(0,NA)) +
+  scale_y_continuous(labels=scales::percent, limits=c(0,NA), breaks=seq(0,1,length=6)) +
+  ylab("Probability of reunion")
+```
+
+
+Given our $n=`r n`$ and $m=`r m`$ we note the high probability of `r scales::percent(df %>% filter(m==!!m, n==!!n) %>% pull(prob))` for a reunion, which confirms our empirical experience. Thus there seems to be a need to impose some additional constraints on the grouping in order to optimize social diversity. For a translation of $m$ into the number of breakout rooms used in Zoom, see Appendix A.
+
+
+### Grouping with avoidance
+
+Let `pairs` be a tibble with columns `id1` and  `id2` denoting all pairs of individuals who were placed in the same group the last time. We now want to enhance our group allocation algorithm to only assign people into groups, if they were not in the same group the last time. We do this by a simple rejection sampling algorithm, where we draw a configuration with `sample_groups`, check if it has overlaps with the last allocation, and if so, draw again. This method is not very efficient and might take a while. Even worse: it might not finish at all, if no configuration satisfying the constraint exist. An example is, if 9 individuals are to be divided into groups of at least 4 two times without any reunions. The corresponding code of such a `sample_groups_avoid` function is available in the [R code](`r paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`) from GitHub. This can then be used to generate the desired grouping without reunions:
+
+```{r sample_groups_avoid}
+#' Sample people into groups, but avoid old configurations
+#'
+#' @description Improved version of the sampling algorithm ensuring that no-one is in a group
+#' with someone from last week. We use rejection sampling and continue
+#' until we have a configuration without any matches from previous week.
+#'
+#' @param people people tibble with emails
+#' @param m Minimum group size 
+#' @param avoid_pairs tibble containing the hash email1-email2 containing info about pairs who were in the same group
+#' @param max_iter Maximum number of rejection samples to generate.
+#' @param verbose Logical (default: FALSE) indicating whether to show additional debugging output
+#' @return A list of integer vector containing the ids (row number in people_today) who will be in te same group
+sample_groups_avoid <- function(people, m, avoid_pairs, max_iter=1e3, verbose=FALSE) {
+  done <- FALSE
+  run_nr <- 1
+  return_groups <- NULL
+  
+  #Run until we have a proper configuration
+  while (!done & (run_nr < max_iter)) {
+    run_nr <- run_nr + 1
+    if (verbose) cat("Run:", run_nr, "\n")
+
+    #Hash of pair list for current allocation 
+    groups <- sample_groups(people, m=m)
+    pairs <-  groups %>% make_pairs() %>% select(hash)
+
+    # Check for each group that none of the participants were in the same group the last time
+    same_pairs <- inner_join( pairs, avoid_pairs %>% select(hash), by="hash")
+    
+    # If no overlap then we are done.
+    if (nrow(same_pairs) == 0) { done <- TRUE; return_groups <- groups}
+  }
+  if (is.null(return_groups))  { 
+    warning("Max iterations reached. No valid config found.") 
+  }
+
+  return(return_groups)
+}
+```
+```{r}
+set.seed(123)
+```
+```{r group_no_reunion, echo=TRUE, cache=TRUE}
+# Sampling in round1 and round2
+groups_r1 <- sample_groups(people, m=m)
+groups_r2 <- sample_groups_avoid(people, m=m, avoid_pairs = make_pairs(groups_r1))
+
+# Check if there are any re-unions. Note: There should be none.
+inner_join( make_pairs(groups_r1) %>% select(hash), make_pairs(groups_r2) %>% select(hash), by="hash")
+```
+
+In other words: No reunions, just as we wanted.
+
+## Discussion
+
+We considered random groupings used, e.g., in lunch roulette or when distributing students into breakout rooms. Depending on the number of people to group and the anticipated group size the probability for a reunion with somebody from last weeks grouping is surprisingly high.
+Hence, we use rejection sampling to propose a configuration, where no reunion occurs. The resulting grouping can easily be exported to a CSV file for import when making [pre-assigned Zoom breakout rooms](https://support.zoom.us/hc/en-us/articles/360032752671-Pre-assigning-Participants-to-Breakout-Rooms) (example in the [R code](`r paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`) on GitHub). Even better allocations might be possible as part of solving the maximally diverse grouping problem. For further combinatorics posts, see also my work on the [birthday problem with unequal probabilities](https://staff.math.su.se/hoehle/blog/2017/02/13/bday.html).
+
+```{r make_zoom_breakout_rooms_example}
+groups <- sample_groups( tibble(id = str_c(sprintf("u%.02d@r-project.org", 1:40))), m=4)
+breakout_groups <- map_df(groups, ~ tibble(email=.x, room=rlang::hash(.))) %>% 
+  mutate(room = sprintf("room%0.2d",as.integer(factor(room)))) %>% 
+  select(room, email)
+write_csv(breakout_groups, path = file.path(filePath, "breakout_groups.csv"))
+```
+
+#### Acknowledgments
+
+Thanks to Dirk, Titus and Filip for the challenge.
+
+## Appendix A
+
+
+ Since the Zoom grouping does not work by specifying the number of individuals in each group, but instead the number of groups, we show an equivalent representation of the reunion probability graph as a function of the number of groups, i.e. $\lfloor n/m\rfloor$. Since we did the math in $m$, not every breakout room size is found. This also means that the shown graph is only an approximation, because the Zoom allocation algorithm is likely to work slightly different to our proposed `sample_groups` algorithm.
+
+```{r plot_p_breakout_rooms}
+ggplot(df %>% filter(n %in% c(25,50,75,100)), aes(x=n_rooms, y=prob, color=factor(n))) + geom_line() + geom_point() +
+  scale_color_brewer(palette="Dark2", name="n") +
+  scale_x_continuous(limits=c(0,NA)) +
+  scale_y_continuous(labels=scales::percent, limits=c(0,NA), breaks=seq(0,1,length=6)) +
+  ylab("Probability of reunion") +
+  xlab("No. Breakout Rooms")
+```
+
+## Appendix B
+
+As a consequence from the calculation and functions from this post we can now answer the following question from our [SU Mathematical Statistics](https://www.math.su.se/english/research/research-groups/research-group-in-mathematical-statistics-1.330441) Zoom Christmas Party announcement:
+
+<div class = "framedbox"> *At 15:00 We will use the breakout room Zoom function that randomly divides the participants into smaller groups (5 persons). At 15:15 and 15:30 we will randomize to form new groups. The natural question that arises is: what is the probability that you and some other colleague spend the entire 45 minutes together?*</div> <p>
+
+
+```{r compute_xmas_prob, cache=TRUE, message=FALSE, results="hide", warning=FALSE}
+# Simulation function for the above described Zoom Xmas party setup
+xmas_puzzle <- function(people) {
+  # Draw the 3 breakout room assignments. We assume same ppl in all 3 sessions
+  groups_r1 <- sample_groups(people, m=5)
+  groups_r2 <- sample_groups(people, m=5)
+  groups_r3 <- sample_groups(people, m=5)
+    
+  me <- people %>% slice(1) %>% pull(id)
+  
+  #Helper function to determine ids of those in the same group as me.
+  my_group <- function(groups, me) {
+    map(groups, function(g) if (me %in% g) return(g) else return(NULL)) %>% unlist()
+  }
+  
+  idx1 <- my_group(groups=groups_r1, me=me) 
+  idx2 <- my_group(groups=groups_r2, me=me) 
+  idx3 <- my_group(groups=groups_r3, me=me) 
+  
+  always_meet <- idx1 %>% intersect(idx2) %>% intersect(idx3) %>% setdiff(me)
+  
+  return(length(always_meet) > 0)
+}
+
+# Define participants
+xmas_people <- tibble(id = 1:30)
+
+# Parallelize samples - see e.g. https://www.jottr.org/2018/06/23/future.apply_1.0.0/
+library(future.apply)
+plan(multiprocess, workers = 4) ## Parallelize using four cores
+p_always_meet <- future_replicate(1e4, xmas_puzzle(xmas_people), future.seed = TRUE) %>% mean()
+p_always_meet
+```
+
+Through simulations (details in the [code](`r paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`)) built on top of the `sample_groups` function we determine that the requested probability when $n=`r nrow(xmas_people)`$ participate in the X-mas party is `r scales::percent(p_always_meet, accuracy=0.1)`.
+
+
+[^1]: As an example consider the case $n=7$ and $m=4$, where we according to our specification would form 1 group with 7 members.
+[^2]: We will assume that the $l$ individuals you met last week all participate again this week. 
+
+## Literature
+
+
+
