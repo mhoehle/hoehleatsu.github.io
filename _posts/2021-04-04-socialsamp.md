@@ -139,14 +139,17 @@ p(n,m) = \sum_{l=1}^\infty \sum_{k=1}^\infty p(k,l,n) f_{n,m}(k) f_{n,m}(l+1)
 $$
 
 The result thus denotes the probability that you in two consecutive assigments of $n$ individuals into groups of at least $m$ individuals will be in the same group with someone twice. We will denote this the *reunion probability*.
-
+The graph below shows this probability as a function of $n$ and $m$ 
+and is also available in a [log-x axis version]({{ site.baseurl }}/figure/source/2021-04-04-socialsamp/p_meetagain_log.png).
 
 
 
 <img src="{{ site.baseurl }}/figure/source/2021-04-04-socialsamp/plot_p_meetagain-1.png" style="display: block; margin: auto;" />
 
 
-Given our $n=47$ and $m=4$ we note the high probability of 22% for a reunion, which confirms our empirical experience. Thus there seems to be a need to impose some additional constraints on the grouping in order to optimize social diversity. For a translation of $m$ into the number of breakout rooms used in Zoom, see Appendix A.
+Why are the curves not decreasing monotonically?[^3] This is due to the minimum size $m$ restriction on the group size. If $m=6$ and you have $n=12$ people then there are two groups. But if $n=17$ while $m$ is still 6, then we will still only have two groups as one would need 18 people for 3 groups. However, there are now 8 and 9 people in the two groups instead of 6 and 6 so the probability of reunion goes up with $n$ until you hit that $n=18$ at which point it jumps down again. Consequently, for $m=2$ the peaks would be at the even $n$ and the troughs would be the odd $n$.
+
+Given our $n=47$ and $m=4$ we also note the high probability of 22% for a reunion, which confirms our empirical experience. Thus there seems to be a need to impose some additional constraints on the grouping in order to optimize social diversity. For a translation of $m$ into the number of breakout rooms used in Zoom, see Appendix A.
 
 
 ### Grouping with avoidance
@@ -204,6 +207,9 @@ Through simulations (details in the [code](https://raw.githubusercontent.com/hoe
 
 [^1]: As an example consider the case $n=7$ and $m=4$, where we according to our specification would form 1 group with 7 members.
 [^2]: We will assume that the $l$ individuals you met last week all participate again this week. 
+[^3]: Thanks to [u/antichain](https://www.reddit.com/r/math/comments/mjy7nx/probability_to_meet_someone_again_when_assigning/gtd33xi?utm_source=share&utm_medium=web2x&context=3) for the question and to [u/assiraN](https://www.reddit.com/r/math/comments/mjy7nx/probability_to_meet_someone_again_when_assigning/gtd4c8t?utm_source=share&utm_medium=web2x&context=3) for the nice answer with examples, which I've integrated into the post:
+<a class="embedly-card" href="https://www.reddit.com/r/math/comments/mjy7nx/probability_to_meet_someone_again_when_assigning/gtd4c8t">Card</a>
+<script async src="//embed.redditmedia.com/widgets/platform.js" charset="UTF-8"></script>
 
 ## Literature
 
