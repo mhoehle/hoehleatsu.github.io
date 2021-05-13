@@ -33,7 +33,7 @@ The [R-markdown source code](https://raw.githubusercontent.com/hoehleatsu/hoehle
 Groupings are relevant when breakout rooms, mystery lunch partitions or student peer review groups are made. 
 My last blog post [Long time, no see: Virtual Lunch Roulette](https://staff.math.su.se/hoehle/blog/2021/04/04/socialsamp.html) considered the probability of being assigned into the same group as someone, you already were in the same group with the last time (aka. a re-union) when using simple random sampling to assign the groups. This probability proved to be surprisingly high.
 
-In this post we develop the subject further by introducing the R package `socialroulette`, which aims at being helpful in making better group assignments based on considering the problem as a solution of the [**maximally diverse grouping problem**](http://grafo.etsii.urjc.es/optsicom/mdgp/) (MDGP) known from operations research.
+In this post we develop the subject further by introducing the R package [`socialroulette`](https://hoehleatsu.github.io/socialroulette/), which aims at being helpful in making better group assignments based on solutions of the [**maximally diverse grouping problem**](http://grafo.etsii.urjc.es/optsicom/mdgp/) (MDGP) known from operations research.
 
 
 ### The Problem
@@ -44,7 +44,7 @@ When assigning such groups repeatedly, e.g. one a weekly basis, an additional cr
 
 ## The R package socialroulette
 
-We illustrate the package by considering a use-case, where a class of students repeatably for every lecture has be assigned into breakout rooms. First, we install and load the [`socialroulette`](https://hoehleatsu.github.io/socialroulette/) package available from [GitHub](https://github.com/hoehleatsu/socialroulette/).
+We illustrate the package by considering a use-case, where a class of students repeatably for every lecture have be assigned into breakout rooms. First, we install and load the [`socialroulette`](https://hoehleatsu.github.io/socialroulette/) package available from [GitHub](https://github.com/hoehleatsu/socialroulette/).
 
 
 
@@ -109,14 +109,6 @@ We thus read the partitions from disk and convert from the stored pair-format (i
 pairs <- map_df(list.files(path=temp_dir, pattern="socialroulette.*", full.names=TRUE), ~read_csv(file=.x))
 ```
 
-<!-- A small sanity check to ensure that the write and read did not really change any information: -->
-<!-- ```{r, echo=TRUE} -->
-<!-- # Convert into a pairs data.frame  -->
-<!-- past_partitions2 <- pairs %>% socialroulette::pairs_to_partitions() -->
-<!-- # Sanity check -->
-<!-- all.equal(past_partitions, past_partitions2)   -->
-<!-- ``` -->
-
 As a next step we sample the students who are in the next class to group.
 
 ```r
@@ -147,7 +139,7 @@ dist %>% head()
 
 Since the past partitions contain the last 4 weeks, students who have not been in a group so far are assigned a value of one time difference more than the last possible meeting opportunity. In the specific example this corresponds to $7\cdot (4 + 1) = 35$ days.
 It thus seems natural to choose the groups, s.t. they do not contain pairs, which have already met in the past. 
-However, for given size of the population, group sizes and meeting histories, this might not be possible to achieve altogether, so a more flexible criterion is to maximize the sum of distance since the last meet over all pairs in the same group of the partition. 
+However, for given size of the population, group sizes and meeting histories, this might not be possible to achieve altogether, so a more flexible criterion is to maximize the sum of distance since the last meet over all pairs in the same group. 
 
 
 ```r
@@ -186,7 +178,7 @@ We provide functionality to create better groupings than obtained by simple rand
 
 ### Acknowledgements
 
-We thank Xiangjing Lai and [Jin-Kao Hao](http://www.info.univ-angers.fr/pub/hao/) for contributing their C++ source code of the MDGP solver in  @lai_hao2016 under a GPL-3 license for the socialroulette package.
+We thank Xiangjing Lai and [Jin-Kao Hao](http://www.info.univ-angers.fr/pub/hao/) for contributing their C++ source code of the MDGP solver in  @lai_hao2016 under a GPL-3 license for the [`socialroulette`](https://hoehleatsu.github.io/socialroulette/) package.
 
 ## Appendix: Maximally diverse grouping problem
 
