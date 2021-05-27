@@ -96,6 +96,7 @@ library(socialroulette)
 devtools::install_github("hoehleatsu/socialroulette")
 library(socialroulette)
 ```
+Note: A binary package version is available from my [r-universe](https://hoehleatsu.r-universe.dev), which is a pipeline automatically compiling the package through GitHub actions.
 
 Say the class consists of 100 students, which for a weekly virtual lab exercise class need to be divided into groups of at least 4.
 Since for various reasons not all students show up for each class, the sampling frame of individuals to be partitioned each week changes accordingly. Still, we would like to make the partitioning of the current week s.t. students get as many new acquaintances as possible.
@@ -258,6 +259,7 @@ $$
  how often each label occurs. This means, e.g., that for $n=7$ and $m=4$ we get $n_g=7\> \text{div}\> 4=1$ group with 7 members.
 
 The `socialroulette` package uses as backend a C++ implementation of MDGP solver of @lai_hao2016.
+
 
 ## Literature
 
