@@ -1,0 +1,249 @@
+<!--
+---
+title: "Birth statistics"
+author: ""
+date: '`r Sys.Date()`'
+output:
+  html_document: default
+  pdf_document: default
+editor_options:
+ chunk_output_type: console
+---
+-->
+<!-- 
+Remove above comment to make this into an Rmd file. This was commented in order
+     for Jekyll not to accidently process the page when creating the blog
+-->
+
+
+```{r knitr_setup, include=FALSE, results="hide"}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r, load_data, results="hide", message=FALSE}
+## Load packages
+library(tidyverse)
+library(ggplot2)
+library(childsds)
+library(lubridate)
+library(glue)
+
+## German Kromeyer-Hausschild et al. (2001) curves (ab 0 Jahre)
+## https://link.springer.com/article/10.1007/s001120170107#citeas
+data(kro.ref)
+kro.ref@refs$height
+kro.ref@refs$weight
+```
+
+```{r, setup}
+## Colors for males and females based on https://blog.datawrapper.de/gendercolor/
+## In particular we select the purple (women) and green (male) scheme from the Telegraph
+#pal <- c(female="#8624f5", male="#1fc3aa")
+pal <- c(girls="#8624f5", boys="#1fc3aa")
+
+## Which percentiles to show
+percentiles <- c(2.5, 5, 50, 95, 97.5)  
+labels <- sprintf("perc_%02d_%d",floor(percentiles), floor(10*(percentiles - floor(percentiles))))
+percentiles_tab <- tibble(percentile=percentiles, label=labels)
+
+kid_point_size <- 4
+max_age <- 4*12 #2*12 4*12
+x_axis_tick_intervals <- 6
+max_height <- 115
+max_weight <- 22000
+max_bmi <- 20
+```
+
+```{r, load_kid_stats, results="hide", message=FALSE}
+kid_wide <- readr::read_csv("kid_measurements.csv") %>% 
+  mutate(age = interval(ymd("20180610"), date) / years(1),
+         weight = weight/1000,
+         bmi  = weight / (height/100)^2,
+         sex  = "male",
+         name = "Albert",
+         long_name = "Albert B. Cook")
+
+kid <- kid_wide %>% pivot_longer(c(height, weight, bmi), names_to = "variable")
+
+kid_current_age <- kid %>% pull(age) %>% max()
+```
+
+```{r, percentile_str_output_func, results="hide", message=FALSE}
+## Compute percentile
+#inspired by childsds::make_percentile_tab
+get_percentile <- function(kid_age, kid_sex, kid_value, variable_str) {
+  ## Fetch the gamlss distribution used for this reference
+  dist <- kro.ref@refs[[variable_str]]@dist[kid_sex] %>% as.character()
+  fun <- get(str_c("p", dist), asNamespace("gamlss.dist"))
+  ## Fetch the relevant parameters of this distrution
+  gamlss_params <- as_tibble(kro.ref@refs[[variable_str]]@params[[kid_sex]])
+  ## Interpolate params at desired age
+  the_params <- purrr::map(gamlss_params[,-1], 
+         function(param) {
+           stats::approx(x = gamlss_params$age, y = param, xout = kid_age, rule = 1)$y
+         }
+  )
+        
+  quantile <- do.call(fun, args=c(q=kid_value, the_params))
+  return(quantile)
+}
+
+which_unit <- function(variable_str) {
+  ## Determine unit of the kid_value variable
+  unit <- case_when(variable_str == "height" ~ "cm",
+                    variable_str == "weight" ~ "g",
+                    variable_str == "bmi" ~ "kg/m²")
+  return(unit)
+}
+
+which_variable_multiplier <- function(variable_str) {
+  mult <- case_when(variable_str == "height" ~ 1,
+                    variable_str == "weight" ~ 1000,
+                    variable_str == "bmi" ~ 1)
+  return(mult)
+}
+
+which_variable_label_str <- function(variable_str) {
+  str <- case_when(variable_str == "bmi" ~ "BMI",
+                   TRUE ~ variable_str)
+  return(str)
+}
+ 
+make_text <- function(kid, variable_str, digits=0) {
+  ## Extract variables
+  kid_name <- kid %>% head(n=1) %>% pull(name)
+  kid_age <- kid %>% filter(variable == variable_str, age==max(age)) %>% pull(age)
+  kid_value <- kid %>% filter(variable == variable_str, age==kid_age) %>%
+    pull(value) %>% as.numeric()
+  
+  
+  ## Determine unit of the kid_value variable
+  unit <- which_unit(variable_str)
+  ## Determine sex
+  kid_sex <- kid %>% head(n=1) %>% pull(sex)
+  kid_sex_group <- ifelse(kid_sex == "male", "boys", "girls")
+  ## Percentile in the population
+  kid_percentile <- get_percentile(kid_age, kid_sex, kid_value, variable=variable_str)
+  
+  ## Massage inputs
+  kid_value <- kid_value * which_variable_multiplier(variable_str)
+  variable_label_str <- which_variable_label_str(variable_str)
+  
+  kid_age_str <- if (kid_age == 0) "birth" else  sprintf("age %.1f years", kid_age)
+  
+  ## Make the string
+  formatted_value <- format(kid_value, big.mark=",", nsmall=digits, digits=max(digits,1))
+  res <- glue("{kid_name}'s {variable_label_str} of {formatted_value} {unit} at {kid_age_str} corresponds to the {format(kid_percentile*100, nsmall=1,digits=1)}% quantile among {kid_sex_group} in Germany of that age.")
+  return(res)
+}
+```
+
+```{r, percentile_tables, results="hide", message=FALSE}
+## Make percentile tables for the 3 variables
+variable_list <- c("height", "weight", "bmi")
+## Result will be a list of length 3 (each element being a data.frame)
+perc_tabs <- purrr::map(variable_list, ~ make_percentile_tab(ref = kro.ref, item=.x, age=seq(0, max_age/12, length=100), digits=2, perc=percentiles, stack=TRUE)) %>% setNames(variable_list)
+
+head(perc_tabs[["height"]])
+```
+
+```{r percentile_plotter}
+make_percentile_plot <- function(variable_str, y_axis_max, y_axis_tick_step, label_pos=11/12) {
+  ## x-position of the labels (closest value in the percentile table)
+  age_percentiles_labels <- perc_tabs[[variable_str]] %>% 
+    mutate(diff = abs(age - label_pos*(max_age/12))) %>% 
+    slice_min(diff) %>% 
+    pull(age) %>% .[[1]]
+
+  ## Position (x,y) of the labels
+  position_percentiles <- left_join(
+    perc_tabs[[variable_str]] %>% filter(age == age_percentiles_labels),
+    percentiles_tab, 
+  by=c(variable="label")) %>% 
+    mutate(label = sprintf("%.1f%%", percentile)) 
+
+  ylab_str <- glue("{which_variable_label_str(variable_str)} ({which_unit(variable_str)})")
+
+  ## Multiplicative factor for y-values
+    y_mult <- which_variable_multiplier(variable_str)
+    
+  ## Rename sex categories (male/female) to (boys/girls) for children. 
+  ## This code needs to be made more efficient
+  perc_tab <- perc_tabs[[variable_str]] %>% mutate(
+    sex = forcats::fct_recode(sex, boys = "male", girls = "female")
+  )
+  position_percentiles <- position_percentiles %>% mutate(
+    sex = forcats::fct_recode(sex, boys = "male", girls = "female")
+  )
+  kid <- kid %>% mutate(
+    sex = forcats::fct_recode(sex, boys = "male", girls = "female")
+  )
+  ######################
+  
+  p <- ggplot(perc_tab, aes(x=12*age, y=value*y_mult, color=sex, linetype=variable)) +
+    geom_line() +
+    geom_point(data=kid %>% filter(variable==variable_str), size=kid_point_size) +
+    geom_line(data=kid %>% filter(variable==variable_str), linetype="solid", size=1) +
+    geom_label(data=position_percentiles, aes(label=label), fill="white",hjust="left", size=1.5, label.padding = unit(0.15, "lines")) + 
+    theme_minimal() +
+    facet_wrap(~ sex ) +
+    scale_color_manual(values=pal, labels=names(pal)) +
+    xlab("Age (months)") + ylab(ylab_str) +
+    scale_y_continuous(breaks=y_mult*seq(0,y_axis_max,by=y_axis_tick_step)) +
+    scale_x_continuous(limits=c(0,NA), breaks=seq(0,max_age,by=x_axis_tick_intervals)) +
+    coord_cartesian(xlim=c(0, max_age)) +
+    theme(legend.position = 'bottom') +
+    guides(color = "none", linetype="none")
+  
+  return(p)
+}
+```
+
+# `r kid %>% head(n=1) %>% pull(long_name)`
+
+Let's look at how `r kid %>% head(n=1) %>% pull(name)` relates to the population of children in Germany[^1] as implemented in the [childsds](https://cran.r-project.org/web/packages/childsds/index.html) R package[^2].
+
+## Height
+
+```{r, results="asis"}
+cat(make_text(kid, variable_str = "height"))
+```
+
+```{r, make_height_plot, message=FALSE, warning=FALSE}
+make_percentile_plot("height", y_axis_max=max_height, y_axis_tick_step=10)
+```
+
+
+## Weight
+
+```{r, results="asis"}
+cat(make_text(kid, variable_str = "weight"))
+```
+
+```{r, make_weight_plot, message=FALSE, warning=FALSE}
+make_percentile_plot("weight", y_axis_max=max_weight, y_axis_tick_step=2)
+```
+
+## BMI
+
+```{r, results="asis"}
+cat(make_text(kid, variable_str = "bmi", digits=1))
+```
+
+```{r, make_bmi_plot, message=FALSE, warning=FALSE}
+make_percentile_plot("bmi", y_axis_max=max_bmi, y_axis_tick_step=1)
+```
+
+```{r, add_cheers_for_newborns, results="asis"}
+if (kid_current_age == 0) {
+  cat("## Cheers to a new life!")
+}
+```
+
+ 
+
+
+[^1]: According to Kromeyer-Hauschild, K., Wabitsch, M., Kunze, D. et al. Perzentile für den Body-mass-Index für das Kindes- und Jugendalter unter Heranziehung verschiedener deutscher Stichproben. *Monatsschr Kinderheilkd* 149, 807–818 (2001). https://doi.org/10.1007/s001120170107
+
+[^2]: Vogel M (2022). _childsds: Data and Methods Around Reference Values in Pediatrics_. R package version 0.8.0,
+<https://CRAN.R-project.org/package=childsds>.

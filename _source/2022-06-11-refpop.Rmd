@@ -1,0 +1,97 @@
+---
+layout: post
+title: "Anthropometric Birthday Cards"
+tags: [rstats, stats, obesity, nonparametrics]
+comments: yes
+---
+
+ <!-- bibliography: /Users/hoehle/Literature/Bibtex/jabref.bib -->
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2022-06-11-refpop/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2022-06-11-refpop")
+
+knitr::opts_chunk$set(echo = FALSE, fig.width=8, fig.height=4, fig.cap='', fig.align='center', dpi=72*2)#, global.par = TRUE)
+options(width=150, scipen=1e3)
+
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(scales))
+suppressPackageStartupMessages(library(knitr))
+# Non CRAN packages
+# devtools::install_github("hadley/emo")
+
+##Configuration
+options(knitr.table.format = "html")
+theme_set(theme_minimal())
+#if there are more than n rows in the tibble, print only the first m rows.
+options(tibble.print_max = 10, tibble.print_min = 5)
+
+# Fix seed value for the post
+set.seed(20220610)
+```
+
+
+## Abstract:
+
+We visualize children reference populations for height, weight and body mass index by plotting percentiles of the population as a function of age. Besides the epidemiological interest in these anthropometric curves, they have dual-use potential for reproducible birthday cards.
+
+<center>
+```{r,results='asis',echo=FALSE}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"make_bmi_plot-1.png"),")")
+```
+</center>
+
+<br>
+<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"/></a>
+This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
+Attribution-ShareAlike 4.0 International License</a>.
+The [R-markdown source code](`r paste0("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`) of this blog is available under a [GNU General Public License (GPL v3)](https://www.gnu.org/licenses/gpl-3.0.html) license from GitHub.
+
+## Introduction
+
+Percentiles of a reference population at a given age are often used to assess under- and overweight of children. As an example, the WHO defines 
+obesity for children under 5 years of age when the [weight-for-height](https://cdn.who.int/media/docs/default-source/child-growth/child-growth-standards/indicators/weight-for-length-height/cht-wfl-girls-z-0-2.pdf?sfvrsn=a683172c_11) of a child is greater than 3 standard deviations above WHO Child Growth Standards median for that age](https://www.who.int/news-room/fact-sheets/detail/obesity-and-overweight) (see also the WHO R package [anthro](https://cran.r-project.org/web/packages/anthro/index.html).
+
+In order to estimate these percentiles, data from a sample of the reference population is often fitted using flexible regression models such as GAMLSS [@rigby_stasinopoulos2005] or quantile regression [@koenker2005]. This allows for a flexible modelling of the percentiles as smooth functions of age [@fenske_etal2013]. The reference curves used in Germany are based on the Box-Cox Cole and Green distribution [@KromeyerHauschild_etal2001] (aka. the LMS method).
+The [childsds](https://cran.r-project.org/web/packages/childsds/index.html) R package contains an implementation of these curves as `data(kro.ref)`. Furthermore, the package contains similar reference curves for several other countries as well as the WHO reference. 
+
+In what follows, we will re-purpose the package as work-horse for generating individualized birthday cards for children.
+
+## Results
+
+Quantiles of the reference population are obtained with the `childsds::make_percentile_tab` function. As an example, let's get the 5th, 50th and 95th percentile of the height distribution for the population of girls in Germany aged 0 and 4 years, respectively.
+
+```{r, echo=TRUE, message=FALSE}
+library(childsds)
+data(kro.ref)
+childsds::make_percentile_tab(
+  ref = kro.ref, item = "height", age=c(0,4),
+  perc=c(5,50,95), include.pars= FALSE
+) %>% filter(sex == "female") 
+```
+
+
+The main result of this short blog post is an Rmd file, which contains a visualization of an imaginary child's growth trajectory: Albert B. Cook born on 2018-06-11. The data of Albert are stored in a [CSV file]({{ site.baseurl }}/figure/source/2022-06-11-refpop/kid_measurements.csv). We show the trajectories for height, weight and BMI and compare to 5 quantiles of the German reference population, i.e. the 2.5%, 5%, 50%, 95% and 97.5% quantile. The resulting visualization looks as follows:
+
+<hr>
+```{r make_birth_report, child=file.path(filePath, "birth_stats.Rmd")}
+```
+<hr>
+
+The Rmd file can be obtained from GitHub and serves as a template for creating [html based congratulation cards]({{ site.baseurl }}/figure/source/2022-06-11-refpop/birth_stats.html) in response to news of newborn (which usually are annotated with birth height and birth weight) or to track the growth of your own kids.
+
+## Discussion
+
+Percentile curves for longitudinal trajectories in populations can also be used in very different contexts than anthropometry. As an example consider the development of your [solve time for the 3x3x3 Rubik's cube as a function of time since first WCA competition](https://staff.math.su.se/hoehle/blog/2019/05/06/wcamining.html). 
+
+
+## Literature
+
+
+
