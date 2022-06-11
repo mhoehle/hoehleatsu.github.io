@@ -95,7 +95,7 @@ Besides the point estimate $\hat{x}_p$ we also would like to report a two-sided 
 $$
 P( (x_p^{\text{l}}, x_p^{\text{u}}) \ni x_p) = 1 - \alpha,
 $$
-where we have used the "backwards" $\in$ to stress the fact that it's the interval which is random. Restricting the limits of this confidence intervals to be **one of the realisations from the order statistics** implies that we need to find indices $d$ and $e$ with $d<e$ s.t.
+where we have used the "backwards" $\in$ to stress the fact that [it's the interval which is random](https://staff.math.su.se/hoehle/blog/2017/06/22/interpretcis.html). Restricting the limits of this confidence intervals to be **one of the realisations from the order statistics** implies that we need to find indices $d$ and $e$ with $d<e$ s.t.
 $$
 P( x_{(d)} \leq x_p \leq x_{(e)}) \geq 1 - \alpha.
 $$
@@ -109,7 +109,7 @@ P( x_{(r)} \leq x_p) &= P(\text{at least $r$ observations are smaller than or eq
       &= 1 - \sum_{k=0}^{r-1} {n \choose k} p^k (1-p)^{n-k}
 \end{align*}
 $$
-In principle, we could now try out all possible $(d,e)$ combinations and for each interval investigate, whether it has the desired $\geq 1-\alpha/2$ property. If several combinations achieve this criterion we would, e.g., take the interval having minimal length. This is what the `MKmisc::quantileCI` function does. However, the number of pairs to investigate is of order $O(n^2)$, which for large $n$ quickly becomes lengthy to compute. Instead, we compute an **equi-tailed confidence interval** by finding two one-sided $1-\alpha/2$ intervals, i.e. we find $d$ and $e$ s.t. $P(x_{(d)} \leq x_p) = 1-\alpha/2$ and
+In principle, we could now try out all possible $(d,e)$ combinations and for each interval investigate, whether it has the desired $\geq 1-\alpha$ property. If several combinations achieve this criterion we would, e.g., take the interval having minimal length. This is what the `MKmisc::quantileCI` function does. However, the number of pairs to investigate is of order $O(n^2)$, which for large $n$ quickly becomes lengthy to compute. Instead, we compute an **equi-tailed confidence interval** by finding two one-sided $1-\alpha/2$ intervals, i.e. we find $d$ and $e$ s.t. $P(x_{(d)} \leq x_p) = 1-\alpha/2$ and
 $P(x_p \geq x_{(e)}) = 1-\alpha/2$. In other words,
 
 $$
@@ -265,7 +265,7 @@ simulate.coverage_qci <- function(n=n,p=p,conf.level=0.9, nSim=10e3, ...) {
     lapplyFun(1L:nSim, function(i) {
       quantileCI::qci_coverage_one_sim(qci_fun=quantile_confints, n=n,p=p,conf.level=conf.level,...)
     }, mc.cores = parallel::detectCores() - 1)
-  ) %>% summarise_each(funs(mean))
+  ) %>% summarise(across(everything(), mean))
   return(sims)
 }
 ```

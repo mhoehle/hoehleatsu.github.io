@@ -2,7 +2,6 @@
 layout: post
 title: "Princes Disguised in Uniforms"
 tags: [math, rstats, secretary problem, stopping rule]
-bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
 html_document:
     mathjax: local
@@ -187,7 +186,7 @@ apply(res,1,mean)
 
 ```
 ##         score    select_idx isOverallBest 
-##         0.870         4.975         0.528
+##         0.871         4.953         0.530
 ```
 
 ```r
@@ -349,6 +348,19 @@ f_pareto <- function(theta,k,l,u) {
 
 We illustrate the prior setting consisting of $l=5$ and $u=7$ and the two values $k=0.1$ and $k=1$:
 
+
+```
+## Warning: stat_contour(): Zero contours were generated
+```
+
+```
+## Warning in min(x): no non-missing arguments to min; returning Inf
+```
+
+```
+## Warning in max(x): no non-missing arguments to max; returning -Inf
+```
+
 ![]({{ site.baseurl }}/figure/source/2016-06-19-princesAsUniforms/PARETO_PDF-1.png)
 
 And the marginal density for two slices of the above joint density is:
@@ -460,8 +472,10 @@ s <- strategy_pig(x, prior=prior)
 ```
 
 ```
-## Warning: `data_frame()` is deprecated, use `tibble()`.
-## This warning is displayed once per session.
+## Warning: `data_frame()` was deprecated in tibble 1.1.0.
+## Please use `tibble()` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.
 ```
 
 ```r
@@ -469,7 +483,7 @@ s$select
 ```
 
 ```
-## # A tibble: 1 x 10
+## # A tibble: 1 × 10
 ##       i     x delta     l     u im1div2     E threshold  rank isOverallBest
 ##   <dbl> <dbl> <dbl> <dbl> <dbl>   <dbl> <dbl>     <dbl> <dbl> <lgl>        
 ## 1     8  9.32 0.745  2.08  9.32     7.5  6.88      7.47    11 TRUE

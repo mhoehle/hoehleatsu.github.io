@@ -31,7 +31,8 @@ markdown: Pandoc
 pandoc:
   extensions:
     - mathjax
-    - bibliography: ~/Literature/Bibtex/jabref.bib
+    - bibliography: /Users/hoehle/Literature/Bibtex/jabref.bib
+    - citeproc
 
 author:
   name:           'Michael Höhle'
@@ -39,4 +40,5 @@ author:
 
 disqus_id: staffmathsusehoehleblog
 
-exclude: ['fts-appendix.Rmd']
+exclude: 
+- birth_stats.Rmd

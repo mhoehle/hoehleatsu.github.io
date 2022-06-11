@@ -98,7 +98,7 @@ Besides the point estimate $\hat{x}_p$ we also would like to report a two-sided 
 $$
 P( (x_p^{\text{l}}, x_p^{\text{u}}) \ni x_p) = 1 - \alpha,
 $$
-where we have used the "backwards" $\in$ to stress the fact that it's the interval which is random. Restricting the limits of this confidence intervals to be **one of the realisations from the order statistics** implies that we need to find indices $d$ and $e$ with $d<e$ s.t.
+where we have used the "backwards" $\in$ to stress the fact that [it's the interval which is random](https://staff.math.su.se/hoehle/blog/2017/06/22/interpretcis.html). Restricting the limits of this confidence intervals to be **one of the realisations from the order statistics** implies that we need to find indices $d$ and $e$ with $d<e$ s.t.
 $$
 P( x_{(d)} \leq x_p \leq x_{(e)}) \geq 1 - \alpha.
 $$
@@ -112,7 +112,7 @@ P( x_{(r)} \leq x_p) &= P(\text{at least $r$ observations are smaller than or eq
       &= 1 - \sum_{k=0}^{r-1} {n \choose k} p^k (1-p)^{n-k}
 \end{align*}
 $$
-In principle, we could now try out all possible $(d,e)$ combinations and for each interval investigate, whether it has the desired $\geq 1-\alpha/2$ property. If several combinations achieve this criterion we would, e.g., take the interval having minimal length. This is what the `MKmisc::quantileCI` function does. However, the number of pairs to investigate is of order $O(n^2)$, which for large $n$ quickly becomes lengthy to compute. Instead, we compute an **equi-tailed confidence interval** by finding two one-sided $1-\alpha/2$ intervals, i.e. we find $d$ and $e$ s.t. $P(x_{(d)} \leq x_p) = 1-\alpha/2$ and
+In principle, we could now try out all possible $(d,e)$ combinations and for each interval investigate, whether it has the desired $\geq 1-\alpha$ property. If several combinations achieve this criterion we would, e.g., take the interval having minimal length. This is what the `MKmisc::quantileCI` function does. However, the number of pairs to investigate is of order $O(n^2)$, which for large $n$ quickly becomes lengthy to compute. Instead, we compute an **equi-tailed confidence interval** by finding two one-sided $1-\alpha/2$ intervals, i.e. we find $d$ and $e$ s.t. $P(x_{(d)} \leq x_p) = 1-\alpha/2$ and
 $P(x_p \geq x_{(e)}) = 1-\alpha/2$. In other words,
 
 $$
@@ -141,13 +141,13 @@ When it comes to confidence intervals for quantiles the set of alternative imple
 
 | Package::Function   |  Version | Description                                            |
 |---------------------|:--------:|--------------------------------------------------------|
-| [`MKmisc::quantileCI`](http://finzi.psych.upenn.edu/R/library/MKmisc/html/quantileCI.html)|1.3 | Implements an exact but very slow $O(n^2)$ search as well as an asymptotic method approximating the exact procedure. Due to the method being slow it is not investigated further, but looking at it an `Rcpp` implementation of the nested loop might be able to speed up the performance substantially. Note: New versions of `MKmisc` do not install, because the depency pkg `limma` is not on CRAN anymore. |
+| [`MKmisc::quantileCI`](http://finzi.psych.upenn.edu/R/library/MKmisc/html/quantileCI.html)| | Implements an exact but very slow $O(n^2)$ search as well as an asymptotic method approximating the exact procedure. Due to the method being slow it is not investigated further, but looking at it an `Rcpp` implementation of the nested loop might be able to speed up the performance substantially. Note: New versions of `MKmisc` do not install, because the depency pkg `limma` is not on CRAN anymore. |
 |   |   |  |
-| [`jmuOutlier::quantileCI`](http://finzi.psych.upenn.edu/R/library/jmuOutlier/html/quantileCI.html)  |  1.4  | Implements the exact method. |
+| [`jmuOutlier::quantileCI`](http://finzi.psych.upenn.edu/R/library/jmuOutlier/html/quantileCI.html)  |  2.2  | Implements the exact method. |
 |   |   |  |
-| [`envStats::eqnpar`](http://finzi.psych.upenn.edu/R/library/EnvStats/html/eqnpar.html)  | 2.3.1 | implements both an exact and an asymptotic interval  |
+| [`envStats::eqnpar`](http://finzi.psych.upenn.edu/R/library/EnvStats/html/eqnpar.html)  | 2.1.1 | implements both an exact and an asymptotic interval  |
 |   |   |  |
-| [`asht::quantileTest`](http://finzi.psych.upenn.edu/R/library/asht/html/quantileTest.html)| 0.9.4 | also implements an exact method |
+| [`asht::quantileTest`](http://finzi.psych.upenn.edu/R/library/asht/html/quantileTest.html)| 0.9.6 | also implements an exact method |
 |   |   |  |
 | [`Qtools::confint.midquantile`](http://finzi.psych.upenn.edu/R/library/Qtools/html/confint.midquantile.html) |  | operates on the mid-quantile (whatever that is). The method is not investigated further.
 |   |   |  |
@@ -166,8 +166,8 @@ as.numeric(asht::quantileTest(x=x,p=p,conf.level=0.95)$conf.int)
 
 ```
 ## [1] -0.03377687  1.52483138
+## [1] 0.2212113 2.6786278
 ## [1] -0.03377687  1.52483138
-## [1] -0.0376499  2.6786278
 ## [1] -0.03377687  2.67862782
 ```
 
@@ -190,7 +190,7 @@ quantileCI::quantile_confint_boot(x, p=p, conf.level=0.95,R=999, type=1)
 ```
 ## [1] -0.03377687  2.67862782
 ## [1] 0.07894831 1.54608644
-## [1] -0.0376499  1.2008637
+## [1] -0.03377687  1.20086374
 ```
 
 The first procedure with `interpolate=FALSE` implements the previously
@@ -237,11 +237,11 @@ quantile_confints(x, p=p, conf.level=0.95)
 
 ```
 ##   jmuOutlier_exact EnvStats_exact EnvStats_asymp asht_quantTest nyblom_exact
-## 1      -0.03377687    -0.03377687     -0.0376499    -0.03377687  -0.03377687
-## 2       1.52483138     1.52483138      2.6786278     2.67862782   2.67862782
+## 1      -0.03377687      0.2212113    -0.03377687    -0.03377687  -0.03377687
+## 2       1.52483138      2.6786278     1.52483138     2.67862782   2.67862782
 ##   nyblom_interp        boot
 ## 1    0.07894831 -0.03377687
-## 2    1.54608644  1.26565726
+## 2    1.54608644  1.49641655
 ```
 
 In order to evaluate the various methods and implementations we
@@ -267,7 +267,7 @@ simulate.coverage_qci <- function(n=n,p=p,conf.level=0.9, nSim=10e3, ...) {
     lapplyFun(1L:nSim, function(i) {
       quantileCI::qci_coverage_one_sim(qci_fun=quantile_confints, n=n,p=p,conf.level=conf.level,...)
     }, mc.cores = parallel::detectCores() - 1)
-  ) %>% summarise_each(funs(mean))
+  ) %>% summarise(across(everything(), mean))
   return(sims)
 }
 ```
@@ -281,9 +281,9 @@ simulate.coverage_qci(n=25, p=0.8, conf.level=0.95)
 
 ```
 ##   jmuOutlier_exact EnvStats_exact EnvStats_asymp asht_quantTest nyblom_exact
-## 1           0.9536         0.9473         0.9536         0.9786       0.9786
+## 1           0.9552         0.9461         0.9552         0.9786       0.9786
 ##   nyblom_interp   boot
-## 1        0.9464 0.9154
+## 1        0.9495 0.9198
 ```
 
 Note that the `nyblom_interp` procedure is closer to the nominal
@@ -304,9 +304,9 @@ simulate.coverage_qci(n=11, p=0.5, conf.level=0.95)
 
 ```
 ##   jmuOutlier_exact EnvStats_exact EnvStats_asymp asht_quantTest nyblom_exact
-## 1           0.9873         0.9352          0.961         0.9873       0.9873
+## 1           0.9873         0.9332         0.9583         0.9873       0.9873
 ##   nyblom_interp   boot hs_interp
-## 1        0.9462 0.9352    0.9462
+## 1        0.9463 0.9332    0.9463
 ```
 
 We note that the `EnvStats_exact` procedure again has a lower coverage
@@ -344,9 +344,9 @@ simulate.coverage_qci(n=11, p=0.25, conf.level=0.90)
 
 ```
 ##   jmuOutlier_exact EnvStats_exact EnvStats_asymp asht_quantTest nyblom_exact
-## 1           0.9249         0.7722         0.8472         0.9249       0.9249
+## 1           0.9219         0.7633          0.841         0.9219       0.9219
 ##   nyblom_interp   boot
-## 1        0.9033 0.8848
+## 1        0.9014 0.8816
 ```
 
 In particular the results of `EnvStats_exact` look disturbing. The
@@ -365,9 +365,9 @@ simulate.coverage_qci(n=101, p=0.9, rfunc=rt, qfunc=qt, conf.level=0.95, df=1)
 
 ```
 ##   jmuOutlier_exact EnvStats_exact EnvStats_asymp asht_quantTest nyblom_exact
-## 1           0.9553         0.9343         0.9553         0.9553       0.9553
+## 1           0.9547         0.9352         0.9547         0.9547       0.9547
 ##   nyblom_interp   boot
-## 1        0.9502 0.9306
+## 1        0.9495 0.9362
 ```
 Again the interpolation method provides the most convincing
 results. The bootstrap on the other hand again has the worst coverage,
