@@ -356,7 +356,7 @@ jehn <- function(player_idx, filled_holes, state_players) {
 } 
 ```
 
-This allows us to test, if there is a winning advantage, despite both players playing the optimal strategy.
+This allows us to test, if there is a winning advantage, despite both players playing the optimal strategy (see [source code](`r str_c("https://raw.githubusercontent.com/hoehleatsu/hoehleatsu.github.io/master/_source/",current_input())`) for details).
 
 ```{r jehn_sim2_optimal, echo=FALSE, cache=TRUE}
 n_sims <- 1e4
