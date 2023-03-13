@@ -235,9 +235,9 @@ We analysed aspects of how to win a game (or more) of Super Six. Important facto
 
 A little surprising is that the best strategy (among those investigated) is to keep throwing the dice regardless of the number of free pits. The optimal strategy may in part depend on how the other players play, but our conclusions appear sufficiently robust, because the simulation study investigated a mixed strategy player field with two to five players. A limitation of our analysis is that we only considered games where each player initially holds 4 sticks.
 
-It is worth pointing out that the best strategy we found is not optimal. As an example, @jehn2021 analytically finds the optimal strategy for the $n=2$ player situation. It depends on the number of sticks left in the game and the number of sticks each player has. In most cases the strategy stops if more than 3 pits are occupied -- see Appendix 1 for details. This dependence on the other player's hand is likely to carry forward to $n>2$ player situation. Analytic results for $n>2$ situations will be extremely difficult to obtain, but it makes intuitive sense to be more aggressive when there are more players, because there are more contestants for the win.
+It is worth pointing out that the best strategy we found is not optimal. As an example, @jehn2021 analytically finds the optimal strategy for the $n=2$ player situation. It depends on the number of sticks left in the game and the number of sticks each player has. In most cases the strategy stops if more than 3 pits are occupied -- see Appendix 1 for details. This dependence on the other player's hand is likely to carry forward to the $n>2$ player situation. However, analytic results for $n>2$ will be extremely difficult to obtain, but it makes intuitive sense to be more aggressive when there are more players, because there are more contestants for the win.
 
-Did the game developers realized that the start player has such a high probability of winning the game? It seems advisable to accompany game development by simulations and mathematical calculations at the design stage. In practice one should randomize the start player to enhance fairness.
+Did the game developers realize that the start player has such a high probability of winning the game? It seems advisable to accompany game development by simulations and mathematical calculations at the design stage. In practice, one should randomize the start player to enhance fairness.
 
 **Final note**: This will be the last post of *Theory Meets Practice* Blog in its current form. As of Jan 2023 I am working as full professor in Statistics and Data Science at the [University of Greifswald](https://math-inf.uni-greifswald.de/en/michael-hoehle/), Germany. For both technical and time reasons a new setup is thus needed.
 
@@ -325,7 +325,7 @@ which -opposite to the 7 sticks left situation- continues in the 4 pits filled s
 Finally, we implement a function, which implements Jehn's optimal strategy in a way, which can be used by the simulation function `simulate_super6()`:
 
 ```{r}
-#' Jehn's optimal strategy for for two players
+#' Jehn's optimal strategy for two players
 #'
 #' @param player_idx Index of the player in the state_players variable (see simulate_super6 function)
 #' @param filled_holes Number of pits filled

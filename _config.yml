@@ -7,13 +7,13 @@
 
 # Site settings
 title: Theory meets practice...
-email: hoehle@math <figure out the rest>
+email: figure@it.out
 description: > # this means to ignore newlines until "baseurl:"
   A blog about statistics in theory and practice. Not always serious, not always flawless, but definitely a statistically flavoured bean.
-baseurl: "/hoehle/blog" # the subpath of your site, e.g. /blog
-url: "http://staff.math.su.se" # the base hostname & protocol for your site
+baseurl: "/blog" # the subpath of your site, e.g. /blog
+url: "http://mhoehle.github.io" # the base hostname & protocol for your site
 twitter_username: m_hoehle
-github_username:  hoehleatsu
+github_username:  mhoehle
 
 #old jekyll versions use this:
 #gems:
@@ -36,7 +36,7 @@ pandoc:
 
 author:
   name:           'Michael Höhle'
-  url:            http://www.math.su.se/~hoehle
+  url:            https://math-inf.uni-greifswald.de/en/michael-hoehle/
 
 disqus_id: staffmathsusehoehleblog
 
