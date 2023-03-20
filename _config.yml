@@ -11,7 +11,7 @@ email: figure@it.out
 description: > # this means to ignore newlines until "baseurl:"
   A blog about statistics in theory and practice. Not always serious, not always flawless, but definitely a statistically flavoured bean.
 baseurl: "/blog" # the subpath of your site, e.g. /blog
-url: "http://mhoehle.github.io" # the base hostname & protocol for your site
+url: "https://mhoehle.github.io" # the base hostname & protocol for your site
 twitter_username: m_hoehle
 github_username:  mhoehle
 
