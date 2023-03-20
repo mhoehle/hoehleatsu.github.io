@@ -1,0 +1,209 @@
+---
+layout: post
+title: "Dynamic Programming for Super Six Gameplay"
+tags: [rstats, python, dynamic programming, reinforcement learning, game theory]
+comments: yes
+editor_options: 
+  chunk_output_type: console
+bibliography: /Users/hoehle/Literature/Bibtex/jabref.bib  
+---
+
+```{r,include=FALSE,echo=FALSE,message=FALSE}
+##If default fig.path, then set it.
+if (knitr::opts_chunk$get("fig.path") == "figure/") {
+  knitr::opts_knit$set( base.dir = '/Users/hoehle/Sandbox/Blog/')
+  knitr::opts_chunk$set(fig.path="figure/source/2023-03-20-dynprog/")
+}
+fullFigPath <- paste0(knitr::opts_knit$get("base.dir"),knitr::opts_chunk$get("fig.path"))
+filePath <- file.path("","Users","hoehle","Sandbox", "Blog", "figure", "source", "2023-03-20-dynprog")
+
+knitr::opts_chunk$set(echo = FALSE, fig.width=8, fig.height=3.5, fig.cap='', fig.align='center', dpi=72*2, echo=TRUE)#, global.par = TRUE)
+options(width=150, scipen=1e3)
+```
+```{r, echo=FALSE}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(reticulate))
+
+# Non CRAN packages
+# devtools::install_github("hadley/emo")
+
+##Configuration
+options(knitr.table.format = "html")
+theme_set(theme_minimal())
+#if there are more than n rows in the tibble, print only the first m rows.
+options(tibble.print_max = 10, tibble.print_min = 5)
+
+# Fix seed value for the post
+set.seed(123)
+```
+
+
+## Abstract:
+
+We use dynamic programming to find the optimal strategy for playing Super Six when there are 2 players. To test the cross-language capabilities of rmarkdown we solve the task by embedding our Python implementation of the value iteration algorithm using the reticulate R-package.
+
+
+<center>
+```{r,results='asis',echo=FALSE}
+cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"optim_strategy-1.png"),")")
+```
+</center>
+
+<br>
+<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"/></a>
+This work is licensed under a <a rel="license"
+href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
+Attribution-ShareAlike 4.0 International License</a>.
+The [R-markdown source code](`r str_c("https://raw.githubusercontent.com/mhoehle/mhoehle.github.io/master/_source/blog",current_input())`) of this blog is available under a [GNU General Public License (GPL v3)](https://www.gnu.org/licenses/gpl-3.0.html) license from GitHub.
+
+## Introduction
+
+The present post finds the optimal game strategy for playing the dice game of Super Six with two players using dynamic programming to solve the corresponding Markov Decision Process (MDP). We use the `reticulate` R package to run our Python implementation of value iteration within the rmarkdown document.
+
+For more details about Super Six, see the previous Blog post [*How to Win a Game (or More) of Super Six*](https://mhoehle.github.io/blog/2023/03/13/super6.html) for a description of the  game. Appendix 1 of the post discussed optimal strategies. The present post is a natural sucessor of this post, because it shows the details of how to calculate an the optimal strategies for two player games by using value iteration [@russell_norvig2020, @sutton_burto2020]. This IMO provides a clearer way to get to the strategy than, e.g., @jehn2021 or the C++ program by [Nuno Hulthberg](https://github.com/mhoehle/mhoehle.github.io/blob/main/blog/figure/source/2023-03-13-super6/hultberg2.cpp).
+
+## Notation
+
+In mathematical notation the current state $s$ corresponds to the $i/j/k$ situation, with $0\leq i\leq 5$, $j\geq 0$ and $k\geq 0$.  
+
+In order to distinguish between the first turn of a player in a round (where the dice has to be thrown) and the subsequent turns, where the player can decide whether to throw the dice or stop, we add a fourth component $l\in \{0,1\}$ to the state, which is a binary indicator whether the move is a forced moved (1) or not (0). The action space for a state $i/j/k/l$ with $l=1$ is $\mathcal{A}(s) = \{\texttt{throw}\}$, whereas for $l=0$ it is $\mathcal{A}(s) = \{\texttt{throw},\texttt{stop}\}$. 
+
+If $j=0$ while $k>0$ then Player 1 won. If $k=0$ while $i>0$ then Player 2 won.
+In order to handle this *episodic task* [@sutton_burto2020]  we introduce an terminal state, which provides no additional future reward.
+
+### State Transition
+
+The state transition probabilities of the Markov decision process are given as follows.  For each throw of the dice from an $i/j/k/l$ state there are three  cases to consider when throwing the dice:
+
+1.  you roll a six (probability $\frac{1}{6}$) and move to the $i/(j-1)/k/0$ state
+2.  (if $0\leq i< 5$) you hit a free spot (probability $\frac{5-i}{6}$) and move to the $(i+1)/j/k/0$ state
+3.  (if $0<i\leq 5$) you hit an already occupied spot (probability $\frac{i}{6}$) and it is your opponents turn to play from an $(i-1)/k/(j+1)/1$ position
+
+If you decide to stop throwing (only possible if $l=0$) then it is the opponent's turn to play from an $i/k/j/1$ position. 
+
+As part of the calculations one needs to know what happens if Player 1 looses their turn (i.e. either by hitting an occupied spot or by voluntarily deciding to stop) This depends on the strategy played by Player 2. For simplicity we will assume that Player 2 plays the same optimal strategy as Player 1. This also means that rewards in this situation are just minus the rewards obtained from the corresponding position.
+
+### Reward
+
+Eventually, the game will finish. Let $R(s,a,s')$ be the reward function, where action $a$ moves the decision maker from state $s$ to $s'$. In our problem, the reward will only depend on $s'$. We have 
+$$
+R(s'=(i,j,k,l)) = \left\{
+\begin{array}{cl}
+1 & \text{if $j=0$ and $k>0$} \\
+-1 & \text{if $k=0$ and $j>0$} \\
+0 & \text{otherwise}
+\end{array}
+\right.
+$$ 
+
+Side note: Since linear transformations of the reward function leave the optimal strategy unchanged [Sect. 17.1.3, @russell_norvig2020], it is equally possible to work with rewards $R^*(s'=(i,j,k,l)) = \frac{1}{2}R(s'=(i,j,k,l)) + \frac{1}{2}$. This would imply values 1 for winning and 0 for loosing and translates directly the expected reward computations into computing expected probabilities for winning, which is what @jehn2021 computed.
+
+### Bellman equations
+
+The expected utility obtained from following stragy $\pi$ is defined as
+$$
+U^{\pi}(s) = E\left[ \sum_{t=0}^\infty R(S_t, \pi(S_t), S_{t+1})\right]
+$$
+The terminal state with future reward 0 ensures that $U^\pi(s)<\infty$. No discounting of the rewards is thus used in our approach. Our aim is now to find a strategy $\pi^*(s)$, which optimizes this expected utility, i.e.
+$$
+\pi_s^* = \operatorname{argmax}_{\pi} U^{\pi}(s) 
+$$
+For state $s$ we thus choose the action that maximizes the reward for the next step plus the expected utility of the subsequent states:
+$$
+\pi^*(s) = \operatorname{argmax}_{a\in \mathcal{A}(s)} \sum_{s'}P(s'| s,a) \left[ R(s,a,s') +  \max_{a'} U(s') \right]
+$$
+
+This expressions for a state $s$ is also called the **Bellman equation**:
+
+\begin{align*}
+U(s) 
+&=\max_{a\in \mathcal{A}(s)} \sum_{s'}P(s'| s,a) \left[ R(s,a,s') + U(s') 
+\right]
+\end{align*}
+
+Hence, for a state $i/j/k/0$ the action "continue" leads to to the following expansion of the sum term in the above equation:
+
+$$
+\begin{align*}
+& \underbrace{\frac{1}{6} [R(i/j-1/k/0) + U(i/j-1/k/0)]}_{\text{stick into hole}} \\
+&+ \underbrace{\frac{5-i}{6} [R(i+1/j-1/k/0) +  U(i+1/j-1/k/0)]}_{\text{put stick into lid}}\\
+&- \underbrace{\frac{i}{6} [R(i-1/k/j+1/1) +  U(i-1/k/j+1/1)]}_{\text{take stick from lid}}
+\end{align*}
+$$
+and the action to stop has value $R(i-1/k/j+1/1) +  U(i-1/k/j+1/1)$. 
+
+## Value Iteration
+
+We use **value iteration** [Sect. 17.2.1, @russell_norvig2020], [Sect 4.4, @sutton_burto2020] to solve the MDP. Let $U(s)$ and $U'$ be collections, which contain the value function for each $s$ in the state space. We initialize $U(s)=U'(s)=0$ for all states and proceed by the following algorithm:
+
+----
+
+**Algorithm 1**: Value iteration
+
+----
+
+**repeat**
+ 
+  1. $U \gets U'; \delta \gets 0$
+  2. **For all** states $s$ **do**
+      a. $U'(s) \gets \max_{a\in \mathcal{A}(s)} \sum_{s'}P(s'| s,a) \left[ R(s,a,s') + U(s') \right]$
+      b. **if** $|U(s')-U(s)| > \delta$ **then** $\delta \gets |U(s')-U(s)|$
+
+**until** $\delta \leq \epsilon$;
+
+---
+<p>
+The optimal action for state $s$ is thus the action maximing the sum term in Step 2a, i.e. $\pi(s) = \operatorname{argmax}_{a\in \mathcal{A}(s)} \sum_{s'}P(s'| s,a) \left[ R(s,a,s') +  \max_{a'} U(s') \right]$. Either one computes this at the end of the algorithm or one adds this book-keeping step as part of step 2a in the value iteration algorithm. Technically, $\pi\approx \pi^*$, i.e. we only obtain an estimate of the optimal strategy, because of the iterative nature of the algorithm. However, one can show that with sufficient iterations we converge towards $\pi^*$.
+
+## Results
+
+Applying the value iteration Python code for $n=7$ (see code in the Appendix) gives the optimal strategy. Furthermore, we also obtain the probabilities to win from each state. We show the result for all states with at least 3 sticks in the lid. With less than 3 sticks the decision is always to continue throwing.
+
+In the output, the column `strategy` shows whether to continue throwing the dice (`TRUE`) or not (`FALSE`); the column `value` shows the expected value $U(s)$ and `prob` shows the expected probability to win the game given that the opponent also follows the same optimal strategy. Note that for states with $l=1$, no choice is possible, i.e. one has to continue no matter what. For these states the strategy column is always `TRUE`. 
+
+```{python, eval=FALSE, echo=FALSE}
+from pathlib import Path
+print(Path.cwd())
+```
+```{python VALUEITER, file=file.path(filePath, "value_iteration.py"), echo=FALSE}
+```
+```{r, echo=FALSE}
+py$s_best %>% filter(i>=3)
+```
+
+
+One can, e.g., compare the results with the numbers in Fig. 4 of @jehn2021. The optimal strategy for a two player game is thus to continue as long as only three pits are filled. If four slots are filled, one would only continue, if the situation is 4/1/1. If 5 pits are filled, one should always stop (if possible). The figure below illustrates the strategy for all $l=0$ states graphically: the y-axis gives $i$ whereas the label of each box is $j/k$ above the expected probability to win from this state (with 2 decimals):
+
+```{r optim_strategy, width=10, height=2, echo=FALSE}
+size_x <- 12
+pi <- py$s_best %>% filter(l==0)
+pi <- pi %>% mutate(x=(size_x*j+k)*size_x - 4*size_x*j^1.25, y=i, label=sprintf("%d/%d\n%.2f",j, k, prob))
+par(mar=c(0,5,0,0))
+plot(c(0,0), xlim=c(100,450), ylim=c(0,6), type="n", xlab="", ylab="Occupied pits in lid", axes=FALSE)
+for (i in 1:nrow(pi)) {
+  one_s <- pi[i,] 
+  rect(xleft= one_s[["x"]], ybottom=one_s[["y"]], xright=one_s[["x"]]+(size_x), one_s[["y"]]+0.8, col=if_else(one_s[["strategy"]], "darkolivegreen3", "salmon2"))
+  text( one_s[["x"]]+size_x/2,  one_s[["y"]]+0.4, one_s[["label"]], cex=0.5, adj=c(0.5,0.5))
+}
+axis(2, at=0:5+0.5, labels=0:5)
+legend(x="topright", fill=c("darkolivegreen3", "salmon2"), legend = c("continue", "stop"), title="Action:", cex=1)
+```
+
+## Discussion
+
+Dynamic programming is an important foundation for reinforcement learning. We can use it to find optimal strategies in fully observable stochastic environments. For environments with reasonable sized state spaces and with a known stochastic model for the transitions between states, dynamic programming is a direct method to get exact solutions. No complex approximate solutions, as e.g. discussed in Part 2 of @sutton_burto2020, are needed.
+
+
+## Appendix: Python code 
+
+The Python code for value iteration can be found as [`value_iteration.py`](`r str_c(fullFigPath, "value_iteration.py")`).
+
+```{python}
+<<VALUEITER>>
+```
+
+
+
+
+## References
