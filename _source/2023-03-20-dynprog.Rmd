@@ -25,6 +25,7 @@ options(width=150, scipen=1e3)
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(knitr))
 suppressPackageStartupMessages(library(reticulate))
+reticulate::use_virtualenv("r-reticulate")
 
 # Non CRAN packages
 # devtools::install_github("hadley/emo")
@@ -56,7 +57,7 @@ cat(paste0("![]({{ site.baseurl }}/",knitr::opts_chunk$get("fig.path"),"optim_st
 This work is licensed under a <a rel="license"
 href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
 Attribution-ShareAlike 4.0 International License</a>.
-The [R-markdown source code](`r str_c("https://raw.githubusercontent.com/mhoehle/mhoehle.github.io/master/_source/blog",current_input())`) of this blog is available under a [GNU General Public License (GPL v3)](https://www.gnu.org/licenses/gpl-3.0.html) license from GitHub.
+The [R-markdown source code](`r str_c("https://raw.githubusercontent.com/mhoehle/hoehleatsu.github.io/master/_source/",current_input())`) of this blog is available under a [GNU General Public License (GPL v3)](https://www.gnu.org/licenses/gpl-3.0.html) license from GitHub.
 
 ## Introduction
 
