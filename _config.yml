@@ -38,7 +38,6 @@ author:
   name:           'Michael Höhle'
   url:            https://math-inf.uni-greifswald.de/en/michael-hoehle/
 
-disqus_id: staffmathsusehoehleblog
 
 exclude: 
 - birth_stats.Rmd

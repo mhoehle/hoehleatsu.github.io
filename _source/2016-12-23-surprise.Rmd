@@ -4,6 +4,8 @@ title: "suRprise! - Classifying Kinder Eggs by Boosting"
 tags: [rstats, stats, programming, juleforsøg, classification]
 bibliography: ~/Literature/Bibtex/jabref.bib
 comments: true
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r,include=FALSE,echo=FALSE,message=FALSE}
@@ -17,9 +19,7 @@ filePath <- "/Users/hoehle/Sandbox/Blog/figure/source/2016-12-23-surprise/"
 
 knitr::opts_chunk$set(echo = TRUE,fig.width=8,fig.height=5,fig.cap='',autodep=TRUE)
 options(width=90)
-library("dplyr")
-library("ggplot2")
-library("tidyr")
+library("tidyverse")
 library("methods")
 library("forcats")
 
@@ -111,15 +111,16 @@ based on boosted classification trees.
 
 ```{r,echo=FALSE}
 #Load data
-surprise <- read.table(paste0(filePath,"surprise.txt"),header=TRUE,skip=9)
+surprise <- read.table(paste0(filePath,"surprise.txt"), header=TRUE,skip=9)
 #Some data munging to get factor variable
-surprise <- surprise %>% mutate(rattles=1 - rattles_like_figure, #solve ambiguity in the rattling covar
+surprise <- surprise %>% mutate(rattles=1 - rattles_like_figure, #solve ambiguity in the rattling covariable
                                 rattles_fac = fct_recode(factor(rattles),
                                                          "no"="0",
                                                          "yes"="1"),
                                 figure_fac = fct_recode(factor(figure),
                                                      "no" = "0",
-                                                     "yes" = "1"))
+                                                     "yes" = "1")) %>% 
+  select(-figure, -rattles_like_figure, -rattles)
 ```
 We collected n=`r nrow(surprise)` eggs of which
 `r sprintf('%.1f%%',100*mean(surprise$figure))` were figures - the
@@ -143,11 +144,11 @@ head(surprise, n=5)
 
 ### Descriptive Data Analysis
 ```{r,echo=FALSE}
-tab <- with(surprise, table(figure, rattles))
+tab <- with(surprise, table(figure_fac, rattles_fac))
 ```
 
 The fraction of figures in the dataset was
-`r sum(surprise$figure)`/`r nrow(surprise)`, which is way higher than
+`r sum(surprise$figure_fac == "yes")`/`r nrow(surprise)`, which is way higher than
 the proclaimed 1/7; possibly, because professionals egg collectors were at work...
 
 Of the `r sum(tab)` analysed eggs, `r colSums(tab)[1]` were categorized as non-rattling.
@@ -236,7 +237,7 @@ cat(paste(str[-removeLines[-1]],"\n"))
 m_xgb$bestTune
 sprintf("%.2f",mean(m_xgb$resample$ROC))
 m_xgb$finalModel
-xgb.plot.tree(feature_names = c("weight", "rattles_fac", "weight:rattles_fac"), model=m_xgb$finalModel,n_first_tree=3)
+xgboost::xgb.plot.tree(feature_names = c("weight", "rattles_fac", "weight:rattles_fac"), model=m_xgb$finalModel,trees=3)
 xgb.plot.multi.trees(model = m_xgb$finalModel, c("weight", "rattles_fac", "weight:rattles_fac"), features_keep = 5)
 ```
 
@@ -277,9 +278,14 @@ probabilities for figure content as a function of egg weight and the
 `rattles_fac` variable.
 
 ```{r,echo=FALSE, CLASSIFIEROUTPUT,fig.align="center"}
-nd <- data.frame(weight=rep(30:40,times=2), rattles_fac=rep(c("no","yes"),each=11))
-nd$p <- predict(m_xgb, newdata = nd,type="prob")[,2]
-ggplot(nd, aes(x=weight, y=p)) + geom_line() + facet_grid(. ~ rattles_fac) + ylab("Probability of figure") + xlab("Weight (g)") + scale_y_continuous(labels=scales::percent)
+nd <- data.frame(weight=rep(30:40,times=2), rattles_fac=rep(c("no","yes"),each=11)) %>% 
+  mutate(rattles_lab = str_c("Rattles = ", rattles_fac))
+nd$p <- predict(m_xgb, newdata = nd,type="prob")[,2] 
+  
+ggplot(nd, aes(x=weight, y=p)) + geom_line() +
+  facet_grid(. ~ rattles_lab) +
+  ylab("Probability of figure") + xlab("Weight (g)") + 
+  scale_y_continuous(labels=scales::percent)
 ```
 
 ## Discussion
